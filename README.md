@@ -11,7 +11,7 @@ A simple webcam recorder for Omarchy. Choose your camera and microphone once, th
 
 ## Build and run
 
-Install a C++17 compiler, `make`, `qt6-base`, `qt6-declarative`, `qt6-multimedia` (Qt 6.8 or newer), and `ffmpeg`. Then:
+Install a C++17 compiler, `make`, `qt6-base`, `qt6-declarative`, `qt6-multimedia` (Qt 6.8 or newer), `libpulse`, and `ffmpeg`. Microphone capture requires a PulseAudio-compatible server, such as PipeWire-Pulse on Omarchy. Then:
 
 ```sh
 ./bin/build
@@ -54,11 +54,13 @@ A disconnected source or encoder error stops the take and preserves its files. A
 
 Tests cover format ranking, pause timing, PCM levels, atomic saving, theme file changes and symlink swaps, actual H.264/AAC encoding and decoding, and native QML keyboard/layout behavior with simulated sources. They run offscreen and do not activate a camera or microphone. The capture-independent backend uses an injected file picker for save and recovery tests. The QML tests write inspection screenshots to `/tmp/monologue-ui-*.png`.
 
-The recording engine forwards native camera frames and one shared microphone PCM stream to timestamped Qt inputs. It removes paused intervals before encoding and uses the same microphone samples for the meter. Qt's audio encoder counts samples, so the writer pads genuine capture gaps and trims overlaps to maintain the common timeline. Preview and metering remain live while paused. Finish remuxes the MP4 without re-encoding to normalize packet durations and put playback metadata at the front of the file.
+The recording engine forwards native camera frames and one shared microphone PCM stream to timestamped Qt inputs. Microphone timestamps account for the audio server's measured capture latency, including buffered samples. The writer removes paused intervals by capture time and accepts delayed samples from before Pause or Finish. Finish briefly waits for those samples before closing the recording. Qt's audio encoder counts samples, so the writer pads genuine capture gaps and trims overlaps to maintain the common timeline. Preview and metering remain live while paused. Finish remuxes the MP4 without re-encoding to normalize packet durations and put playback metadata at the front of the file.
+
+A synchronization regression test encodes and decodes matching flashes and audio clicks with delayed delivery, including events just before Pause and Finish. It checks event alignment within 10 ms, rather than only comparing stream durations.
 
 Run `./bin/test-camera` explicitly for a short real camera/microphone recording with a pause and resume. It uses separate `monologue-camera-check` settings and storage, and retains its output for inspection. It is never run by `bin/test`.
 
-A real-camera check is still needed for each device/backend combination, particularly maximum-resolution throughput and synchronization over long takes. A short 1920 × 1080 hardware check passed on this machine; it does not establish long-take synchronization or 4K throughput. See [the plan](plans/monologue.md) for the manual acceptance checks.
+A real-camera check is still needed for each device/backend combination, particularly maximum-resolution throughput and synchronization over long takes. Short 1920 × 1080 and 3840 × 2160 hardware checks passed on this machine; they do not establish physical lip sync or sustained throughput. See [the plan](plans/monologue.md) for the manual acceptance checks.
 
 ## License
 

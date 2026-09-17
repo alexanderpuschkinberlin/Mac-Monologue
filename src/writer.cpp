@@ -2,6 +2,7 @@
 #include <QMediaFormat>
 #include <QUrl>
 #include <QAbstractVideoBuffer>
+#include <limits>
 
 namespace {
 // QVideoFrame copies share timestamp metadata as well as pixels. Give recording
@@ -31,15 +32,40 @@ private:
 };
 }
 
-void TakeClock::start(qint64 now) { m_start = now; m_completed = 0; m_paused = false; }
-void TakeClock::pause(qint64 now) {
-    if (!m_paused) { m_completed += std::max(qint64(0), now - m_start); m_paused = true; }
+void TakeClock::start(qint64 now) {
+    m_start = now; m_completed = 0; m_paused = false;
+    m_intervals = {{now, std::numeric_limits<qint64>::max(), 0}};
 }
-void TakeClock::resume(qint64 now) { if (m_paused) { m_start = now; m_paused = false; } }
+void TakeClock::pause(qint64 now) {
+    if (!m_paused) {
+        m_intervals.last().end = std::max(now, m_start);
+        m_completed += m_intervals.last().end - m_start;
+        m_paused = true;
+    }
+}
+void TakeClock::resume(qint64 now) {
+    if (m_paused) {
+        m_start = now; m_paused = false;
+        m_intervals.append({now, std::numeric_limits<qint64>::max(), m_completed});
+    }
+}
 qint64 TakeClock::duration(qint64 now) const { return m_completed + (m_paused ? 0 : std::max(qint64(0), now - m_start)); }
 std::optional<qint64> TakeClock::position(qint64 time) const {
-    if (m_paused || time < m_start) return {};
-    return m_completed + time - m_start;
+    for (auto i = m_intervals.crbegin(); i != m_intervals.crend(); ++i) {
+        if (time < i->begin) continue;
+        if (time < i->end) return i->position + time - i->begin;
+        break;
+    }
+    return {};
+}
+QList<TakeClock::Span> TakeClock::spans(qint64 begin, qint64 end) const {
+    QList<Span> result;
+    for (auto i = m_intervals.crbegin(); i != m_intervals.crend(); ++i) {
+        if (i->end <= begin) break;
+        const qint64 first = std::max(begin, i->begin), last = std::min(end, i->end);
+        if (first < last) result.prepend({first, last, i->position + first - i->begin});
+    }
+    return result;
 }
 
 Writer::Writer(QObject *parent) : QObject(parent) {
@@ -88,22 +114,21 @@ bool Writer::start(const QString &path, const QVideoFrameFormat &format,
     return !m_failed;
 }
 void Writer::pause(qint64 now) {
-    if (!m_stopping) {
-        // Hold the last camera frame through the interval's tail, just as the
-        // live preview does between deliveries. Finish both streams together.
-        if (m_tailFrame.isValid()) video(m_tailFrame, now - m_frameDuration);
-        padAudioTo(m_clock.duration(now));
-        m_clock.pause(now);
-    }
+    // Close the interval, but still accept buffers captured before this edge.
+    // Padding now would overwrite the microphone's in-flight tail with silence.
+    if (!m_stopping) m_clock.pause(now);
 }
 void Writer::resume(qint64 now) { if (!m_stopping) m_clock.resume(now); }
 void Writer::video(QVideoFrame frame, qint64 capturedAt) {
     if (m_stopping || m_failed || !frame.isValid()) return;
     const auto time = m_clock.position(capturedAt);
     if (!time) return;
+    videoAt(frame, *time);
+}
+void Writer::videoAt(QVideoFrame frame, qint64 position) {
     // Quantize to the output rate instead of rejecting short callback intervals:
     // real webcams deliver jittery batches, which must not halve the frame rate.
-    const qint64 frameIndex = qRound64(*time * m_fps / 1000000.0);
+    const qint64 frameIndex = qRound64(position * m_fps / 1000000.0);
     const qint64 timestamp = qRound64(frameIndex * 1000000.0 / m_fps);
     if (timestamp <= m_lastVideo) return;
     m_tailFrame = frame;
@@ -118,30 +143,32 @@ void Writer::video(QVideoFrame frame, qint64 capturedAt) {
     drain();
 }
 void Writer::audio(QByteArray data, qint64 capturedAt) {
-    if (m_stopping || m_failed || !m_audio || m_clock.paused()) return;
-    // A callback can straddle the start/resume boundary. Trim pre-take samples.
-    if (capturedAt < m_clock.intervalStart()) {
-        const auto skip = m_audioFormat.framesForDuration(m_clock.intervalStart() - capturedAt);
-        data.remove(0, std::min(qsizetype(data.size()), qsizetype(skip * m_audioFormat.bytesPerFrame())));
-        capturedAt += m_audioFormat.durationForFrames(skip);
-        capturedAt = std::max(capturedAt, m_clock.intervalStart());
+    if (m_stopping || m_failed || !m_audio || data.isEmpty()) return;
+    const qint64 end = capturedAt + m_audioFormat.durationForBytes(data.size());
+    const int frameBytes = m_audioFormat.bytesPerFrame();
+    // Select by capture time, including closed intervals. A late buffer may
+    // straddle Pause, Resume, or Finish; only the recorded sample ranges survive.
+    for (const auto &span : m_clock.spans(capturedAt, end)) {
+        const auto sampleAtOrAfter = [this](qint64 time) {
+            return (time * m_audioFormat.sampleRate() + 999999) / 1000000;
+        };
+        const qint64 first = sampleAtOrAfter(span.begin - capturedAt);
+        const qint64 last = sampleAtOrAfter(span.end - capturedAt);
+        QByteArray part = data.mid(first * frameBytes, (last - first) * frameBytes);
+        const auto position = span.position + m_audioFormat.durationForFrames(first) - (span.begin - capturedAt);
+        // Qt counts audio samples rather than honoring PTS. Materialize capture
+        // gaps as silence and trim overlaps, keeping the original event times.
+        const qint64 desiredFrame = qRound64(position * m_audioFormat.sampleRate() / 1000000.0);
+        if (desiredFrame < m_audioFramesWritten) {
+            const auto overlap = (m_audioFramesWritten - desiredFrame) * frameBytes;
+            part.remove(0, std::min(qsizetype(part.size()), qsizetype(overlap)));
+        } else padAudioTo(position);
+        if (!part.isEmpty()) appendAudio(part);
     }
-    const auto time = m_clock.position(capturedAt);
-    if (!time || data.isEmpty()) return;
-    // Qt's FFmpeg audio encoder counts samples; it does not honor buffer PTS.
-    // Materialize the timeline as PCM: silence for gaps, trim overlaps. This
-    // preserves offsets and prevents missing callback tails accumulating over
-    // repeated pauses. No paused samples ever enter this stream.
-    const qint64 desiredFrame = m_audioFormat.framesForDuration(*time);
-    if (desiredFrame < m_audioFramesWritten) {
-        const auto overlap = (m_audioFramesWritten - desiredFrame) * m_audioFormat.bytesPerFrame();
-        data.remove(0, std::min(qsizetype(data.size()), qsizetype(overlap)));
-    } else padAudioTo(*time);
-    if (!data.isEmpty()) appendAudio(data);
 }
 void Writer::padAudioTo(qint64 time) {
     if (!m_audio || m_failed) return;
-    const qint64 missing = m_audioFormat.framesForDuration(time) - m_audioFramesWritten;
+    const qint64 missing = qRound64(time * m_audioFormat.sampleRate() / 1000000.0) - m_audioFramesWritten;
     if (missing <= 0) return;
     if (m_audioFormat.durationForFrames(missing) > 500000) {
         fail("Audio capture fell behind the recording. The interrupted take has been kept."); return;
@@ -170,6 +197,14 @@ void Writer::drain() {
 }
 void Writer::finish() {
     if (m_stopping) return;
+    // Backend calls this after the capture watermarks pass Finish, so all
+    // in-flight samples have had a chance to reach the closed final interval.
+    if (m_clock.paused()) {
+        const auto duration = m_clock.duration(0);
+        if (m_tailFrame.isValid()) videoAt(m_tailFrame, std::max(qint64(0), duration - m_frameDuration));
+        padAudioTo(duration);
+    }
+    if (m_failed) return;
     m_stopping = true;
     m_flushTimeout.start();
     drain();

@@ -3,7 +3,7 @@
 #include <QMediaDevices>
 #include <QMediaCaptureSession>
 #include <QCamera>
-#include <QAudioSource>
+#include "audiocapture.h"
 #include <QVideoSink>
 #include <QElapsedTimer>
 #include <QSettings>
@@ -86,6 +86,8 @@ private:
     void activateSources();
     void releaseSources();
     void readAudio();
+    void receiveAudio(const QByteArray &data, qint64 capturedAt);
+    void finishWhenCaptured();
     void receiveVideo(const QVideoFrame &frame);
     void tick();
     void sourceFailed(const QString &message);
@@ -102,13 +104,13 @@ private:
     QVideoSink m_sink;
     QPointer<QVideoSink> m_preview;
     QCamera *m_camera = nullptr;
-    QAudioSource *m_audio = nullptr;
-    QIODevice *m_audioDevice = nullptr;
+    AudioCapture *m_audio = nullptr;
     QAudioFormat m_audioFormat;
     QVideoFrame m_lastFrame;
     QCameraFormat m_cameraFormat;
     QElapsedTimer m_wall;
     QTimer m_tick;
+    QTimer m_finishTimeout;
     QSettings m_settings;
     FilePicker *m_picker;
     bool m_activateHardware;
@@ -119,7 +121,8 @@ private:
     QString m_root, m_takeId, m_clipPath, m_clipFileName;
     QString m_interruption;
     qint64 m_lastVideoAt = 0, m_lastAudioAt = 0, m_activatedAt = 0;
-    qint64 m_videoOrigin = -1, m_videoBase = 0, m_audioBase = -1, m_audioFrames = 0;
+    qint64 m_videoOrigin = -1, m_videoBase = 0;
+    qint64 m_audioCapturedUntil = -1, m_videoCapturedUntil = -1, m_finishAt = -1;
     qint64 m_clipUntil = 0, m_peakUntil = 0, m_signalAt = 0;
     double m_duration = 0, m_level = -60, m_peak = -60, m_pendingPeak = 0, m_fps = 30;
     bool m_cameraHealthy = false, m_audioHealthy = false, m_dialogOpen = false;

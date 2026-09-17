@@ -1,5 +1,8 @@
 #include "audiocapture.h"
 #include <limits>
+#include <QLoggingCategory>
+
+Q_LOGGING_CATEGORY(audioTiming, "monologue.audio", QtWarningMsg)
 
 AudioCapture::AudioCapture(std::function<qint64()> clock, QObject *parent)
     : QObject(parent), m_clock(std::move(clock)) {
@@ -96,7 +99,11 @@ void AudioCapture::readAvailable() {
         if (pa_stream_get_latency(m_stream, &latency, &negative) < 0) {
             requestTiming(); break; // Never invent a timestamp while timing is unavailable.
         }
-        const qint64 capturedAt = m_clock() + (negative ? qint64(latency) : -qint64(latency));
+        const qint64 capturedAt = captureTime(m_clock(), qint64(latency), negative);
+        if (!m_reportedTiming) {
+            qCDebug(audioTiming) << "Measured microphone capture latency (us):" << latency << "negative:" << negative;
+            m_reportedTiming = true;
+        }
         const void *data = nullptr;
         size_t bytes = 0;
         if (pa_stream_peek(m_stream, &data, &bytes) < 0) { fail("Could not read microphone samples."); break; }

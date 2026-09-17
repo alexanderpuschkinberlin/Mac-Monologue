@@ -16,6 +16,9 @@ public:
     void start(const QByteArray &device, const QAudioFormat &format);
     void stop();
     void readAvailable();
+    static qint64 captureTime(qint64 deliveredAt, qint64 latency, bool negative) {
+        return deliveredAt + (negative ? latency : -latency);
+    }
 signals:
     void samples(const QByteArray &data, qint64 capturedAt);
     void failed(const QString &message);
@@ -31,5 +34,5 @@ private:
     pa_mainloop *m_loop = nullptr;
     pa_context *m_context = nullptr;
     pa_stream *m_stream = nullptr;
-    bool m_failed = false, m_reading = false, m_timingRequested = false;
+    bool m_failed = false, m_reading = false, m_timingRequested = false, m_reportedTiming = false;
 };

@@ -1,4 +1,5 @@
 #include <QtTest>
+#include <cstring>
 #include <QTemporaryDir>
 #include <QImage>
 #include <QSignalSpy>
@@ -46,6 +47,13 @@ private slots:
         QCOMPARE(c.duration(21000000),10000000);
         QVERIFY(!c.position(15999999));
         c.pause(21000000); c.pause(23000000); QCOMPARE(c.duration(23000000),10000000);
+        QCOMPARE(*c.position(5900000),4900000); // Late delivery from a closed interval.
+        const auto parts=c.spans(5900000,16100000);
+        QCOMPARE(parts.size(),2);
+        QCOMPARE(parts[0].position,4900000);
+        QCOMPARE(parts[0].end,6000000);
+        QCOMPARE(parts[1].position,5000000);
+        QCOMPARE(parts[1].begin,16000000);
     }
     void meterAllChannels() {
         QAudioFormat f; f.setSampleRate(48000); f.setChannelCount(2); f.setSampleFormat(QAudioFormat::Int16);
@@ -176,6 +184,74 @@ private slots:
         reopened.save(); QCOMPARE(QFileInfo(secondPicker->suggestion.toLocalFile()).absolutePath(),fixture.path()); secondPicker->cancel();
         backend.discardRecording(id); QVERIFY(!QFile::exists(original)); QVERIFY(QFile::exists(saved+".mp4"));
         QCOMPARE(backend.recordings().size(),0);
+    }
+    void delayedCaptureStaysInSync() {
+        QTemporaryDir directory;
+        const auto path=directory.filePath("sync.mp4");
+        QAudioFormat format; format.setSampleRate(48000); format.setChannelCount(1); format.setSampleFormat(QAudioFormat::Int16);
+        Writer writer; QSignalSpy ended(&writer,&Writer::finished), errors(&writer,&Writer::failed);
+        QVERIFY(writer.start(path,QVideoFrameFormat(QSize(64,64),QVideoFrameFormat::Format_BGRA8888),30,format,0));
+        QImage first(64,64,QImage::Format_RGB32); first.fill(Qt::black); writer.video(QVideoFrame(first),0);
+        int nextVideo=0, nextAudio=0;
+        bool paused=false,resumed=false,finished=false;
+        const QList<qint64> events{300000,966667,2300000,2966667};
+        for(qint64 delivered=0;delivered<=3200000;delivered+=10000) {
+            if(!paused && delivered>=1000000) { writer.pause(1000000); paused=true; }
+            if(!resumed && delivered>=2000000) { writer.resume(2000000); resumed=true; }
+            if(!finished && delivered>=3000000) { writer.pause(3000000); finished=true; }
+            // Camera callbacks are delayed by one frame; the microphone by
+            // 80 ms plus the 20 ms buffer itself. Both describe the same events.
+            while(qRound64(nextVideo*1000000.0/30)+33333<=delivered) {
+                const qint64 captured=qRound64(nextVideo*1000000.0/30);
+                QImage image(64,64,QImage::Format_RGB32);
+                image.fill(events.contains(captured)?Qt::white:Qt::black);
+                writer.video(QVideoFrame(image),captured); ++nextVideo;
+            }
+            while(nextAudio*20000LL+100000<=delivered) {
+                const qint64 callbackAt=nextAudio*20000LL+100000;
+                const qint64 captured=AudioCapture::captureTime(callbackAt,100000,false);
+                QByteArray pcm(960*2,0); auto *samples=reinterpret_cast<qint16*>(pcm.data());
+                for(int i=0;i<960;++i) {
+                    const qint64 time=captured+qRound64(i*1000000.0/48000);
+                    for(const auto event:events)
+                        if(time>=event && time<event+10000) samples[i]=qint16(12000*std::sin(i*2*3.141592653589793*1000/48000));
+                }
+                writer.audio(pcm,captured); ++nextAudio;
+            }
+            QTest::qWait(10);
+        }
+        writer.finish(); QTRY_VERIFY_WITH_TIMEOUT(!ended.isEmpty(),15000);
+        QVERIFY2(errors.isEmpty(),errors.isEmpty()?"":qPrintable(errors.first().first().toString()));
+        QVERIFY(media::normalizeMp4(path,30).isEmpty());
+        QProcess frames;
+        frames.start("ffprobe",{"-v","error","-select_streams","v:0","-show_frames","-show_entries","frame=best_effort_timestamp_time","-of","json",path});
+        QVERIFY(frames.waitForFinished());
+        const auto timestamps=QJsonDocument::fromJson(frames.readAllStandardOutput()).object()["frames"].toArray();
+        QProcess pixels;
+        pixels.start("ffmpeg",{"-v","error","-i",path,"-an","-vf","scale=1:1","-pix_fmt","gray","-fps_mode","passthrough","-f","rawvideo","-"});
+        QVERIFY(pixels.waitForFinished()); QCOMPARE(pixels.exitCode(),0);
+        const auto values=pixels.readAllStandardOutput(); QCOMPARE(values.size(),timestamps.size());
+        QList<double> flashes;
+        for(int i=0;i<values.size();++i)
+            if(quint8(values[i])>220) flashes.append(timestamps[i].toObject()["best_effort_timestamp_time"].toString().toDouble());
+        QProcess audio;
+        audio.start("ffmpeg",{"-v","error","-i",path,"-vn","-ac","1","-ar","48000","-f","s16le","-"});
+        QVERIFY(audio.waitForFinished()); QCOMPARE(audio.exitCode(),0);
+        const auto pcm=audio.readAllStandardOutput();
+        QList<double> clicks; int lastLoud=-48000;
+        for(int i=0;i<pcm.size()/2;++i) {
+            qint16 sample; std::memcpy(&sample,pcm.constData()+i*2,2);
+            if(std::abs(int(sample))>5000) {
+                if(i-lastLoud>2400) clicks.append(i/48000.0);
+                lastLoud=i;
+            }
+        }
+        QCOMPARE(flashes.size(),4); QCOMPARE(clicks.size(),4);
+        for(int i=0;i<4;++i) {
+            const double expected=i<2 ? events[i]/1000000.0 : events[i]/1000000.0-1;
+            QVERIFY2(std::abs(flashes[i]-expected)<.002,qPrintable(QString("Flash %1 at %2, expected %3").arg(i).arg(flashes[i]).arg(expected)));
+            QVERIFY2(std::abs(flashes[i]-clicks[i])<.01,qPrintable(QString("Event %1: video %2, audio %3").arg(i).arg(flashes[i]).arg(clicks[i])));
+        }
     }
 };
 int main(int argc,char**argv) {

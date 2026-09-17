@@ -12,14 +12,18 @@
 // Maps a monotonic capture clock onto a take with the paused intervals removed.
 class TakeClock {
 public:
+    struct Span { qint64 begin, end, position; };
     void start(qint64 now);
     void pause(qint64 now);
     void resume(qint64 now);
     qint64 duration(qint64 now) const;
     std::optional<qint64> position(qint64 capturedAt) const;
+    QList<Span> spans(qint64 begin, qint64 end) const;
     bool paused() const { return m_paused; }
     qint64 intervalStart() const { return m_start; }
 private:
+    struct Interval { qint64 begin, end, position; };
+    QList<Interval> m_intervals;
     qint64 m_start = 0, m_completed = 0;
     bool m_paused = false;
 };
@@ -45,6 +49,7 @@ private:
     void fail(const QString &message);
     void appendAudio(const QByteArray &data);
     void padAudioTo(qint64 time);
+    void videoAt(QVideoFrame frame, qint64 position);
     QMediaCaptureSession m_session;
     QMediaRecorder m_recorder;
     QVideoFrameInput *m_video = nullptr;

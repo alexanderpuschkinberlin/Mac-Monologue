@@ -1,5 +1,6 @@
 #include "backend.h"
 #include "mediautils.h"
+#include <QAudioDevice>
 #include <QDir>
 #include <QFileInfo>
 #include <QStandardPaths>
@@ -40,6 +41,14 @@ Backend::Backend(FilePicker *picker, bool activateHardware, QObject *parent)
     m_tick.setInterval(40);
     connect(&m_tick,&QTimer::timeout,this,&Backend::tick);
     m_tick.start();
+    m_finishTimeout.setSingleShot(true);
+    m_finishTimeout.setInterval(2000);
+    connect(&m_finishTimeout, &QTimer::timeout, this, [this] {
+        if (!m_writer || m_finishAt < 0) return;
+        if (m_interruption.isEmpty()) m_interruption = "The final capture buffers did not arrive. The interrupted take has been kept.";
+        m_finishAt = -1;
+        m_writer->finish();
+    });
     QTimer::singleShot(0,this,[this] { if(m_activateHardware) refreshDevices(); refreshRecordings(); });
 }
 Backend::~Backend() { releaseSources(); }
@@ -86,9 +95,9 @@ void Backend::refreshDevices() {
 }
 void Backend::releaseSources() {
     if(m_camera) { m_camera->disconnect(this); m_camera->stop(); m_capture.setCamera(nullptr); delete m_camera; m_camera=nullptr; }
-    if(m_audio) { m_audio->disconnect(this); if(m_audioDevice) m_audioDevice->disconnect(this); m_audio->stop(); delete m_audio; m_audio=nullptr; m_audioDevice=nullptr; }
+    if(m_audio) { m_audio->disconnect(this); m_audio->stop(); delete m_audio; m_audio=nullptr; }
     m_cameraHealthy=false; m_audioHealthy=false;
-    m_videoOrigin=-1; m_audioBase=-1; m_audioFrames=0;
+    m_videoOrigin=-1; m_audioCapturedUntil=-1; m_videoCapturedUntil=-1;
     m_lastFrame=QVideoFrame();
     if(m_preview) m_preview->setVideoFrame({});
     m_level=m_peak=-60; emit meterChanged();
@@ -121,15 +130,10 @@ void Backend::activateSources() {
         if(selectedAudio.isNull()) { m_state="unavailable"; m_message="Choose an available microphone, or select No audio."; }
         else {
             m_audioFormat=selectedAudio.preferredFormat();
-            m_audio=new QAudioSource(selectedAudio,m_audioFormat,this);
-            m_audio->setBufferSize(m_audioFormat.bytesForDuration(40000));
-            connect(m_audio,&QAudioSource::stateChanged,this,[this](auto state) {
-                if(m_audio && state==QtAudio::StoppedState && m_audio->error()!=QtAudio::NoError)
-                    sourceFailed("The microphone could not be read. Check its permissions or choose another source.");
-            });
-            m_audioDevice=m_audio->start();
-            if(m_audioDevice) connect(m_audioDevice,&QIODevice::readyRead,this,&Backend::readAudio);
-            else { m_state="unavailable"; m_message="The microphone could not be opened. Choose another source or Retry."; }
+            m_audio=new AudioCapture([this] { return now(); },this);
+            connect(m_audio,&AudioCapture::samples,this,&Backend::receiveAudio);
+            connect(m_audio,&AudioCapture::failed,this,&Backend::sourceFailed);
+            m_audio->start(selectedAudio.id(),m_audioFormat);
         }
     } else { m_settings.setValue("microphone/id","none"); m_settings.setValue("microphone/label","No audio"); }
     if(QStandardPaths::findExecutable("ffprobe").isEmpty() || QStandardPaths::findExecutable("ffmpeg").isEmpty()) { m_state="unavailable"; m_message="Install ffmpeg (including ffprobe) to record and inspect clips."; }
@@ -163,15 +167,15 @@ void Backend::receiveVideo(const QVideoFrame &frame) {
         // future frames into the take's compact timeline.
         if(captureTime>m_lastVideoAt || m_lastVideoAt-captureTime>500000) { m_videoOrigin=frame.startTime(); m_videoBase=m_lastVideoAt; captureTime=m_lastVideoAt; }
     }
-    if(m_writer && m_state=="recording") m_writer->video(frame,captureTime);
+    m_videoCapturedUntil = std::max(m_videoCapturedUntil, captureTime);
+    if(m_writer) m_writer->video(frame,captureTime);
+    finishWhenCaptured();
 }
 void Backend::readAudio() {
-    if(!m_audioDevice || !m_audioFormat.isValid()) return;
-    const auto available=m_audioDevice->bytesAvailable();
-    const auto count=available-available%m_audioFormat.bytesPerFrame();
-    if(count<=0) return;
-    const auto data=m_audioDevice->read(count);
-    if(data.isEmpty()) return;
+    if(m_audio) m_audio->readAvailable();
+}
+void Backend::receiveAudio(const QByteArray &data, qint64 capturedAt) {
+    if(data.isEmpty() || !m_audioFormat.isValid()) return;
     m_lastAudioAt=now();
     if(!m_audioHealthy) {
         m_audioHealthy=true;
@@ -180,10 +184,9 @@ void Backend::readAudio() {
         updateReady();
     }
     m_pendingPeak=std::max(m_pendingPeak,media::peak(data,m_audioFormat));
-    if(m_audioBase<0) m_audioBase=m_lastAudioAt-m_audioFormat.durationForBytes(data.size());
-    const qint64 captureTime=m_audioBase+m_audioFormat.durationForFrames(m_audioFrames);
-    m_audioFrames+=m_audioFormat.framesForBytes(data.size());
-    if(m_writer && m_state=="recording") m_writer->audio(data,captureTime);
+    m_audioCapturedUntil = std::max(m_audioCapturedUntil, capturedAt + m_audioFormat.durationForBytes(data.size()));
+    if(m_writer) m_writer->audio(data,capturedAt);
+    finishWhenCaptured();
 }
 void Backend::tick() {
     const auto time=now();
@@ -249,13 +252,24 @@ void Backend::startTake() {
 void Backend::finish() {
     if(!m_writer || m_state=="finalizing") return;
     if(m_state=="recording") readAudio();
-    m_duration=m_writer->duration(now())/1000000.0;
-    m_writer->pause(now());
+    m_finishAt=now();
+    m_duration=m_writer->duration(m_finishAt)/1000000.0;
+    m_writer->pause(m_finishAt);
     m_state="finalizing"; m_message=m_interruption.isEmpty()?"Finishing your clip…":m_interruption;
-    m_writer->finish(); emit changed();
+    m_finishTimeout.start();
+    finishWhenCaptured();
+    emit changed();
+}
+void Backend::finishWhenCaptured() {
+    if(!m_writer || m_finishAt < 0) return;
+    if(m_videoCapturedUntil < m_finishAt || (audioEnabled() && m_audioCapturedUntil < m_finishAt)) return;
+    m_finishAt=-1;
+    m_finishTimeout.stop();
+    m_writer->finish();
 }
 void Backend::writerFinished() {
     if(!m_writer) return;
+    m_finishTimeout.stop(); m_finishAt=-1;
     m_writer->deleteLater(); m_writer=nullptr;
     releaseSources();
     if(m_discardAfter) {

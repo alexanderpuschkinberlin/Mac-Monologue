@@ -73,6 +73,7 @@ public:
     Q_INVOKABLE void showFiles(const QString &id);
     Q_INVOKABLE void finishAndClose();
     Q_INVOKABLE void discardAndClose();
+    Q_INVOKABLE void discardCurrent();
 signals:
     void changed();
     void devicesChanged();
@@ -126,5 +127,5 @@ private:
     qint64 m_clipUntil = 0, m_peakUntil = 0, m_signalAt = 0;
     double m_duration = 0, m_level = -60, m_peak = -60, m_pendingPeak = 0, m_fps = 30;
     bool m_cameraHealthy = false, m_audioHealthy = false, m_dialogOpen = false;
-    bool m_quitAfter = false, m_discardAfter = false, m_probing = false;
+    bool m_quitAfter = false, m_discardAfter = false, m_restartAfter = false, m_probing = false;
 };

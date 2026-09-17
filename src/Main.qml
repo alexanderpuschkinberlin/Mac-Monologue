@@ -15,9 +15,10 @@ ApplicationWindow {
     Material.accent: theme.accent
     readonly property color accent: theme.accent
     readonly property color accentForeground: theme.foreground
+    readonly property int cornerRadius: theme.radius
     readonly property bool finished: backend.state === "finished" || backend.state === "saving"
     readonly property bool busy: backend.state === "finalizing" || backend.state === "saving"
-    readonly property bool overlayOpen: closeDialog.opened || recordingsDialog.opened || discardDialog.opened || helpDialog.opened || backend.dialogOpen
+    readonly property bool overlayOpen: closeDialog.visible || recordingsDialog.visible || discardDialog.visible || restartDialog.visible || helpDialog.visible || backend.dialogOpen
     property bool quitting: false
     property string discardId: ""
     property var playbackOutput: null
@@ -58,6 +59,11 @@ ApplicationWindow {
     Shortcut { sequence: "Ctrl+Return"; context: Qt.WindowShortcut; autoRepeat: false; enabled: backend.takeActive && !win.busy && !win.overlayOpen; onActivated: backend.finish() }
     Shortcut { sequence: "Ctrl+Enter"; context: Qt.WindowShortcut; autoRepeat: false; enabled: backend.takeActive && !win.busy && !win.overlayOpen; onActivated: backend.finish() }
     Shortcut { sequence: "Ctrl+S"; context: Qt.WindowShortcut; autoRepeat: false; enabled: win.finished && !win.busy && !win.overlayOpen; onActivated: { player.pause(); backend.save() } }
+    Shortcut {
+        sequence: "Escape"; context: Qt.WindowShortcut; autoRepeat: false
+        enabled: (backend.takeActive || win.finished) && !win.busy && !win.overlayOpen && !cameraChoice.popup.visible && !microphoneChoice.popup.visible
+        onActivated: { player.pause(); restartDialog.open() }
+    }
     Shortcut { sequence: "Q"; context: Qt.WindowShortcut; autoRepeat: false; enabled: !win.overlayOpen; onActivated: win.closeSafely() }
     Shortcut { sequence: "?"; context: Qt.WindowShortcut; enabled: !win.overlayOpen; onActivated: helpDialog.open() }
 
@@ -70,11 +76,32 @@ ApplicationWindow {
         implicitHeight: 42
         contentItem: Text { text: button.text; font: button.font; color: button.primary ? win.accentForeground : "#eeeef0"; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; opacity: button.enabled ? 1 : .4 }
         background: Rectangle {
-            radius: 8; color: button.primary ? win.accent : button.hovered ? "#3a3a3e" : "#2c2c2f"
+            radius: win.cornerRadius; color: button.primary ? win.accent : button.hovered ? "#3a3a3e" : "#2c2c2f"
             opacity: button.enabled ? 1 : .4
             border.width: button.activeFocus ? 2 : 0; border.color: button.primary ? win.accentForeground : win.accent
         }
+        Keys.onReturnPressed: clicked()
+        Keys.onEnterPressed: clicked()
         HoverHandler { cursorShape: Qt.PointingHandCursor }
+    }
+    component ThemedDialog: Dialog {
+        id: dialog
+        focus: true
+        Material.roundedScale: win.cornerRadius
+        Material.elevation: 0
+        background: Rectangle { color: "#202023"; radius: win.cornerRadius; border.color: "#39393e" }
+        Overlay.modal: Rectangle { color: "#99000000" }
+        header: Label {
+            text: dialog.title; color: "#eeeef0"; font.pixelSize: 22
+            padding: 24; bottomPadding: 0; elide: Text.ElideRight
+        }
+        footer: DialogButtonBox {
+            Material.roundedScale: win.cornerRadius
+            background: Item { }
+            visible: count > 0
+            delegate: ActionButton { }
+        }
+        onClosed: liveVideo.forceActiveFocus()
     }
     component SourceChoice: ComboBox {
         id: choice
@@ -83,9 +110,13 @@ ApplicationWindow {
         implicitHeight: 42
         font.pixelSize: 13
         Material.accent: win.accent
-        background: Rectangle { color: "#202023"; radius: 8; border.width: 1; border.color: choice.activeFocus ? win.accent : "#39393e"; opacity: choice.enabled ? 1 : .5 }
-        ToolTip.visible: hovered && currentText !== ""
-        ToolTip.text: currentText
+        background: Rectangle { color: "#202023"; radius: win.cornerRadius; border.width: 1; border.color: choice.activeFocus ? win.accent : "#39393e"; opacity: choice.enabled ? 1 : .5 }
+        popup.background: Rectangle { color: "#202023"; radius: win.cornerRadius; border.color: "#39393e" }
+        ToolTip {
+            visible: choice.hovered && choice.currentText !== ""
+            text: choice.currentText
+            background: Rectangle { color: "#303037"; radius: win.cornerRadius }
+        }
     }
 
     ColumnLayout {
@@ -128,13 +159,13 @@ ApplicationWindow {
         }
         Rectangle {
             Layout.fillWidth: true; Layout.fillHeight: true; Layout.minimumHeight: 120
-            color: "black"; radius: 12; clip: true
+            color: "black"; radius: win.cornerRadius; clip: true
             VideoOutput { id: liveVideo; anchors.fill: parent; visible: !win.finished; fillMode: VideoOutput.PreserveAspectFit; focus: true }
             VideoOutput { id: clipVideo; anchors.fill: parent; visible: win.finished; fillMode: VideoOutput.PreserveAspectFit }
             MouseArea { anchors.fill: parent; onClicked: { liveVideo.forceActiveFocus(); if (win.finished) win.togglePlayback() } }
             Rectangle {
                 anchors.top: parent.top; anchors.left: parent.left; anchors.margins: 14
-                height: 30; width: stateLabel.implicitWidth + 32; radius: 6; color: "#dd17171b"
+                height: 30; width: stateLabel.implicitWidth + 32; radius: win.cornerRadius; color: "#dd17171b"
                 Row {
                     anchors.centerIn: parent; spacing: 7
                     Rectangle { width: 7; height: 7; radius: 4; anchors.verticalCenter: parent.verticalCenter; color: backend.state === "recording" ? "#f06c6c" : backend.state === "paused" ? "#e2c77c" : "#a3bd9c" }
@@ -144,7 +175,7 @@ ApplicationWindow {
             Rectangle {
                 anchors.top: parent.top; anchors.right: parent.right; anchors.margins: 14
                 visible: backend.formatLabel !== ""
-                height: 30; width: formatText.implicitWidth + 20; radius: 6; color: "#dd17171b"
+                height: 30; width: formatText.implicitWidth + 20; radius: win.cornerRadius; color: "#dd17171b"
                 Label { id: formatText; anchors.centerIn: parent; text: backend.formatLabel; font.pixelSize: 11; font.family: "monospace" }
             }
             Column {
@@ -172,6 +203,17 @@ ApplicationWindow {
             Slider {
                 id: seek; visible: win.finished; Layout.fillWidth: true; from: 0; to: player.duration
                 value: player.position; enabled: !win.busy
+                background: Rectangle {
+                    x: seek.leftPadding; y: seek.topPadding + seek.availableHeight / 2 - height / 2
+                    width: seek.availableWidth; height: 4; radius: Math.min(2, win.cornerRadius); color: "#39393e"
+                    Rectangle { width: seek.visualPosition * parent.width; height: parent.height; radius: parent.radius; color: win.accent }
+                }
+                handle: Rectangle {
+                    x: seek.leftPadding + seek.visualPosition * (seek.availableWidth - width)
+                    y: seek.topPadding + seek.availableHeight / 2 - height / 2
+                    width: 14; height: 20; radius: Math.min(7, win.cornerRadius); color: win.accent
+                    border.width: seek.activeFocus ? 2 : 0; border.color: win.accentForeground
+                }
                 onMoved: player.position = value
                 Accessible.name: "Clip position"
             }
@@ -191,7 +233,7 @@ ApplicationWindow {
                             color: backend.audioEnabled && (backend.level >= threshold || Math.abs(backend.peakLevel - threshold) < 2.5) ? (threshold >= -3 ? "#f06c6c" : threshold >= -12 ? "#e2c77c" : "#9fc89b") : "#303037"
                         }
                     }
-                    Rectangle { width: 5; height: 17; radius: 1; color: backend.clipping ? "#f06c6c" : "#303037" }
+                    Rectangle { width: 5; height: 17; radius: Math.min(1, win.cornerRadius); color: backend.clipping ? "#f06c6c" : "#303037" }
                 }
                 RowLayout {
                     Layout.fillWidth: true
@@ -217,7 +259,7 @@ ApplicationWindow {
                 Layout.fillWidth: true; elide: Text.ElideRight; color: "#96969f"; font.pixelSize: 11
                 text: win.finished ? "Kept in Recordings until you discard it" : backend.state === "paused" ? "Space to resume · Preview and mic are live" : backend.state === "recording" ? "Space to pause · Ctrl+Enter to finish" : "Space to record · Sources remembered automatically"
             }
-            ToolButton { text: "?"; implicitHeight: 24; implicitWidth: 24; onClicked: helpDialog.open(); Accessible.name: "Keyboard shortcuts" }
+            ActionButton { text: "?"; padding: 0; implicitHeight: 24; implicitWidth: 24; onClicked: helpDialog.open(); Accessible.name: "Keyboard shortcuts" }
         }
     }
     MediaPlayer {
@@ -226,7 +268,7 @@ ApplicationWindow {
         audioOutput: win.playbackOutput
     }
     Component { id: playbackAudio; AudioOutput {} }
-    Dialog {
+    ThemedDialog {
         id: closeDialog; anchors.centerIn: parent; modal: true; title: "Finish this recording?"
         closePolicy: Popup.CloseOnEscape
         ColumnLayout {
@@ -239,7 +281,7 @@ ApplicationWindow {
             }
         }
     }
-    Dialog {
+    ThemedDialog {
         id: recordingsDialog; anchors.centerIn: parent; modal: true
         title: "Recordings"; width: Math.min(win.width-40,700); height: Math.min(win.height-60,490)
         standardButtons: Dialog.Close
@@ -268,14 +310,41 @@ ApplicationWindow {
             }
         }
     }
-    Dialog {
+    ThemedDialog {
         id: discardDialog; anchors.centerIn: parent; modal: true; title: "Discard this recording?"
         width: Math.min(win.width-40,460)
         standardButtons: Dialog.Cancel | Dialog.Discard
         Label { width: parent.width; text: "This deletes the original from Recordings. Any Omacut window using it will lose its source. Saved copies are kept."; wrapMode: Text.WordWrap }
         onDiscarded: { player.stop(); backend.discardRecording(win.discardId) }
     }
-    Dialog {
+    ThemedDialog {
+        id: restartDialog; objectName: "restartDialog"
+        anchors.centerIn: parent; modal: true; title: "Discard this clip and start over?"
+        width: Math.min(win.width-40,460)
+        closePolicy: Popup.CloseOnEscape
+        enter: Transition { }
+        exit: Transition { }
+        onOpened: restartConfirm.forceActiveFocus()
+        footer: DialogButtonBox {
+            Material.roundedScale: win.cornerRadius
+            background: Item { }
+            ActionButton {
+                id: restartCancel; objectName: "restartCancel"; text: "Cancel"
+                DialogButtonBox.buttonRole: DialogButtonBox.RejectRole
+                KeyNavigation.tab: restartConfirm; KeyNavigation.backtab: restartConfirm
+                KeyNavigation.left: restartConfirm; KeyNavigation.right: restartConfirm
+            }
+            ActionButton {
+                id: restartConfirm; objectName: "restartConfirm"; text: "Confirm"; primary: true
+                DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole
+                KeyNavigation.tab: restartCancel; KeyNavigation.backtab: restartCancel
+                KeyNavigation.left: restartCancel; KeyNavigation.right: restartCancel
+            }
+        }
+        Label { width: parent.width; text: "This deletes the current clip. Saved copies are kept."; wrapMode: Text.WordWrap }
+        onAccepted: { player.stop(); backend.discardCurrent() }
+    }
+    ThemedDialog {
         id: overwriteDialog; anchors.centerIn: parent; modal: true; title: "Replace the existing MP4?"
         property string targetPath: ""
         width: Math.min(win.width-40,460)
@@ -284,8 +353,8 @@ ApplicationWindow {
         onAccepted: backend.confirmOverwrite(true)
         onRejected: backend.confirmOverwrite(false)
     }
-    Dialog {
+    ThemedDialog {
         id: helpDialog; anchors.centerIn: parent; modal: true; title: "Keyboard shortcuts"; standardButtons: Dialog.Close
-        Label { text: "Space     Record / pause / resume; play a finished clip\nCtrl+Enter     Finish this take\nCtrl+S     Save the finished clip\nQ     Quit\n?     Show shortcuts\n\nTab between controls; Space activates a focused control."; lineHeight: 1.5; font.pixelSize: 13 }
+        Label { text: "Space     Record / pause / resume; play a finished clip\nCtrl+Enter     Finish this take\nCtrl+S     Save the finished clip\nEsc     Discard this clip and start over (asks first)\nQ     Quit\n?     Show shortcuts\n\nTab between controls; Space activates a focused control."; lineHeight: 1.5; font.pixelSize: 13 }
     }
 }

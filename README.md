@@ -6,7 +6,7 @@ A simple webcam recorder for Omarchy. Choose your camera and microphone once, th
 - Automatically selects the camera's maximum advertised video resolution, preferring 30 fps at that resolution. Preview preserves the whole frame.
 - Live microphone meter with peak hold and clipping indication, including while paused. No microphone playback through your speakers.
 - Explicit No audio option for silent recordings.
-- Live Omarchy accent syncing, including theme symlink switches. Dark chrome and a yellow fallback follow Omacut; button foregrounds adapt for contrast.
+- Live Omarchy accent syncing, including theme symlink switches. Controls and dialogs follow Hyprland's active corner rounding, including personal overrides. Dark chrome and a yellow fallback follow Omacut; button foregrounds adapt for contrast.
 - H.264 MP4 with AAC audio, retained originals, atomic Save, and direct Omacut handoff.
 
 ## Build and run
@@ -33,10 +33,13 @@ To build and install the Arch package:
 | Space | Record / pause / resume; play / pause a finished clip |
 | Ctrl+Enter | Finish the take |
 | Ctrl+S | Save a finished clip |
+| Esc | Confirm discarding the current clip and start over |
 | Q | Quit (offers to finish an active take) |
 | ? | Keyboard help |
 
 Tab focuses controls; Space activates a focused control normally. Capture shortcuts stop while dialogs and source dropdowns are open. Selectors stay locked through a take, including pauses.
+
+The discard confirmation focuses Confirm immediately: press Escape then Return to start over. Tab or Left/Right selects Cancel; Escape also cancels. Corner rounding updates live through `hyprctl`; outside Hyprland, controls default to square corners.
 
 ## Recordings and settings
 

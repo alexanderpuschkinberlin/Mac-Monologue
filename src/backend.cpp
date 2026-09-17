@@ -275,6 +275,13 @@ void Backend::writerFinished() {
     if(m_discardAfter) {
         QDir(m_root+"/"+m_takeId).removeRecursively(); emit safeToClose(); return;
     }
+    if(m_restartAfter) {
+        m_restartAfter=false;
+        if(QDir(m_root+"/"+m_takeId).removeRecursively()) {
+            newRecording(); refreshRecordings(); return;
+        }
+        m_interruption="Could not discard the recording. The clip has been kept.";
+    }
     probeClip(m_clipPath,true);
 }
 void Backend::probeClip(const QString &path,bool currentTake) {
@@ -418,3 +425,8 @@ void Backend::showFiles(const QString &id) {
 }
 void Backend::finishAndClose() { m_quitAfter=true; finish(); }
 void Backend::discardAndClose() { m_discardAfter=true; finish(); }
+void Backend::discardCurrent() {
+    if(m_dialogOpen || m_probing || m_state=="saving" || m_state=="finalizing") return;
+    if(m_writer) { m_restartAfter=true; finish(); }
+    else if(m_state=="finished") discardRecording(m_takeId);
+}

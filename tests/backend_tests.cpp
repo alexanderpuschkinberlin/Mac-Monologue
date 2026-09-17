@@ -82,6 +82,20 @@ private slots:
         QVERIFY(write(d.filePath("two/colors.toml"),"accent = '#333333'\n")); QTRY_COMPARE(theme.accent(),QString("#333333"));
         QVERIFY(QFile::remove(d.filePath("two/colors.toml"))); QTRY_COMPARE(theme.accent(),QString("#FFD60A"));
     }
+    void liveRounding() {
+        QTemporaryDir directory;
+        const auto response=directory.filePath("response.json"), command=directory.filePath("hyprctl");
+        auto write=[](const QString &path,const QByteArray &data) { QFile f(path); return f.open(QIODevice::WriteOnly) && f.write(data)==data.size(); };
+        QVERIFY(write(command, "#!/bin/sh\ncat '" + response.toUtf8() + "'\n"));
+        QVERIFY(QFile::setPermissions(command,QFile::ReadOwner|QFile::WriteOwner|QFile::ExeOwner));
+        QVERIFY(write(response,"{\"int\":0}"));
+        Theme theme(directory.path(),nullptr,command);
+        QCOMPARE(theme.radius(),0);
+        QVERIFY(write(response,"{\"int\":6}")); QTRY_COMPARE(theme.radius(),6);
+        QVERIFY(write(response,"{\"int\":0}")); QTRY_COMPARE(theme.radius(),0);
+        QVERIFY(write(response,"{\"int\":8}")); QTRY_COMPARE(theme.radius(),8);
+        QVERIFY(write(response,"unavailable")); QTest::qWait(1200); QCOMPARE(theme.radius(),8);
+    }
     void realEncoding_data() { QTest::addColumn<bool>("sound"); QTest::newRow("silent")<<false; QTest::newRow("audio")<<true; }
     void realEncoding() {
         QFETCH(bool,sound);
@@ -182,7 +196,8 @@ private slots:
         Backend reopened(secondPicker,false); QTRY_COMPARE(reopened.recordings().size(),1);
         reopened.openRecording(id); QTRY_COMPARE(reopened.state(),QString("finished"));
         reopened.save(); QCOMPARE(QFileInfo(secondPicker->suggestion.toLocalFile()).absolutePath(),fixture.path()); secondPicker->cancel();
-        backend.discardRecording(id); QVERIFY(!QFile::exists(original)); QVERIFY(QFile::exists(saved+".mp4"));
+        backend.discardCurrent(); QVERIFY(!QFile::exists(original)); QVERIFY(QFile::exists(saved+".mp4"));
+        QVERIFY(backend.clip().isEmpty()); QVERIFY(!backend.takeActive());
         QCOMPARE(backend.recordings().size(),0);
     }
     void delayedCaptureStaysInSync() {

@@ -1,0 +1,4 @@
+<RCC><qresource prefix="/">
+<file>Main.qml</file>
+<file alias="monologue.svg">../pkgbuild/monologue.svg</file>
+</qresource></RCC>

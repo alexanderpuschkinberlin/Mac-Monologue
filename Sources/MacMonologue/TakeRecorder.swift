@@ -66,7 +66,7 @@ final class TakeRecorder: NSObject, @unchecked Sendable {
         return movies.appendingPathComponent("Monologue", isDirectory: true)
     }
 
-    /// `Monologue-yyyy-MM-dd-HHmmss.mp4`, matching the original's convention.
+    /// `Monologue-yyyy-MM-dd-HHmmss.mp4`, matching omacom/monologue's convention.
     static func filename(for date: Date = Date()) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")

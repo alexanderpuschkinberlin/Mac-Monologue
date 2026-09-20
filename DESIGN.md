@@ -3,8 +3,10 @@
 A native macOS talking-head recorder. Pick a camera and a mic once, press Space,
 talk, press Space to pause, `⌘↩` to finish — the file lands in `~/Movies/Monologue`.
 
-Modeled on [omacom/monologue](https://github.com/omacom/monologue), DHH's Qt 6
-webcam recorder for Omarchy, but written from scratch in Swift.
+A fork of [omacom/monologue](https://github.com/omacom/monologue) — David
+Heinemeier Hansson's Qt 6 webcam recorder for Omarchy, MIT licensed — in
+provenance rather than in code. The upstream implementation is preserved
+untouched on the `master` branch.
 
 **Not a port.** The Linux original spends much of its code on problems macOS does
 not have: it bypasses Qt's audio layer to talk to libpulse directly just to obtain

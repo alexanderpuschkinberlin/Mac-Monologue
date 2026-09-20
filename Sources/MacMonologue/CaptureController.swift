@@ -320,7 +320,7 @@ final class CaptureController: ObservableObject {
 
     /// Best format capped at 1080p30.
     ///
-    /// The Linux original picks the camera's *maximum* advertised resolution and
+    /// omacom/monologue picks the camera's *maximum* advertised resolution and
     /// refuses to downgrade, which is what produces its "encoding cannot keep up"
     /// failure. Capping instead: at 1080p a talking head is already the file you
     /// want, and 4K only buys enormous files you re-encode later.

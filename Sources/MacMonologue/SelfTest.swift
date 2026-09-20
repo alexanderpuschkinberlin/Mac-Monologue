@@ -1,7 +1,7 @@
 import AVFoundation
 import Foundation
 
-/// An opt-in smoke test against real hardware, mirroring the original's
+/// An opt-in smoke test against real hardware, mirroring omacom/monologue's
 /// `bin/test-camera`: the unit tests deliberately never touch a device, so this
 /// is the only thing that proves the capture path end to end.
 ///

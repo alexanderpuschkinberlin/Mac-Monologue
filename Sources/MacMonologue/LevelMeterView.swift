@@ -6,7 +6,8 @@ struct LevelMeterView: View {
     let peak: Float
     let isClipping: Bool
 
-    /// The original's clipping red.
+    /// The clipping red from omacom/monologue (`#f06c6c`), kept deliberately:
+    /// it is the one visual constant carried over verbatim.
     private static let clipColor = Color(red: 0.94, green: 0.42, blue: 0.42)
 
     var body: some View {

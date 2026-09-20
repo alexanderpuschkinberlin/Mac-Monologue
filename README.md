@@ -1,11 +1,18 @@
 # Mac-Monologue
 
+> A fork of **[omacom/monologue](https://github.com/omacom/monologue)** — David
+> Heinemeier Hansson's webcam recorder for Omarchy, MIT licensed — rebuilt for
+> Apple Silicon Macs.
+>
+> Not a line of the original C++ survives. It is Qt 6 on libpulse, with a
+> `xdg-desktop-portal` picker and an `ffmpeg` finalize step, and none of that
+> layer has an equivalent here. What carries over is the design. The
+> implementation is Swift on AVFoundation — written because my Mac currently
+> gives me the best video and audio quality I have available.
+
 A native macOS talking-head recorder. Pick a camera and a microphone once, press
 **Space**, talk, press **Space** to pause, **⌘↩** to finish — the clip lands in
 `~/Movies/Monologue`.
-
-Modeled on [omacom/monologue](https://github.com/omacom/monologue), DHH's Qt 6
-webcam recorder for Omarchy, and written from scratch in Swift for the Mac.
 
 It is not a port. The Linux original spends much of its code on problems macOS
 does not have — it bypasses Qt's audio layer to talk to libpulse directly just
@@ -60,11 +67,34 @@ The app is not notarized. On first launch macOS will refuse to open it; go to
 **System Settings → Privacy & Security** and choose **Open Anyway**. Then grant
 camera and microphone access once. Nothing else to install.
 
-## Design
+## Relationship to the original
 
-[`DESIGN.md`](DESIGN.md) records the decisions and why they were made, including
-the ones deliberately taken differently from the original.
+This is a fork in provenance, not in code. `master` still holds
+[omacom/monologue](https://github.com/omacom/monologue) untouched; `main` removes
+that implementation and rebuilds the same idea natively.
+
+**Taken from the original:** the concept and the two-state flow (ready → preview),
+pause and resume as the feature the whole design turns on, the keyboard shortcuts,
+the device-memory behaviour where a missing camera shows as *unavailable* rather
+than silently switching, the filename convention
+`Monologue-yyyy-MM-dd-HHmmss.mp4`, and the clipping red `#f06c6c` in the
+microphone meter.
+
+**Deliberately different:** 1080p30 instead of the camera's maximum advertised
+resolution — picking the maximum is what produces the original's "encoding cannot
+keep up" failure; HEVC instead of H.264; `~/Movies/Monologue` instead of a staging
+library with per-take manifests; Reveal in Finder instead of the Omacut handoff;
+and no crash recovery. [`DESIGN.md`](DESIGN.md) records every such decision and
+why it was made.
+
+**Written from scratch:** all of `Sources/`, on AVFoundation. `AVCaptureSession`
+delivers camera and microphone buffers on one synchronized clock, which is the
+problem the original solves by bypassing Qt for libpulse, and `AVAssetWriter`
+writes a faststart-optimized file itself, which is what the original calls
+`ffmpeg` for.
 
 ## License
 
-MIT
+MIT — see [`LICENSE`](LICENSE), which carries both copyright lines: David
+Heinemeier Hansson for the original Monologue, and Alexander Puschkin for this
+macOS rewrite.

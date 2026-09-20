@@ -159,6 +159,15 @@ struct ContentView: View {
 
             Spacer()
 
+            if capture.hasAudio {
+                LevelMeterView(
+                    level: capture.audioLevel,
+                    peak: capture.audioPeak,
+                    isClipping: capture.isClipping
+                )
+                .frame(width: 180)
+            }
+
             if capture.state == .preview, let url = capture.lastRecordingURL {
                 Text(url.lastPathComponent)
                     .font(.system(.caption, design: .monospaced))

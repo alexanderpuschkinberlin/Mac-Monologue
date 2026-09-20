@@ -51,6 +51,9 @@ final class CaptureController: ObservableObject {
     @Published private(set) var formatSummary: String = ""
     @Published private(set) var banner: String?
     @Published private(set) var elapsed: Double = 0
+    @Published private(set) var audioLevel: Float = AudioLevelMeter.floorDB
+    @Published private(set) var audioPeak: Float = AudioLevelMeter.floorDB
+    @Published private(set) var isClipping = false
     @Published private(set) var lastRecordingURL: URL?
 
     /// Locked for the whole take, including while paused.
@@ -86,6 +89,10 @@ final class CaptureController: ObservableObject {
     nonisolated(unsafe) private let videoOutput = AVCaptureVideoDataOutput()
     nonisolated(unsafe) private let audioOutput = AVCaptureAudioDataOutput()
     private lazy var recorder = TakeRecorder(queue: outputQueue)
+
+    /// Confined to `outputQueue`: only the meter's readings cross to the main actor.
+    nonisolated(unsafe) private let meter = AudioLevelMeter()
+    nonisolated(unsafe) private var lastMeterPublish: CFTimeInterval = 0
 
     /// Dimensions of the active capture format, handed to the encoder.
     private var activeDimensions = (width: 1920, height: 1080)
@@ -229,6 +236,11 @@ final class CaptureController: ObservableObject {
         let microphone = selectedMicrophoneID
             .flatMap { $0 == DeviceOption.noAudioID ? nil : Self.device(id: $0) }
         hasAudio = microphone != nil
+        if microphone == nil {
+            audioLevel = AudioLevelMeter.floorDB
+            audioPeak = AudioLevelMeter.floorDB
+            isClipping = false
+        }
 
         let format = Self.bestFormat(for: camera)
         if let format {
@@ -343,6 +355,24 @@ final class CaptureController: ObservableObject {
         }
         recorder.onDurationChange = { [weak self] seconds in
             Task { @MainActor in self?.elapsed = seconds }
+        }
+        recorder.onAudioBuffer = { [weak self] buffer in
+            guard let self else { return }
+            self.meter.consume(buffer)
+
+            // Audio buffers arrive ~100×/s; the eye needs about 20.
+            let now = CACurrentMediaTime()
+            guard now - self.lastMeterPublish >= 0.05 else { return }
+            self.lastMeterPublish = now
+
+            let level = self.meter.level
+            let peak = self.meter.peak
+            let clipping = self.meter.isClipping
+            Task { @MainActor in
+                self.audioLevel = level
+                self.audioPeak = peak
+                self.isClipping = clipping
+            }
         }
         recorder.onFailure = { [weak self] message in
             Task { @MainActor in

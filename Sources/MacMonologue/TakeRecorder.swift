@@ -45,6 +45,10 @@ final class TakeRecorder: NSObject, @unchecked Sendable {
     var onStatusChange: (@Sendable (Status) -> Void)?
     var onDurationChange: (@Sendable (Double) -> Void)?
     var onFailure: (@Sendable (String) -> Void)?
+    /// Every audio buffer, including while idle or paused — the meter has to be
+    /// live before you start, which is the whole point of having one.
+    /// Called on `queue`; the buffer must not escape it.
+    var onAudioBuffer: ((CMSampleBuffer) -> Void)?
 
     init(queue: DispatchQueue) {
         self.queue = queue
@@ -264,9 +268,11 @@ extension TakeRecorder: AVCaptureVideoDataOutputSampleBufferDelegate,
         from connection: AVCaptureConnection
     ) {
         // Already on `queue` — the capture outputs deliver here.
+        let isVideo = output is AVCaptureVideoDataOutput
+        if !isVideo { onAudioBuffer?(sampleBuffer) }
+
         guard status == .recording, let writer, writer.status == .writing else { return }
 
-        let isVideo = output is AVCaptureVideoDataOutput
         let presentation = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
 
         if !sessionStarted {

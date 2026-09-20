@@ -38,6 +38,10 @@ final class TakeRecorder: NSObject, @unchecked Sendable {
     private var sessionStarted = false
     private var temporaryURL: URL?
     private var hasAudio = false
+    /// AVAssetWriter requires strictly increasing presentation times per input,
+    /// and rejects the whole take otherwise.
+    private var lastVideoTime: CMTime?
+    private var lastAudioTime: CMTime?
 
     private(set) var status: Status = .idle
 
@@ -148,9 +152,9 @@ final class TakeRecorder: NSObject, @unchecked Sendable {
     func finish(completion: @escaping @Sendable (Result<URL, Error>) -> Void) {
         queue.async { [self] in
             guard status == .recording || status == .paused else { return }
+            if status == .recording { clock.pause(at: now()) }
             setStatus(.finishing)
 
-            if status == .recording { clock.pause(at: now()) }
             videoInput?.markAsFinished()
             audioInput?.markAsFinished()
 
@@ -210,6 +214,8 @@ final class TakeRecorder: NSObject, @unchecked Sendable {
         temporaryURL = nil
         sourceClock = nil
         sessionStarted = false
+        lastVideoTime = nil
+        lastAudioTime = nil
         clock = TakeClock()
         setStatus(.idle)
     }
@@ -239,6 +245,20 @@ final class TakeRecorder: NSObject, @unchecked Sendable {
                 AVVideoExpectedSourceFrameRateKey: Int(configuration.frameRate),
             ],
         ]
+    }
+
+    /// AVFoundation's `localizedDescription` is usually the useless
+    /// "The operation could not be completed" — the actual cause lives in the
+    /// failure reason and the underlying error.
+    static func describe(_ error: Error) -> String {
+        let nsError = error as NSError
+        var parts = [nsError.localizedDescription]
+        if let reason = nsError.localizedFailureReason { parts.append(reason) }
+        if let underlying = nsError.userInfo[NSUnderlyingErrorKey] as? NSError {
+            parts.append("(\(underlying.domain) \(underlying.code))")
+        }
+        parts.append("[\(nsError.domain) \(nsError.code)]")
+        return parts.joined(separator: " ")
     }
 
     enum RecorderError: LocalizedError {
@@ -288,14 +308,25 @@ extension TakeRecorder: AVCaptureVideoDataOutputSampleBufferDelegate,
         // session, and writing them would reinstate the dead air pause removes.
         guard let takeTime = clock.takeTime(for: presentation) else { return }
 
+        let lastTime = isVideo ? lastVideoTime : lastAudioTime
+        if let lastTime, takeTime <= lastTime { return }
+
         let input = isVideo ? videoInput : audioInput
         guard let input, input.isReadyForMoreMediaData else { return }
         guard let retimed = Self.retime(sampleBuffer, to: takeTime) else { return }
 
-        input.append(retimed)
+        if !input.append(retimed) {
+            let reason = writer.error.map(Self.describe) ?? "the encoder rejected a frame"
+            onFailure?("Recording stopped: \(reason)")
+            discard()
+            return
+        }
 
         if isVideo {
+            lastVideoTime = takeTime
             onDurationChange?(takeTime.seconds)
+        } else {
+            lastAudioTime = takeTime
         }
     }
 

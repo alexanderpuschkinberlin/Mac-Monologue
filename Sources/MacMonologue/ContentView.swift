@@ -11,7 +11,10 @@ struct ContentView: View {
             controls
         }
         .background(Color(nsColor: .windowBackgroundColor))
-        .onAppear { capture.start() }
+        .onAppear {
+            capture.start()
+            if SelfTest.isEnabled { SelfTest.run(capture: capture) }
+        }
         .onDisappear { capture.stop() }
     }
 

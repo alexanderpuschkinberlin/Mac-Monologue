@@ -259,6 +259,14 @@ final class CaptureController: ObservableObject {
             for input in self.session.inputs { self.session.removeInput(input) }
 
             if !self.session.outputs.contains(self.videoOutput), self.session.canAddOutput(self.videoOutput) {
+                // macOS defaults this output to 4:2:2 (2vuy); the HEVC encoder
+                // wants 4:2:0, and the writer will not convert it for us.
+                let preferred = kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
+                if self.videoOutput.availableVideoPixelFormatTypes.contains(preferred) {
+                    self.videoOutput.videoSettings = [
+                        kCVPixelBufferPixelFormatTypeKey as String: preferred
+                    ]
+                }
                 self.videoOutput.alwaysDiscardsLateVideoFrames = false
                 self.session.addOutput(self.videoOutput)
                 self.videoOutput.setSampleBufferDelegate(self.recorder, queue: self.outputQueue)
@@ -406,9 +414,7 @@ final class CaptureController: ObservableObject {
             width: activeDimensions.width,
             height: activeDimensions.height,
             frameRate: Self.targetFPS,
-            audioSettings: hasAudio
-                ? audioOutput.recommendedAudioSettingsForAssetWriter(writingTo: .mp4) as? [String: Any]
-                : nil
+            audioSettings: hasAudio ? recommendedAudioSettings() : nil
         )
 
         sessionQueue.async { [weak self] in
@@ -416,6 +422,29 @@ final class CaptureController: ObservableObject {
             let clock = self.session.synchronizationClock
             self.recorder.start(configuration: configuration, sourceClock: clock)
         }
+    }
+
+    /// AVFoundation has no recommendation to give until the audio connection is
+    /// live, so a take started moments after launch gets nil back — and without
+    /// the fallback below that silently produces a file with no audio track at
+    /// all. Started by hand, seconds later, it always works; which is precisely
+    /// the kind of bug that ships.
+    private func recommendedAudioSettings() -> [String: Any] {
+        var settings: [String: Any] = [:]
+        if let recommended = audioOutput.recommendedAudioSettingsForAssetWriter(writingTo: .mp4) {
+            for (key, value) in recommended {
+                if let key = key as? String { settings[key] = value }
+            }
+        }
+        guard settings[AVFormatIDKey] != nil else {
+            return [
+                AVFormatIDKey: kAudioFormatMPEG4AAC,
+                AVSampleRateKey: 48_000,
+                AVNumberOfChannelsKey: 1,
+                AVEncoderBitRateKey: 128_000,
+            ]
+        }
+        return settings
     }
 
     func finishTake() {
@@ -428,7 +457,7 @@ final class CaptureController: ObservableObject {
                     self.lastRecordingURL = url
                     self.state = .preview
                 case .failure(let error):
-                    self.banner = error.localizedDescription
+                    self.banner = TakeRecorder.describe(error)
                     self.state = .ready
                 }
             }

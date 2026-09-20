@@ -54,14 +54,28 @@ final class TakeClockTests: XCTestCase {
         XCTAssertNil(clock.takeTime(for: t(106)))
     }
 
-    func testBufferInFlightAcrossResumeDoesNotRunBackwards() {
+    func testBufferInFlightAcrossResumeIsDropped() {
         var clock = TakeClock()
         clock.resume(at: t(100))
         clock.pause(at: t(105))
         clock.resume(at: t(200))
-        // Captured just before the resume point, delivered just after.
-        let clamped = clock.takeTime(for: t(199.9))
-        XCTAssertEqual(clamped?.seconds ?? -1, 5, accuracy: 0.001)
+        // Captured just before the resume point, delivered just after: its content
+        // is from during the pause, and reusing the last written timestamp would
+        // make AVAssetWriter reject the append.
+        XCTAssertNil(clock.takeTime(for: t(199.9)))
+    }
+
+    func testTimestampsAreStrictlyIncreasingAcrossAPause() {
+        var clock = TakeClock()
+        clock.resume(at: t(100))
+        let last = clock.takeTime(for: t(104.9))
+        clock.pause(at: t(105))
+        clock.resume(at: t(200))
+        let first = clock.takeTime(for: t(200.033))
+
+        XCTAssertNotNil(last)
+        XCTAssertNotNil(first)
+        XCTAssertGreaterThan(first!.seconds, last!.seconds)
     }
 
     func testRedundantResumeIsIgnored() {

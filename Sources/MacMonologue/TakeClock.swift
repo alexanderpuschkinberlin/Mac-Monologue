@@ -44,10 +44,13 @@ struct TakeClock: Equatable {
     func takeTime(for captureTime: CMTime) -> CMTime? {
         guard let segmentStart else { return nil }
         guard captureTime >= segmentStart else {
-            // A buffer captured before the resume point — in flight across the
-            // pause boundary. Clamp it to the segment start rather than emitting
-            // a timestamp that runs backwards.
-            return accumulated
+            // Captured before the resume point — in flight across the pause
+            // boundary, so its content is from *during* the pause. Drop it.
+            //
+            // Clamping to `accumulated` instead would emit the same timestamp as
+            // the last frame already written, and AVAssetWriter requires strictly
+            // increasing presentation times: it fails the whole take.
+            return nil
         }
         return accumulated + (captureTime - segmentStart)
     }

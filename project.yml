@@ -30,6 +30,12 @@ targets:
     platform: macOS
     sources:
       - path: Sources/MacMonologue
+    dependencies:
+      # Explicit: auto-linking does not pull AVKit in, and SwiftUI's VideoPlayer
+      # then crashes at runtime failing to demangle AVPlayerView.
+      - sdk: AVFoundation.framework
+      - sdk: AVKit.framework
+      - sdk: CoreMedia.framework
     settings:
       base:
         PRODUCT_NAME: Mac-Monologue

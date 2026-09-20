@@ -55,6 +55,10 @@ final class CaptureController: ObservableObject {
     @Published private(set) var audioPeak: Float = AudioLevelMeter.floorDB
     @Published private(set) var isClipping = false
     @Published private(set) var lastRecordingURL: URL?
+    @Published private(set) var player: AVPlayer?
+    @Published private(set) var isPlaying = false
+    @Published var isConfirmingDiscard = false
+    @Published var isShowingHelp = false
 
     /// Locked for the whole take, including while paused.
     @Published var selectedCameraID: String? {
@@ -395,9 +399,9 @@ final class CaptureController: ObservableObject {
     func toggleRecording() {
         switch state {
         case .ready: startTake()
-        // Preview gets clip playback in a later step; for now the button returns
-        // to Ready rather than starting a take the moment you click it.
-        case .preview: newRecording()
+        // Space is overloaded in preview: it plays the clip rather than starting
+        // a take you did not ask for.
+        case .preview: togglePlayback()
         case .recording: recorder.pause()
         case .paused: recorder.resume()
         case .needsAccess, .unavailable, .finishing: break
@@ -455,6 +459,7 @@ final class CaptureController: ObservableObject {
                 switch result {
                 case .success(let url):
                     self.lastRecordingURL = url
+                    self.preparePlayer(for: url)
                     self.state = .preview
                 case .failure(let error):
                     self.banner = TakeRecorder.describe(error)
@@ -464,16 +469,75 @@ final class CaptureController: ObservableObject {
         }
     }
 
-    func discardTake() {
-        if state == .recording || state == .paused {
-            recorder.discard()
+    // MARK: - Playback
+
+    private func preparePlayer(for url: URL) {
+        let player = AVPlayer(url: url)
+        self.player = player
+        isPlaying = false
+
+        let token = NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime,
+            object: player.currentItem,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.isPlaying = false
+                self.player?.seek(to: .zero)
+            }
         }
+        observers.append(token)
+    }
+
+    func togglePlayback() {
+        guard let player else { return }
+        if isPlaying {
+            player.pause()
+        } else {
+            if player.currentTime() >= (player.currentItem?.duration ?? .zero) {
+                player.seek(to: .zero)
+            }
+            player.play()
+        }
+        isPlaying.toggle()
+    }
+
+    private func tearDownPlayer() {
+        player?.pause()
+        player = nil
+        isPlaying = false
+    }
+
+    // MARK: - Discard
+
+    /// Always confirms. Discarding is the one irreversible-feeling action here,
+    /// even though a finished take goes to the Trash rather than vanishing.
+    func requestDiscard() {
+        guard state == .recording || state == .paused || state == .preview else { return }
+        isConfirmingDiscard = true
+    }
+
+    func discardTake() {
+        isConfirmingDiscard = false
+
+        if state == .recording || state == .paused {
+            // Nothing has reached ~/Movies yet: this is a temp-file delete.
+            recorder.discard()
+        } else if state == .preview, let url = lastRecordingURL {
+            // Finished takes go to the Trash, so Finder's Put Back works.
+            tearDownPlayer()
+            try? FileManager.default.trashItem(at: url, resultingItemURL: nil)
+        }
+
+        tearDownPlayer()
         lastRecordingURL = nil
         elapsed = 0
         state = .ready
     }
 
     func newRecording() {
+        tearDownPlayer()
         lastRecordingURL = nil
         elapsed = 0
         if state == .preview { state = .ready }

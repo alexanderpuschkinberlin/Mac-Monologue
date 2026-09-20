@@ -1,8 +1,9 @@
 import AVFoundation
+import AVKit
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var capture = CaptureController()
+    @ObservedObject var capture: CaptureController
 
     var body: some View {
         VStack(spacing: 0) {
@@ -16,13 +17,26 @@ struct ContentView: View {
             if SelfTest.isEnabled { SelfTest.run(capture: capture) }
         }
         .onDisappear { capture.stop() }
+        .sheet(isPresented: $capture.isShowingHelp) { HelpSheet() }
+        .confirmationDialog(
+            "Discard this take?",
+            isPresented: $capture.isConfirmingDiscard,
+            titleVisibility: .visible
+        ) {
+            Button("Discard", role: .destructive) { capture.discardTake() }
+            Button("Keep", role: .cancel) {}
+        } message: {
+            Text(capture.state == .preview
+                 ? "The file moves to the Trash."
+                 : "The take is not saved.")
+        }
     }
 
     // MARK: - Pickers
 
     private var devicePickers: some View {
         HStack(alignment: .bottom, spacing: 16) {
-            labelled("Camera") {
+            labelled(capture.state == .preview ? "Recording" : "Camera") {
                 Picker("Camera", selection: $capture.selectedCameraID) {
                     ForEach(capture.cameras) { option in
                         Text(option.displayName).tag(Optional(option.id))
@@ -59,7 +73,11 @@ struct ContentView: View {
 
     private var preview: some View {
         ZStack(alignment: .topLeading) {
-            CameraPreviewView(session: capture.session)
+            if capture.state == .preview, let player = capture.player {
+                VideoPlayer(player: player)
+            } else {
+                CameraPreviewView(session: capture.session)
+            }
 
             statusPill
                 .padding(12)
@@ -145,14 +163,12 @@ struct ContentView: View {
                 Label(recordButtonTitle, systemImage: recordButtonIcon)
                     .frame(minWidth: 84)
             }
-            .keyboardShortcut(.space, modifiers: [])
             .disabled(capture.state == .needsAccess
                       || capture.state == .unavailable
                       || capture.state == .finishing)
 
             if capture.state == .recording || capture.state == .paused {
                 Button("Finish") { capture.finishTake() }
-                    .keyboardShortcut(.return, modifiers: .command)
             }
 
             Text(Self.timecode(capture.elapsed))
@@ -178,8 +194,9 @@ struct ContentView: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
 
+                Button("New recording") { capture.newRecording() }
+
                 Button("Reveal in Finder") { capture.revealInFinder() }
-                    .keyboardShortcut("r", modifiers: [.command, .shift])
             }
         }
         .padding(.horizontal, 16)
@@ -190,7 +207,7 @@ struct ContentView: View {
         switch capture.state {
         case .recording: "Pause"
         case .paused: "Resume"
-        case .preview: "New recording"
+        case .preview: capture.isPlaying ? "Pause" : "Play"
         default: "Record"
         }
     }
@@ -199,7 +216,7 @@ struct ContentView: View {
         switch capture.state {
         case .recording: "pause.circle"
         case .paused: "record.circle"
-        case .preview: "arrow.clockwise.circle"
+        case .preview: capture.isPlaying ? "pause.circle" : "play.circle"
         default: "record.circle"
         }
     }

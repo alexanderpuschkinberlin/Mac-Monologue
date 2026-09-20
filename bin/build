@@ -28,4 +28,15 @@ xcodebuild \
   -derivedDataPath build \
   build | tail -n 20
 
-echo "→ build/Build/Products/$CONFIG/Mac-Monologue.app"
+APP="build/Build/Products/$CONFIG/Mac-Monologue.app"
+
+# Re-sign with the stable identity when it exists. The Xcode setting stays
+# ad-hoc so a fresh clone builds on any machine, but ad-hoc means a new code
+# signature on every build, and macOS re-asks for camera and microphone access
+# each time. bin/make-signing-cert creates the identity.
+IDENTITY="${SIGNING_IDENTITY:-Mac-Monologue Self-Signed}"
+if security find-identity -p codesigning 2>/dev/null | grep -q "$IDENTITY"; then
+  codesign --force --sign "$IDENTITY" --timestamp=none "$APP" >/dev/null 2>&1 || true
+fi
+
+echo "→ $APP"

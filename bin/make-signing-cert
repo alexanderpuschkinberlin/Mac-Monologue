@@ -5,8 +5,11 @@
 # app's code signature. An ad-hoc signed app gets a new identity on every
 # rebuild, so you re-grant access every time. A stable certificate fixes that.
 #
-# This is not notarization — recipients still use Open Anyway once.
-# Run it once. macOS may ask for your keychain password.
+# This is not notarization — recipients still use Open Anyway once. The
+# certificate is deliberately NOT added to the trust store: signing does not
+# need it, and doing so would mean a GUI password prompt or sudo.
+#
+# Run it once.
 set -euo pipefail
 
 NAME="${1:-Mac-Monologue Self-Signed}"
@@ -20,6 +23,10 @@ fi
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
+# A throwaway password, not an empty one: OpenSSL 3 writes an empty-password
+# PKCS#12 whose MAC macOS refuses with "MAC verification failed".
+PASSWORD="$(openssl rand -hex 16)"
+
 openssl req -x509 -newkey rsa:2048 -nodes -days 3650 \
   -keyout "$WORK/key.pem" -out "$WORK/cert.pem" \
   -subj "/CN=$NAME/O=$NAME" \
@@ -27,19 +34,16 @@ openssl req -x509 -newkey rsa:2048 -nodes -days 3650 \
   -addext "keyUsage=critical,digitalSignature" \
   -addext "extendedKeyUsage=critical,codeSigning" 2>/dev/null
 
-openssl pkcs12 -export -legacy \
+# -legacy: macOS cannot read OpenSSL 3's default AES-256-CBC/PBKDF2 container.
+openssl pkcs12 -export -legacy -macalg sha1 \
   -inkey "$WORK/key.pem" -in "$WORK/cert.pem" \
-  -name "$NAME" -out "$WORK/identity.p12" -passout pass:
+  -name "$NAME" -out "$WORK/identity.p12" -passout "pass:$PASSWORD"
 
-security import "$WORK/identity.p12" -k "$KEYCHAIN" -P "" \
+security import "$WORK/identity.p12" -k "$KEYCHAIN" -P "$PASSWORD" \
   -T /usr/bin/codesign -T /usr/bin/security
 
-# Without this, codesign stops to ask for permission on every single build.
+# Without this, codesign stops to ask permission on every single build.
 security set-key-partition-list -S apple-tool:,apple: -k "" "$KEYCHAIN" >/dev/null 2>&1 || true
 
-# Trust it for code signing. User domain only, so no sudo.
-security add-trusted-cert -r trustRoot -p codeSign -k "$KEYCHAIN" "$WORK/cert.pem" 2>/dev/null \
-  || echo "note: could not mark the certificate trusted; signing still works."
-
 echo "Created '$NAME'."
-security find-identity -v -p codesigning | grep "$NAME" || true
+security find-identity -p codesigning | grep "$NAME" || true

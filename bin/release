@@ -17,7 +17,9 @@ xcodebuild \
 
 APP="build/Build/Products/Release/Mac-Monologue.app"
 
-if security find-identity -v -p codesigning 2>/dev/null | grep -q "$IDENTITY"; then
+# Not `-v`: that lists only chain-trusted identities, and the self-signed one
+# is deliberately untrusted. It signs perfectly well.
+if security find-identity -p codesigning 2>/dev/null | grep -q "$IDENTITY"; then
   echo "Signing with '$IDENTITY'"
   codesign --force --sign "$IDENTITY" --timestamp=none "$APP"
 else

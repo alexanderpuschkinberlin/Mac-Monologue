@@ -242,6 +242,7 @@ final class CaptureController: ObservableObject {
             isClipping = false
         }
 
+
         let format = Self.bestFormat(for: camera)
         if let format {
             applyFormat(format, to: camera)

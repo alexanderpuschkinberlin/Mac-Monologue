@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
-# Build and launch the app.
+# Build and launch the app, replacing any running instance.
+#
+# `open` on an app that is already running just activates it — it does not pick
+# up a new build. Quitting first is the difference between testing your change
+# and testing the binary from an hour ago.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-./bin/build "${1:-Debug}"
-open "build/Build/Products/${1:-Debug}/Mac-Monologue.app"
+
+CONFIG="${1:-Debug}"
+./bin/build "$CONFIG"
+
+osascript -e 'quit app "Mac-Monologue"' 2>/dev/null || true
+pkill -f "Mac-Monologue.app/Contents/MacOS/Mac-Monologue" 2>/dev/null || true
+sleep 1
+
+open "build/Build/Products/$CONFIG/Mac-Monologue.app"

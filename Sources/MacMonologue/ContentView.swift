@@ -137,22 +137,63 @@ struct ContentView: View {
     // MARK: - Controls
 
     private var controls: some View {
-        HStack(spacing: 16) {
-            Button {
-                // Wired up in the next step.
-            } label: {
-                Label("Record", systemImage: "record.circle")
+        HStack(spacing: 12) {
+            Button(action: capture.toggleRecording) {
+                Label(recordButtonTitle, systemImage: recordButtonIcon)
+                    .frame(minWidth: 84)
             }
-            .disabled(true)
+            .keyboardShortcut(.space, modifiers: [])
+            .disabled(capture.state == .needsAccess
+                      || capture.state == .unavailable
+                      || capture.state == .finishing)
 
-            Text("00:00")
+            if capture.state == .recording || capture.state == .paused {
+                Button("Finish") { capture.finishTake() }
+                    .keyboardShortcut(.return, modifiers: .command)
+            }
+
+            Text(Self.timecode(capture.elapsed))
                 .font(.system(.title3, design: .monospaced))
                 .monospacedDigit()
-                .foregroundStyle(.secondary)
+                .foregroundStyle(capture.state == .recording ? .primary : .secondary)
 
             Spacer()
+
+            if capture.state == .preview, let url = capture.lastRecordingURL {
+                Text(url.lastPathComponent)
+                    .font(.system(.caption, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+
+                Button("Reveal in Finder") { capture.revealInFinder() }
+                    .keyboardShortcut("r", modifiers: [.command, .shift])
+            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
+    }
+
+    private var recordButtonTitle: String {
+        switch capture.state {
+        case .recording: "Pause"
+        case .paused: "Resume"
+        case .preview: "New recording"
+        default: "Record"
+        }
+    }
+
+    private var recordButtonIcon: String {
+        switch capture.state {
+        case .recording: "pause.circle"
+        case .paused: "record.circle"
+        case .preview: "arrow.clockwise.circle"
+        default: "record.circle"
+        }
+    }
+
+    static func timecode(_ seconds: Double) -> String {
+        let total = Int(seconds.rounded(.down))
+        return String(format: "%02d:%02d", total / 60, total % 60)
     }
 }

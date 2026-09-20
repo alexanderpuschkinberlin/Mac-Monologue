@@ -1,4 +1,5 @@
 import AVFoundation
+import AppKit
 import Combine
 import Foundation
 
@@ -49,6 +50,8 @@ final class CaptureController: ObservableObject {
     @Published private(set) var microphones: [DeviceOption] = [.noAudio]
     @Published private(set) var formatSummary: String = ""
     @Published private(set) var banner: String?
+    @Published private(set) var elapsed: Double = 0
+    @Published private(set) var lastRecordingURL: URL?
 
     /// Locked for the whole take, including while paused.
     @Published var selectedCameraID: String? {
@@ -76,6 +79,16 @@ final class CaptureController: ObservableObject {
     /// reference and does its own internal locking).
     nonisolated(unsafe) let session = AVCaptureSession()
     private let sessionQueue = DispatchQueue(label: "io.github.alexanderpuschkinberlin.mac-monologue.session")
+    /// Sample buffers are delivered here, separately from session configuration,
+    /// so reconfiguring never stalls behind frame delivery.
+    private let outputQueue = DispatchQueue(label: "io.github.alexanderpuschkinberlin.mac-monologue.output")
+
+    nonisolated(unsafe) private let videoOutput = AVCaptureVideoDataOutput()
+    nonisolated(unsafe) private let audioOutput = AVCaptureAudioDataOutput()
+    private lazy var recorder = TakeRecorder(queue: outputQueue)
+
+    /// Dimensions of the active capture format, handed to the encoder.
+    private var activeDimensions = (width: 1920, height: 1080)
 
     /// Whether the configured session currently has an audio input.
     /// The `AVCaptureDeviceInput` objects themselves stay confined to
@@ -86,6 +99,7 @@ final class CaptureController: ObservableObject {
     // MARK: - Lifecycle
 
     func start() {
+        wireRecorder()
         selectedCameraID = DevicePreferences.cameraID
         selectedMicrophoneID = DevicePreferences.microphoneID ?? DeviceOption.noAudioID
         observeDeviceChanges()
@@ -219,6 +233,8 @@ final class CaptureController: ObservableObject {
         let format = Self.bestFormat(for: camera)
         if let format {
             applyFormat(format, to: camera)
+            let d = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
+            activeDimensions = (Int(d.width), Int(d.height))
             formatSummary = Self.summary(for: format, hasAudio: microphone != nil)
         }
 
@@ -228,6 +244,16 @@ final class CaptureController: ObservableObject {
             defer { self.session.commitConfiguration() }
 
             for input in self.session.inputs { self.session.removeInput(input) }
+
+            if !self.session.outputs.contains(self.videoOutput), self.session.canAddOutput(self.videoOutput) {
+                self.videoOutput.alwaysDiscardsLateVideoFrames = false
+                self.session.addOutput(self.videoOutput)
+                self.videoOutput.setSampleBufferDelegate(self.recorder, queue: self.outputQueue)
+            }
+            if !self.session.outputs.contains(self.audioOutput), self.session.canAddOutput(self.audioOutput) {
+                self.session.addOutput(self.audioOutput)
+                self.audioOutput.setSampleBufferDelegate(self.recorder, queue: self.outputQueue)
+            }
 
             if let videoInput = try? AVCaptureDeviceInput(device: camera),
                self.session.canAddInput(videoInput) {
@@ -299,6 +325,109 @@ final class CaptureController: ObservableObject {
         return underCap.isEmpty
             ? pool.min(by: { pixels($0) < pixels($1) })
             : pool.max(by: { pixels($0) < pixels($1) })
+    }
+
+    // MARK: - Takes
+
+    private func wireRecorder() {
+        recorder.onStatusChange = { [weak self] status in
+            Task { @MainActor in
+                guard let self else { return }
+                switch status {
+                case .recording: self.state = .recording
+                case .paused: self.state = .paused
+                case .finishing: self.state = .finishing
+                case .idle: if self.state != .preview { self.state = .ready }
+                }
+            }
+        }
+        recorder.onDurationChange = { [weak self] seconds in
+            Task { @MainActor in self?.elapsed = seconds }
+        }
+        recorder.onFailure = { [weak self] message in
+            Task { @MainActor in
+                self?.banner = message
+                self?.state = .ready
+            }
+        }
+    }
+
+    /// Space: record, then pause, then resume.
+    func toggleRecording() {
+        switch state {
+        case .ready: startTake()
+        // Preview gets clip playback in a later step; for now the button returns
+        // to Ready rather than starting a take the moment you click it.
+        case .preview: newRecording()
+        case .recording: recorder.pause()
+        case .paused: recorder.resume()
+        case .needsAccess, .unavailable, .finishing: break
+        }
+    }
+
+    private func startTake() {
+        guard selectedCameraID.flatMap(Self.device(id:)) != nil else { return }
+        lastRecordingURL = nil
+        elapsed = 0
+        banner = nil
+
+        let configuration = TakeRecorder.Configuration(
+            width: activeDimensions.width,
+            height: activeDimensions.height,
+            frameRate: Self.targetFPS,
+            audioSettings: hasAudio
+                ? audioOutput.recommendedAudioSettingsForAssetWriter(writingTo: .mp4) as? [String: Any]
+                : nil
+        )
+
+        sessionQueue.async { [weak self] in
+            guard let self else { return }
+            let clock = self.session.synchronizationClock
+            self.recorder.start(configuration: configuration, sourceClock: clock)
+        }
+    }
+
+    func finishTake() {
+        guard state == .recording || state == .paused else { return }
+        recorder.finish { [weak self] result in
+            Task { @MainActor in
+                guard let self else { return }
+                switch result {
+                case .success(let url):
+                    self.lastRecordingURL = url
+                    self.state = .preview
+                case .failure(let error):
+                    self.banner = error.localizedDescription
+                    self.state = .ready
+                }
+            }
+        }
+    }
+
+    func discardTake() {
+        if state == .recording || state == .paused {
+            recorder.discard()
+        }
+        lastRecordingURL = nil
+        elapsed = 0
+        state = .ready
+    }
+
+    func newRecording() {
+        lastRecordingURL = nil
+        elapsed = 0
+        if state == .preview { state = .ready }
+    }
+
+    func revealInFinder() {
+        let url = lastRecordingURL
+        let directory = TakeRecorder.recordingsDirectory
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        if let url {
+            NSWorkspace.shared.activateFileViewerSelecting([url])
+        } else {
+            NSWorkspace.shared.open(directory)
+        }
     }
 
     static func summary(for format: AVCaptureDevice.Format, hasAudio: Bool) -> String {

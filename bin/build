@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Generate the Xcode project and build the app.
+#   bin/build            → Debug
+#   bin/build Release    → Release
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+CONFIG="${1:-Debug}"
+
+# Command Line Tools are the active toolchain on this machine; xcodebuild needs Xcode.
+# Setting DEVELOPER_DIR avoids having to `sudo xcode-select -s`.
+export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}"
+
+command -v xcodegen >/dev/null || { echo "xcodegen missing: brew install xcodegen" >&2; exit 1; }
+
+xcodegen generate --quiet
+xcodebuild \
+  -project Mac-Monologue.xcodeproj \
+  -scheme Mac-Monologue \
+  -configuration "$CONFIG" \
+  -derivedDataPath build \
+  build | tail -n 20
+
+echo "→ build/Build/Products/$CONFIG/Mac-Monologue.app"

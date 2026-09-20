@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Build and launch the app.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+./bin/build "${1:-Debug}"
+open "build/Build/Products/${1:-Debug}/Mac-Monologue.app"

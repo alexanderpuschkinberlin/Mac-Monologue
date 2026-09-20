@@ -1,0 +1,63 @@
+name: Mac-Monologue
+
+options:
+  bundleIdPrefix: io.github.alexanderpuschkinberlin
+  createIntermediateGroups: true
+  developmentLanguage: en
+  deploymentTarget:
+    macOS: "14.0"
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    ARCHS: arm64
+    ONLY_ACTIVE_ARCH: YES
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    # Self-signed identity comes later (see DESIGN.md, Distribution).
+    # Ad-hoc for now; sandbox and hardened runtime stay off by design.
+    CODE_SIGN_IDENTITY: "-"
+    CODE_SIGN_STYLE: Manual
+    DEVELOPMENT_TEAM: ""
+    ENABLE_HARDENED_RUNTIME: NO
+    ENABLE_APP_SANDBOX: NO
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+    SWIFT_STRICT_CONCURRENCY: complete
+
+targets:
+  Mac-Monologue:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources/MacMonologue
+    settings:
+      base:
+        PRODUCT_NAME: Mac-Monologue
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.alexanderpuschkinberlin.mac-monologue
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: Sources/MacMonologue/Info.plist
+        COMBINE_HIDPI_IMAGES: YES
+
+  MacMonologueTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests/MacMonologueTests
+    dependencies:
+      - target: Mac-Monologue
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.alexanderpuschkinberlin.mac-monologue.tests
+
+schemes:
+  Mac-Monologue:
+    build:
+      targets:
+        Mac-Monologue: all
+        MacMonologueTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - MacMonologueTests

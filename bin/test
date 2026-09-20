@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Run the unit tests (no camera or microphone required).
+set -euo pipefail
+cd "$(dirname "$0")/.."
+export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}"
+xcodegen generate --quiet
+xcodebuild \
+  -project Mac-Monologue.xcodeproj \
+  -scheme Mac-Monologue \
+  -configuration Debug \
+  -derivedDataPath build \
+  test | tail -n 30

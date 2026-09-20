@@ -30,6 +30,8 @@ targets:
     platform: macOS
     sources:
       - path: Sources/MacMonologue
+      - path: Resources
+        buildPhase: resources
     dependencies:
       # Explicit: auto-linking does not pull AVKit in, and SwiftUI's VideoPlayer
       # then crashes at runtime failing to demangle AVPlayerView.

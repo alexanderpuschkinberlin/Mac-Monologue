@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Release build, signed, zipped into dist/ ready to hand over.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}"
+IDENTITY="${SIGNING_IDENTITY:-Mac-Monologue Self-Signed}"
+VERSION="$(grep -m1 'MARKETING_VERSION:' project.yml | sed 's/.*: *"\{0,1\}\([^"]*\)"\{0,1\}/\1/')"
+
+xcodegen generate --quiet
+xcodebuild \
+  -project Mac-Monologue.xcodeproj \
+  -scheme Mac-Monologue \
+  -configuration Release \
+  -derivedDataPath build \
+  build >/dev/null
+
+APP="build/Build/Products/Release/Mac-Monologue.app"
+
+if security find-identity -v -p codesigning 2>/dev/null | grep -q "$IDENTITY"; then
+  echo "Signing with '$IDENTITY'"
+  codesign --force --sign "$IDENTITY" --timestamp=none "$APP"
+else
+  echo "No '$IDENTITY' identity found — signing ad-hoc."
+  echo "Camera and microphone access will be re-prompted after every rebuild."
+  echo "Run bin/make-signing-cert once to avoid that."
+  codesign --force --sign - "$APP"
+fi
+
+codesign --verify --strict "$APP" && echo "signature ok"
+
+mkdir -p dist
+ZIP="dist/Mac-Monologue-$VERSION.zip"
+rm -f "$ZIP"
+ditto -c -k --keepParent "$APP" "$ZIP"
+
+echo
+echo "→ $ZIP ($(du -h "$ZIP" | cut -f1))"
+echo "  Recipient: unzip, double-click, then System Settings → Privacy & Security → Open Anyway."

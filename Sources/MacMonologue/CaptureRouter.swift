@@ -39,6 +39,17 @@ final class CaptureRouter: NSObject, @unchecked Sendable {
     private var previewSink: PreviewSink?
     private var fallbackTimer: DispatchSourceTimer?
 
+    /// Present only during a screen-mode take: the microphone and system audio are
+    /// summed into one track rather than written as two.
+    private var mixer: AudioMixer?
+    /// ScreenCaptureKit's clock. System audio is converted from it into the
+    /// capture session's — the one conversion between clocks anywhere in the app.
+    private var screenClock: CMClock?
+    private var hasProbedClocks = false
+
+    /// Once per take, whether the two clocks could be related at all.
+    var onClockReading: (@Sendable (ClockProbe.Reading) -> Void)?
+
     /// Every microphone buffer, including while idle or paused — the meter has to
     /// be live before you start, which is the whole point of having one.
     /// Called on `queue`; the buffer must not escape it.
@@ -49,6 +60,7 @@ final class CaptureRouter: NSObject, @unchecked Sendable {
         self.recorder = recorder
         super.init()
         startFallbackTimer()
+        recorder.onWillFinish = { [weak self] in self?.flushMixer() }
     }
 
     /// Takes effect from the next frame. Safe to call from any thread.
@@ -61,6 +73,19 @@ final class CaptureRouter: NSObject, @unchecked Sendable {
 
     func setPreviewSink(_ sink: PreviewSink?) {
         queue.async { [self] in previewSink = sink }
+    }
+
+    func setScreenClock(_ clock: CMClock?) {
+        nonisolated(unsafe) let clock = clock
+        queue.async { [self] in screenClock = clock }
+    }
+
+    /// Call before starting a take, so its audio starts from an empty mixer.
+    func prepareTake(microphonePresent: Bool) {
+        queue.async { [self] in
+            mixer = configuration.isScreenMode ? AudioMixer(microphoneIsMaster: microphonePresent) : nil
+            hasProbedClocks = false
+        }
     }
 
     // MARK: - Camera
@@ -97,7 +122,53 @@ final class CaptureRouter: NSObject, @unchecked Sendable {
 
     private func handleMicrophone(_ sampleBuffer: CMSampleBuffer) {
         onMicrophoneBuffer?(sampleBuffer)
-        recorder.append(sampleBuffer, to: .audio)
+
+        guard let mixer else {
+            recorder.append(sampleBuffer, to: .audio)
+            return
+        }
+        // nil while paused or before the first frame: the same gate every buffer
+        // passes, so a pause removes dead air from both sources alike.
+        guard let takeTime = recorder.takeTime(
+            for: CMSampleBufferGetPresentationTimeStamp(sampleBuffer)) else { return }
+        mixer.pushMicrophone(sampleBuffer, takeTime: takeTime)
+        writeMixedAudio()
+    }
+
+    // MARK: - System audio
+
+    private func handleSystemAudio(_ sampleBuffer: CMSampleBuffer) {
+        guard let mixer else { return }
+        let captureClock = recorder.currentSourceClock()
+        var timestamp = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
+
+        if let screenClock {
+            timestamp = CMSyncConvertTime(timestamp, from: screenClock, to: captureClock)
+            if !hasProbedClocks {
+                hasProbedClocks = true
+                onClockReading?(ClockProbe.measure(from: screenClock, to: captureClock))
+            }
+        }
+
+        guard let takeTime = recorder.takeTime(for: timestamp) else { return }
+        mixer.pushSystem(sampleBuffer, takeTime: takeTime)
+        writeMixedAudio()
+    }
+
+    private func writeMixedAudio() {
+        guard let mixer else { return }
+        for block in mixer.drainReady() {
+            recorder.appendInTakeTime(block, to: .audio)
+        }
+    }
+
+    /// Hands over the hold-back at the end of a take. Runs inside `finish`.
+    private func flushMixer() {
+        guard let mixer else { return }
+        for block in mixer.flush() {
+            recorder.appendInTakeTime(block, to: .audio)
+        }
+        self.mixer = nil
     }
 
     // MARK: - Screen
@@ -175,6 +246,7 @@ extension CaptureRouter: SCStreamOutput {
         // Already on `queue` — ScreenCaptureKit was handed it as its sample queue.
         switch type {
         case .screen: handleScreenFrame(sampleBuffer)
+        case .audio: handleSystemAudio(sampleBuffer)
         default: break
         }
     }

@@ -292,6 +292,7 @@ struct ContentView: View {
 
             Spacer()
 
+            // The microphone only: that is what a person can do something about.
             if capture.hasAudio {
                 LevelMeterView(
                     level: capture.audioLevel,

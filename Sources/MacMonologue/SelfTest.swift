@@ -36,6 +36,9 @@ enum SelfTest {
             let screenMode = CommandLine.arguments.contains("--screen")
             capture.mode = screenMode ? .screenAndCamera : .camera
             capture.mirrorsRecording = CommandLine.arguments.contains("--mirror")
+            if CommandLine.arguments.contains("--no-mic") {
+                capture.selectedMicrophoneID = DeviceOption.noAudioID
+            }
 
             guard await waitUntil(timeout: 15, { capture.state == .ready && capture.canRecord }) else {
                 log("FAIL: never became ready to record (state=\(capture.state.label), "
@@ -45,7 +48,8 @@ enum SelfTest {
             // Let a couple of seconds of frames flow, so the take opens on real
             // screen content rather than the black before the first frame.
             if screenMode { try? await Task.sleep(for: .seconds(1)) }
-            log("ready · \(capture.formatSummary) · audio=\(capture.hasAudio) · mirrored=\(capture.mirrorsRecording)")
+            log("ready · \(capture.formatSummary) · microphone=\(capture.hasAudio) · "
+                + "audio track=\(capture.recordsAudio) · mirrored=\(capture.mirrorsRecording)")
 
             capture.toggleRecording()
             guard await waitUntil({ capture.state == .recording }) else {
@@ -103,7 +107,20 @@ enum SelfTest {
             if screenMode, naturalSize != capture.canvasSize {
                 failures.append("frame is \(naturalSize), expected the canvas \(capture.canvasSize)")
             }
-            if capture.hasAudio && audioTracks.isEmpty { failures.append("no audio track") }
+            if capture.recordsAudio && audioTracks.count != 1 {
+                failures.append("\(audioTracks.count) audio tracks, expected exactly one")
+            }
+            if let audio = audioTracks.first,
+               let audioDuration = try? await audio.load(.timeRange).duration.seconds {
+                log(String(format: "audio track %.2fs", audioDuration))
+                if screenMode, abs(audioDuration - duration) > 0.3 {
+                    failures.append(String(format: "audio %.2fs vs video %.2fs", audioDuration, duration))
+                }
+            }
+            if let reading = capture.clockReading {
+                log(String(format: "clocks · rate %.6f · offset %.4fs · %@", reading.relativeRate,
+                           reading.offsetSeconds, String(describing: reading.verdict)))
+            }
 
             // 2s + 2s recorded around a 3s pause: the pause must not be in the file.
             let expected = recordSeconds * 2

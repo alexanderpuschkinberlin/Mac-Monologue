@@ -140,10 +140,17 @@ final class CaptureController: ObservableObject {
     /// settings to a connection that may have been rebuilt.
     @Published private(set) var sessionGeneration = 0
 
-    /// Whether the configured session currently has an audio input.
-    /// The `AVCaptureDeviceInput` objects themselves stay confined to
+    /// Whether a microphone is selected — which is also what the level meter
+    /// shows. The `AVCaptureDeviceInput` objects themselves stay confined to
     /// `sessionQueue` — they are not Sendable and must not cross actors.
     @Published private(set) var hasAudio = false
+
+    /// Whether the file gets an audio track at all. In screen mode it always does:
+    /// system audio is recorded even with "No audio" chosen for the microphone.
+    var recordsAudio: Bool { mode == .screenAndCamera || hasAudio }
+
+    /// How the screen's clock related to the camera's in the last screen take.
+    @Published private(set) var clockReading: ClockProbe.Reading?
 
     /// The hardware self-test must not overwrite the user's own settings.
     private var persistsPreferences: Bool { !SelfTest.isEnabled }
@@ -526,7 +533,7 @@ final class CaptureController: ObservableObject {
 
         let settings = ScreenCaptureSource.Settings(
             displayID: chosen.id, width: canvas.width, height: canvas.height,
-            showsMouseClicks: true, capturesAudio: false
+            showsMouseClicks: true, capturesAudio: true
         )
         screenSource.apply(settings, output: router, outputQueue: outputQueue) { [weak self] error in
             Task { @MainActor in
@@ -689,6 +696,15 @@ final class CaptureController: ObservableObject {
                 self.isClipping = clipping
             }
         }
+        router.onClockReading = { [weak self] reading in
+            Task { @MainActor in
+                guard let self else { return }
+                self.clockReading = reading
+                if reading.verdict == .unrelated {
+                    self.banner = "System audio could not be synchronised with the camera and may drift."
+                }
+            }
+        }
         recorder.onFailure = { [weak self] message in
             Task { @MainActor in
                 self?.banner = message
@@ -716,13 +732,19 @@ final class CaptureController: ObservableObject {
         elapsed = 0
         banner = nil
 
+        let screenMode = mode == .screenAndCamera
         let configuration = TakeRecorder.Configuration(
             width: activeDimensions.width,
             height: activeDimensions.height,
             frameRate: Self.targetFPS,
-            audioSettings: hasAudio ? recommendedAudioSettings() : nil,
-            averageBitRate: mode == .screenAndCamera ? TakeRecorder.screenBitRate : TakeRecorder.cameraBitRate
+            // Screen mode writes the mixer's output — mono 48 kHz Float32 — so it
+            // gets settings for exactly that, not a recommendation made for the
+            // microphone's own format.
+            audioSettings: screenMode ? Self.mixedAudioSettings : (hasAudio ? recommendedAudioSettings() : nil),
+            averageBitRate: screenMode ? TakeRecorder.screenBitRate : TakeRecorder.cameraBitRate
         )
+        clockReading = nil
+        router.prepareTake(microphonePresent: hasAudio)
 
         sessionQueue.async { [weak self] in
             guard let self else { return }
@@ -730,6 +752,13 @@ final class CaptureController: ObservableObject {
             self.recorder.start(configuration: configuration, sourceClock: clock)
         }
     }
+
+    static let mixedAudioSettings: [String: Any] = [
+        AVFormatIDKey: kAudioFormatMPEG4AAC,
+        AVSampleRateKey: AudioMixerCore.sampleRate,
+        AVNumberOfChannelsKey: 1,
+        AVEncoderBitRateKey: 128_000,
+    ]
 
     /// AVFoundation has no recommendation to give until the audio connection is
     /// live, so a take started moments after launch gets nil back — and without

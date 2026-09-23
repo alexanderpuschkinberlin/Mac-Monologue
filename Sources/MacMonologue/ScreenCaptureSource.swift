@@ -158,6 +158,7 @@ final class ScreenCaptureSource: NSObject, @unchecked Sendable {
 
         nonisolated(unsafe) let started = stream
         started.startCapture { error in
+            if error == nil { output.setScreenClock(started.synchronizationClock) }
             self.controlQueue.async {
                 if error != nil, self.stream === started {
                     self.stream = nil

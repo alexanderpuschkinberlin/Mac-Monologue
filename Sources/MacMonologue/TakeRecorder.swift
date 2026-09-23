@@ -62,6 +62,9 @@ final class TakeRecorder: @unchecked Sendable {
     var onStatusChange: (@Sendable (Status) -> Void)?
     var onDurationChange: (@Sendable (Double) -> Void)?
     var onFailure: (@Sendable (String) -> Void)?
+    /// Called on `queue` at the start of `finish`, while the take is still
+    /// writable — the last chance to hand over audio that was being held back.
+    var onWillFinish: (() -> Void)?
 
     init(queue: DispatchQueue) {
         self.queue = queue
@@ -160,6 +163,7 @@ final class TakeRecorder: @unchecked Sendable {
     func finish(completion: @escaping @Sendable (Result<URL, Error>) -> Void) {
         queue.async { [self] in
             guard status == .recording || status == .paused else { return }
+            onWillFinish?()
             if status == .recording { clock.pause(at: now()) }
             setStatus(.finishing)
 
@@ -299,6 +303,9 @@ extension TakeRecorder {
     /// Call on `queue`.
     func currentCaptureTime() -> CMTime { now() }
 
+    /// The clock the take's timestamps are in. Call on `queue`.
+    func currentSourceClock() -> CMClock { sourceClock ?? CMClockGetHostTimeClock() }
+
     /// Maps a capture timestamp onto take time, or nil while paused or before the
     /// take began. Call on `queue`.
     ///
@@ -355,7 +362,8 @@ extension TakeRecorder {
     /// Appends a buffer whose timestamp is already take time — a mixed audio
     /// block built downstream of `takeTime(for:)`. Must be called on `queue`.
     func appendInTakeTime(_ sampleBuffer: CMSampleBuffer, to track: Track) {
-        guard status == .recording, sessionStarted,
+        // Paused is fine too: these are samples from before the pause, released late.
+        guard status == .recording || status == .paused, sessionStarted,
               let writer, writer.status == .writing else { return }
 
         let takeTime = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)

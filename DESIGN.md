@@ -321,3 +321,9 @@ Tests/MacMonologueTests/       all of the above, plus compositing on synthetic f
 - **Not notarized**, so every first install needs *Open Anyway*. An Apple
   Developer ID would remove that, but switching later changes the signature: every
   user would reinstall once.
+- **Every new version asks for camera and microphone again.** Seen with 0.3.0 over
+  0.2.0 (installed by hand) and 0.3.1 over 0.3.0 (the in-app update): macOS asked
+  again for both, although the designated requirement was unchanged. Screen
+  recording stayed allowed, and the update asked neither for App Management nor
+  for *Open Anyway*. The cause
+  is unconfirmed; a Developer ID signature is the likely cure.

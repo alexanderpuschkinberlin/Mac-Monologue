@@ -208,15 +208,17 @@ You only do this once. Apple explains the same steps in
 #### Camera, microphone and screen
 
 The welcome steps ask for each permission in turn. Screen recording is only needed for
-**Screen + Camera**, and the app restarts once after you allow it. Used
-Mac-Monologue on this Mac before? It keeps the permissions you already gave, so you are
-not asked again.
+**Screen + Camera**, and the app restarts once after you allow it.
+
+After an update, or when you install a new version by hand, macOS asks once more for
+the camera and the microphone - click **Allow**. Screen recording stays allowed.
 
 ### Updates
 
 Mac-Monologue tells you when a new version is out, shows what changed, and
 installs it with one click. It checks with GitHub once a day - you can switch that
-off in Settings.
+off in Settings. After an update, macOS asks once more for the camera and the
+microphone.
 
 ## Questions
 
@@ -227,7 +229,7 @@ Apple only lets apps through without asking once the developer has paid for a
 yearly registration. Mac-Monologue is free and not registered, so macOS asks you to
 confirm once in <i>System Settings › Privacy & Security</i> - see
 <a href="#first-open">The first time you open it</a>. After that it
-opens normally.
+opens normally, and updates from inside the app do not ask again.
 </details>
 
 <details>

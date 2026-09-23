@@ -45,6 +45,20 @@ enum SelfTest {
                 capture.selectedMicrophoneID = DeviceOption.noAudioID
             }
 
+            if screenMode {
+                // The user's remembered screen may be a monitor that is unplugged
+                // right now — the app rightly refuses to record another one. The
+                // test is not about that choice, so it takes a connected screen,
+                // without saving it over the user's own.
+                _ = await waitUntil({ !capture.displays.isEmpty })
+                let chosen = capture.displays.first { $0.id == capture.selectedDisplayID }
+                if chosen?.isAvailable != true,
+                   let connected = capture.displays.first(where: { $0.id == CGMainDisplayID() && $0.isAvailable })
+                    ?? capture.displays.first(where: \.isAvailable) {
+                    capture.selectedDisplayID = connected.id
+                }
+            }
+
             guard await waitUntil(timeout: 15, { capture.state == .ready && capture.canRecord }) else {
                 log("FAIL: never became ready to record (state=\(capture.state.label), "
                     + "screenAccess=\(capture.screenAccess), banner=\(capture.banner ?? "-"))")

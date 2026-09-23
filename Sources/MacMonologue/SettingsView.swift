@@ -19,6 +19,7 @@ enum LaunchMode: String, CaseIterable, Identifiable, Sendable {
 
 struct SettingsView: View {
     @ObservedObject var capture: CaptureController
+    @ObservedObject var updates: UpdateChecker
 
     var body: some View {
         TabView {
@@ -28,6 +29,8 @@ struct SettingsView: View {
                 .tabItem { Label("Recording", systemImage: "record.circle") }
             permissions
                 .tabItem { Label("Permissions", systemImage: "lock.shield") }
+            updatesTab
+                .tabItem { Label("Updates", systemImage: "arrow.down.circle") }
         }
         .frame(width: 520)
         .padding(.vertical, 8)
@@ -102,6 +105,45 @@ struct SettingsView: View {
                     Text("Saved to ~/Movies/Monologue")
                     Spacer()
                     Button("Show in Finder") { capture.revealInFinder() }
+                }
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    // MARK: - Updates
+
+    private var updatesTab: some View {
+        Form {
+            Section {
+                Toggle("Automatically check for updates", isOn: $updates.checksAutomatically)
+                Text("Asks GitHub for the newest version when Mac-Monologue opens and once a day. "
+                     + "Nothing else leaves your Mac, and nothing is installed without asking you.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Section {
+                LabeledContent("Installed version", value: updates.installedVersion.description)
+                LabeledContent("Last checked") {
+                    if let lastCheck = updates.lastCheck {
+                        Text(lastCheck, format: .relative(presentation: .named))
+                    } else {
+                        Text("Never")
+                    }
+                }
+                HStack {
+                    Button("Check Now") { updates.checkNow(userInitiated: true) }
+                    Spacer()
+                    Button("Release Notes on GitHub") { NSWorkspace.shared.open(ReleaseFeed.pageURL) }
+                        .buttonStyle(.link)
+                }
+            }
+            if let problem = updates.installationProblem {
+                Section {
+                    Label(problem.localizedDescription, systemImage: "info.circle")
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
         }

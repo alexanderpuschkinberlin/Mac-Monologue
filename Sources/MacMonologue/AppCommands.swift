@@ -4,8 +4,13 @@ import SwiftUI
 /// looks for the shortcuts, and where they find the recordings folder.
 struct AppCommands: Commands {
     @ObservedObject var capture: CaptureController
+    @ObservedObject var updates: UpdateChecker
 
     var body: some Commands {
+        CommandGroup(after: .appInfo) {
+            Button("Check for Updates…") { updates.checkNow(userInitiated: true) }
+        }
+
         CommandGroup(replacing: .newItem) {
             Button("New Recording") { capture.newRecording() }
                 .keyboardShortcut("n", modifiers: .command)

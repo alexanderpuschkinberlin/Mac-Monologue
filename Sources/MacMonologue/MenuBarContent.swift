@@ -39,11 +39,18 @@ struct MenuBarLabel: View {
 
 struct MenuBarMenu: View {
     @ObservedObject var capture: CaptureController
+    @ObservedObject var updates: UpdateChecker
     @Environment(\.openWindow) private var openWindow
     @Environment(\.openSettings) private var openSettings
 
     var body: some View {
         Text(statusLine)
+
+        if let newest = updates.availableReleases.first?.version {
+            Button("Update Available: \(newest.description)…") {
+                updates.checkNow(userInitiated: true)
+            }
+        }
 
         Divider()
 
@@ -67,6 +74,7 @@ struct MenuBarMenu: View {
 
         Button("Show Mac-Monologue") { showWindow() }
         Button("Reveal Recordings in Finder") { capture.revealInFinder() }
+        Button("Check for Updates…") { updates.checkNow(userInitiated: true) }
         Button("Settings…") {
             NSApp.activate()
             openSettings()

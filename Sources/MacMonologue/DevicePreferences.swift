@@ -21,6 +21,9 @@ enum DevicePreferences {
     private static let showsMouseClicksKey = "showsMouseClicks"
     private static let completedOnboardingKey = "hasCompletedOnboarding"
     private static let launchModeKey = "launchMode"
+    private static let checksForUpdatesKey = "checksForUpdatesAutomatically"
+    private static let skippedUpdateKey = "skippedUpdateVersion"
+    private static let lastUpdateCheckKey = "lastUpdateCheck"
 
     static var cameraID: String? {
         get { UserDefaults.standard.string(forKey: cameraKey) }
@@ -92,6 +95,23 @@ enum DevicePreferences {
     static var launchMode: LaunchMode {
         get { UserDefaults.standard.string(forKey: launchModeKey).flatMap(LaunchMode.init) ?? .lastUsed }
         set { UserDefaults.standard.set(newValue.rawValue, forKey: launchModeKey) }
+    }
+
+    /// Absent means on.
+    static var checksForUpdatesAutomatically: Bool {
+        get { UserDefaults.standard.object(forKey: checksForUpdatesKey) as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: checksForUpdatesKey) }
+    }
+
+    /// "Skip This Version": not offered again automatically, still found by hand.
+    static var skippedUpdateVersion: String? {
+        get { UserDefaults.standard.string(forKey: skippedUpdateKey) }
+        set { UserDefaults.standard.set(newValue, forKey: skippedUpdateKey) }
+    }
+
+    static var lastUpdateCheck: Date? {
+        get { UserDefaults.standard.object(forKey: lastUpdateCheckKey) as? Date }
+        set { UserDefaults.standard.set(newValue, forKey: lastUpdateCheckKey) }
     }
 
     static var hasCompletedOnboarding: Bool {

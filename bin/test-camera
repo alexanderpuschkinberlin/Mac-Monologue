@@ -1,16 +1,36 @@
 #!/usr/bin/env bash
-# Opt-in smoke test against the real camera and microphone.
+# Real takes against the real camera, microphone and screen.
 #
-# Records 2s, pauses 3s, records 2s, finishes. A correct take is ~4s long:
-# if the pause arithmetic is wrong it comes out ~7s, with the dead air in it.
+# Each take records 2 s, pauses 3 s, records 2 s, finishes — and the file is then
+# inspected: a correct take is ~4 s long, not ~7 s with the dead air in it, with
+# exactly one audio track as long as the video.
+#
+#   bin/test-camera                 camera mode, then screen mode
+#   bin/test-camera --screen …      one take with these flags:
+#     --screen    Screen + Camera
+#     --mirror    mirror the recording
+#     --no-mic    "No audio" for the microphone (screen mode: system audio only)
+#     --keep      keep the file in ~/Movies/Monologue to look at
+#     --hotkeys   drive the take through the global shortcuts
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 ./bin/build Debug >/dev/null
 
-osascript -e 'quit app "Mac-Monologue"' 2>/dev/null || true
-pkill -f "Mac-Monologue.app/Contents/MacOS/Mac-Monologue" 2>/dev/null || true
-sleep 1
-
 APP="build/Build/Products/Debug/Mac-Monologue.app/Contents/MacOS/Mac-Monologue"
-"$APP" --self-test "$@"
+
+take() {
+  osascript -e 'quit app "Mac-Monologue"' 2>/dev/null || true
+  pkill -f "Mac-Monologue.app/Contents/MacOS/Mac-Monologue" 2>/dev/null || true
+  sleep 1
+  "$APP" --self-test "$@"
+}
+
+if [ $# -gt 0 ]; then
+  take "$@"
+else
+  echo "— camera —"
+  take
+  echo "— screen + camera —"
+  take --screen
+fi

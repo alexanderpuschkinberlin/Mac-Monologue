@@ -10,9 +10,13 @@
 > implementation is Swift on AVFoundation — written because my Mac currently
 > gives me the best video and audio quality I have available.
 
-A native macOS talking-head recorder. Pick a camera and a microphone once, press
-**Space**, talk, press **Space** to pause, **⌘↩** to finish — the clip lands in
-`~/Movies/Monologue`.
+A native macOS recorder for talking heads and screen tutorials. Pick a camera and a
+microphone once, press **Space**, talk, press **Space** to pause, **⌘↩** to finish —
+the clip lands in `~/Movies/Monologue`.
+
+Or switch to **Screen + Camera**: your screen, with you as a round bubble in a corner
+you pick — the tutorial look you know from YouTube, without editing it together
+afterwards. Pause and finish with a global shortcut while you present.
 
 It is not a port. The Linux original spends much of its code on problems macOS
 does not have — it bypasses Qt's audio layer to talk to libpulse directly just
@@ -23,16 +27,42 @@ itself, so **Mac-Monologue has no runtime dependencies at all**.
 
 ## What it does
 
-- Camera and microphone capture at **1080p30**, encoded to **HEVC + AAC** in `.mp4`
+**Camera**
+- Camera and microphone at **1080p30**, encoded to **HEVC + AAC** in `.mp4`
 - **Pause and resume mid-take** — the paused interval is removed, and one
   continuous file comes out
+- **Mirror the recording** if you want to: the preview always looks like a mirror,
+  the file only when you ask
+
+**Screen + Camera**
+- Any connected screen at a **2560-px long edge** — slide text stays sharp
+- **You as a round bubble** in the corner you pick, in three sizes; the preview shows
+  exactly what is recorded, bubble included
+- **System audio mixed with your microphone** into one track, so a video in your
+  slides can be heard
+- The mouse pointer and your clicks are shown; Mac-Monologue never records its own window
+- If the camera drops out — an iPhone that locks — the screen keeps recording
+
+**Everywhere**
+- **Global shortcuts** and an always-visible **menu bar item** with a red dot and the
+  running time, so you can pause and finish without leaving your presentation
 - Live **microphone meter** in dBFS with peak-hold and a clipping indicator
 - Play the finished take back before you keep it
 - Remembers your devices by unique ID; a missing one shows as *unavailable*
-  rather than silently switching to another camera
+  rather than silently switching to another
 - **Reveal in Finder**, and discard moves the file to the Trash
+- Welcome steps on first launch, with a drawing of where your fingers go
 
 ## Shortcuts
+
+**From any app** — also while presenting. Changeable in Settings.
+
+| Key | |
+|---|---|
+| `⌃⌥⌘R` | Record → Pause → Resume |
+| `⌃⌥⌘↩` | Finish the take |
+
+**In the Mac-Monologue window**
 
 | Key | |
 |---|---|
@@ -41,11 +71,12 @@ itself, so **Mac-Monologue has no runtime dependencies at all**.
 | `⌫` | Discard (always confirms) |
 | `⌘N` | New recording |
 | `⇧⌘R` | Reveal in Finder |
+| `⌘,` | Settings |
 | `?` | Keyboard shortcuts |
 
 ## Requirements
 
-Apple Silicon, macOS 14 or later. Building needs Xcode and
+Apple Silicon, macOS 15 or later. Building needs Xcode and
 [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`).
 
 ## Building
@@ -53,19 +84,25 @@ Apple Silicon, macOS 14 or later. Building needs Xcode and
 ```sh
 bin/build           # build Debug
 bin/run             # build and launch, replacing any running instance
-bin/test            # unit tests — no camera or microphone needed
-bin/test-camera     # opt-in smoke test against real hardware
+bin/test            # unit tests — no camera, microphone or screen access needed
+bin/test-camera     # real takes in both modes, the files inspected afterwards
 bin/release         # signed Release build plus a zip in dist/
 ```
 
 The scripts export `DEVELOPER_DIR` themselves, so `sudo xcode-select -s` is not
 required.
 
+**Run `bin/make-signing-cert` once** before working on screen recording. macOS ties
+the camera, microphone and screen recording permissions to the app's code signature;
+without a stable certificate every rebuild looks like a new app and has to be granted
+them again.
+
 ## Installing
 
 The app is not notarized. On first launch macOS will refuse to open it; go to
-**System Settings → Privacy & Security** and choose **Open Anyway**. Then grant
-camera and microphone access once. Nothing else to install.
+**System Settings → Privacy & Security** and choose **Open Anyway**. The welcome
+steps then ask for the camera, the microphone and screen recording, and restart the
+app once so screen recording takes effect. Nothing else to install.
 
 ## Relationship to the original
 
@@ -84,7 +121,10 @@ microphone meter.
 resolution — picking the maximum is what produces the original's "encoding cannot
 keep up" failure; HEVC instead of H.264; `~/Movies/Monologue` instead of a staging
 library with per-take manifests; Reveal in Finder instead of the Omacut handoff;
-and no crash recovery. [`DESIGN.md`](DESIGN.md) records every such decision and
+and no crash recovery.
+
+**Not in the original at all:** the Screen + Camera mode with the bubble and mixed
+system audio, global shortcuts, the menu bar item, mirroring, and the welcome steps. [`DESIGN.md`](DESIGN.md) records every such decision and
 why it was made.
 
 **Written from scratch:** all of `Sources/`, on AVFoundation. `AVCaptureSession`

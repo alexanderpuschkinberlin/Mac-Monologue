@@ -48,17 +48,41 @@ enum SelfTest {
             // Let a couple of seconds of frames flow, so the take opens on real
             // screen content rather than the black before the first frame.
             if screenMode { try? await Task.sleep(for: .seconds(1)) }
+            log("global shortcuts · \(capture.toggleShortcut.displayString) \(capture.finishShortcut.displayString) · "
+                + (capture.unavailableShortcuts.isEmpty ? "registered" : "FAILED: \(capture.unavailableShortcuts)"))
+            if !capture.unavailableShortcuts.isEmpty {
+                log("FAIL: global shortcuts could not be registered")
+                exit(1)
+            }
             log("ready · \(capture.formatSummary) · microphone=\(capture.hasAudio) · "
                 + "audio track=\(capture.recordsAudio) · mirrored=\(capture.mirrorsRecording)")
 
-            capture.toggleRecording()
+            let viaHotkeys = CommandLine.arguments.contains("--hotkeys")
+            if viaHotkeys, !CGPreflightPostEventAccess() {
+                // macOS silently drops synthetic key presses from a process without
+                // the Accessibility permission — that would read as the shortcuts
+                // failing when it is the test that cannot type.
+                log("SKIP: this process may not send key presses (System Settings › Privacy & "
+                    + "Security › Accessibility). The shortcuts are registered; test them by hand.")
+                exit(0)
+            }
+            // With --hotkeys the take is driven by synthetic presses of the global
+            // shortcuts, delivered to the system as if typed in another app.
+            @MainActor func toggle() {
+                viaHotkeys ? HotkeyProbe.press(capture.toggleShortcut) : capture.toggleRecording()
+            }
+            @MainActor func finish() {
+                viaHotkeys ? HotkeyProbe.press(capture.finishShortcut) : capture.finishTake()
+            }
+
+            toggle()
             guard await waitUntil({ capture.state == .recording }) else {
-                log("FAIL: did not start recording")
+                log("FAIL: did not start recording" + (viaHotkeys ? " from the global shortcut" : ""))
                 exit(1)
             }
             try? await Task.sleep(for: .seconds(recordSeconds))
 
-            capture.toggleRecording()
+            toggle()
             guard await waitUntil({ capture.state == .paused }) else {
                 log("FAIL: did not pause")
                 exit(1)
@@ -66,14 +90,14 @@ enum SelfTest {
             log("paused at \(String(format: "%.2f", capture.elapsed))s")
             try? await Task.sleep(for: .seconds(pauseSeconds))
 
-            capture.toggleRecording()
+            toggle()
             guard await waitUntil({ capture.state == .recording }) else {
                 log("FAIL: did not resume")
                 exit(1)
             }
             try? await Task.sleep(for: .seconds(recordSeconds))
 
-            capture.finishTake()
+            finish()
             guard await waitUntil(timeout: 20, { capture.state == .preview || capture.banner != nil }) else {
                 log("FAIL: finish never completed (state=\(capture.state.label))")
                 exit(1)
@@ -141,6 +165,23 @@ enum SelfTest {
                 log("OK · verified and removed \(url.lastPathComponent)")
             }
             exit(0)
+        }
+    }
+}
+
+/// Posts a key press to the system, the way a keyboard would.
+enum HotkeyProbe {
+    static func press(_ shortcut: Shortcut) {
+        var flags: CGEventFlags = []
+        if shortcut.hasControl { flags.insert(.maskControl) }
+        if shortcut.hasOption { flags.insert(.maskAlternate) }
+        if shortcut.hasShift { flags.insert(.maskShift) }
+        if shortcut.hasCommand { flags.insert(.maskCommand) }
+        let source = CGEventSource(stateID: .hidSystemState)
+        for isDown in [true, false] {
+            let event = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(shortcut.keyCode), keyDown: isDown)
+            event?.flags = flags
+            event?.post(tap: .cghidEventTap)
         }
     }
 }

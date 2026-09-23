@@ -152,6 +152,44 @@ final class CaptureController: ObservableObject {
     /// How the screen's clock related to the camera's in the last screen take.
     @Published private(set) var clockReading: ClockProbe.Reading?
 
+    // MARK: Settings
+
+    @Published var toggleShortcut: Shortcut = .defaultToggle {
+        didSet {
+            guard toggleShortcut != oldValue else { return }
+            if persistsPreferences { DevicePreferences.toggleShortcut = toggleShortcut }
+            registerHotkeys()
+        }
+    }
+
+    @Published var finishShortcut: Shortcut = .defaultFinish {
+        didSet {
+            guard finishShortcut != oldValue else { return }
+            if persistsPreferences { DevicePreferences.finishShortcut = finishShortcut }
+            registerHotkeys()
+        }
+    }
+
+    /// Shortcuts another app already owns, so registering them failed.
+    @Published private(set) var unavailableShortcuts: [GlobalHotkeys.Action] = []
+
+    @Published var autoMinimizes = true {
+        didSet { if persistsPreferences { DevicePreferences.autoMinimizes = autoMinimizes } }
+    }
+
+    @Published var showsMouseClicks = true {
+        didSet {
+            guard showsMouseClicks != oldValue else { return }
+            if persistsPreferences { DevicePreferences.showsMouseClicks = showsMouseClicks }
+            if mode == .screenAndCamera { reconfigure() }
+        }
+    }
+
+    private let hotkeys = GlobalHotkeys()
+    private weak var mainWindow: NSWindow?
+    private var minimizesWhenRecordingStarts = false
+    private var minimizedForTake = false
+
     /// The hardware self-test must not overwrite the user's own settings.
     private var persistsPreferences: Bool { !SelfTest.isEnabled }
 
@@ -211,6 +249,11 @@ final class CaptureController: ObservableObject {
     func start() {
         wireRecorder()
         wireScreenSource()
+        toggleShortcut = DevicePreferences.toggleShortcut
+        finishShortcut = DevicePreferences.finishShortcut
+        autoMinimizes = DevicePreferences.autoMinimizes
+        showsMouseClicks = DevicePreferences.showsMouseClicks
+        registerHotkeys()
         mirrorsRecording = DevicePreferences.mirrorsRecording
         bubbleCorner = DevicePreferences.bubbleCorner
         bubbleSize = DevicePreferences.bubbleSize
@@ -533,7 +576,7 @@ final class CaptureController: ObservableObject {
 
         let settings = ScreenCaptureSource.Settings(
             displayID: chosen.id, width: canvas.width, height: canvas.height,
-            showsMouseClicks: true, capturesAudio: true
+            showsMouseClicks: showsMouseClicks, capturesAudio: true
         )
         screenSource.apply(settings, output: router, outputQueue: outputQueue) { [weak self] error in
             Task { @MainActor in
@@ -663,15 +706,68 @@ final class CaptureController: ObservableObject {
         router.setPreviewSink(sink)
     }
 
+    // MARK: - Control from anywhere
+
+    private func registerHotkeys() {
+        hotkeys.onAction = { [weak self] action in
+            guard let self else { return }
+            switch action {
+            case .toggleRecording:
+                // From outside the app, Space-like overloading would be a
+                // surprise: a global press never starts playback of a clip.
+                if self.state == .preview { self.newRecording() }
+                self.toggleRecording()
+            case .finish:
+                self.finishTake()
+            }
+        }
+        hotkeys.register([.toggleRecording: toggleShortcut, .finish: finishShortcut])
+        unavailableShortcuts = hotkeys.failed
+    }
+
+    func setMainWindow(_ window: NSWindow?) {
+        mainWindow = window
+    }
+
+    func showMainWindow() {
+        NSApp.activate()
+        if let mainWindow {
+            if mainWindow.isMiniaturized { mainWindow.deminiaturize(nil) }
+            mainWindow.makeKeyAndOrderFront(nil)
+        }
+    }
+
+    /// In screen mode the window would sit over what is being recorded — it is
+    /// already left out of the recording itself, but it still covers the slides
+    /// for the person presenting.
+    private func minimizeForTakeIfNeeded() {
+        guard minimizesWhenRecordingStarts else { return }
+        minimizesWhenRecordingStarts = false
+        guard let mainWindow, !mainWindow.isMiniaturized else { return }
+        minimizedForTake = true
+        mainWindow.miniaturize(nil)
+    }
+
+    private func restoreAfterTake() {
+        minimizesWhenRecordingStarts = false
+        guard minimizedForTake else { return }
+        minimizedForTake = false
+        showMainWindow()
+    }
+
     private func wireRecorder() {
         recorder.onStatusChange = { [weak self] status in
             Task { @MainActor in
                 guard let self else { return }
                 switch status {
-                case .recording: self.state = .recording
+                case .recording:
+                    self.state = .recording
+                    self.minimizeForTakeIfNeeded()
                 case .paused: self.state = .paused
                 case .finishing: self.state = .finishing
-                case .idle: if self.state != .preview { self.state = .ready }
+                case .idle:
+                    if self.state != .preview { self.state = .ready }
+                    self.restoreAfterTake()
                 }
             }
         }
@@ -745,6 +841,7 @@ final class CaptureController: ObservableObject {
         )
         clockReading = nil
         router.prepareTake(microphonePresent: hasAudio)
+        minimizesWhenRecordingStarts = screenMode && autoMinimizes && !SelfTest.isEnabled
 
         sessionQueue.async { [weak self] in
             guard let self else { return }
@@ -847,6 +944,8 @@ final class CaptureController: ObservableObject {
     /// even though a finished take goes to the Trash rather than vanishing.
     func requestDiscard() {
         guard state == .recording || state == .paused || state == .preview else { return }
+        // The confirmation lives in the main window; it must be visible to answer.
+        showMainWindow()
         isConfirmingDiscard = true
     }
 

@@ -12,12 +12,15 @@ struct ContentView: View {
             controls
         }
         .background(Color(nsColor: .windowBackgroundColor))
+        .background(WindowAccessor { capture.setMainWindow($0) })
         .onAppear {
             capture.start()
             if SelfTest.isEnabled { SelfTest.run(capture: capture) }
         }
         .onDisappear { capture.stop() }
-        .sheet(isPresented: $capture.isShowingHelp) { HelpSheet() }
+        .sheet(isPresented: $capture.isShowingHelp) {
+            HelpSheet(toggleShortcut: capture.toggleShortcut, finishShortcut: capture.finishShortcut)
+        }
         .confirmationDialog(
             "Discard this take?",
             isPresented: $capture.isConfirmingDiscard,

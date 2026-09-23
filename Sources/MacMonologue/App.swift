@@ -11,5 +11,13 @@ struct MacMonologueApp: App {
         }
         .windowResizability(.contentMinSize)
         .commands { AppCommands(capture: capture) }
+
+        // Always in the menu bar: the recorder has to be reachable while its
+        // window is minimised and a presentation is in front.
+        MenuBarExtra {
+            MenuBarMenu(capture: capture)
+        } label: {
+            MenuBarLabel(capture: capture)
+        }
     }
 }

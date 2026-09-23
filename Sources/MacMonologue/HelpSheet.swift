@@ -2,6 +2,8 @@ import SwiftUI
 
 struct HelpSheet: View {
     @Environment(\.dismiss) private var dismiss
+    var toggleShortcut: Shortcut = .defaultToggle
+    var finishShortcut: Shortcut = .defaultFinish
 
     private static let shortcuts: [(String, String)] = [
         ("Space", "Record, then pause, then resume — or play the finished clip"),
@@ -18,12 +20,31 @@ struct HelpSheet: View {
             Text("Keyboard Shortcuts")
                 .font(.headline)
 
+            Text("From any app — while presenting")
+                .font(.subheadline.weight(.semibold))
+            Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 16, verticalSpacing: 8) {
+                GridRow {
+                    Text(toggleShortcut.displayString)
+                        .font(.system(.body, design: .monospaced))
+                        .frame(minWidth: 64, alignment: .leading)
+                    Text("Record, pause, resume")
+                }
+                GridRow {
+                    Text(finishShortcut.displayString)
+                        .font(.system(.body, design: .monospaced))
+                        .frame(minWidth: 64, alignment: .leading)
+                    Text("Finish the take")
+                }
+            }
+
+            Text("In the Mac-Monologue window")
+                .font(.subheadline.weight(.semibold))
             Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 16, verticalSpacing: 8) {
                 ForEach(Self.shortcuts, id: \.0) { key, description in
                     GridRow {
                         Text(key)
                             .font(.system(.body, design: .monospaced))
-                            .frame(minWidth: 44, alignment: .leading)
+                            .frame(minWidth: 64, alignment: .leading)
                         Text(description)
                     }
                 }

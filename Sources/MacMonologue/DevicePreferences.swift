@@ -15,6 +15,11 @@ enum DevicePreferences {
     private static let displayNameKey = "selectedDisplayName"
     private static let bubbleCornerKey = "bubbleCorner"
     private static let bubbleSizeKey = "bubbleSize"
+    private static let toggleShortcutKey = "toggleShortcut"
+    private static let finishShortcutKey = "finishShortcut"
+    private static let autoMinimizesKey = "autoMinimizes"
+    private static let showsMouseClicksKey = "showsMouseClicks"
+    private static let completedOnboardingKey = "hasCompletedOnboarding"
 
     static var cameraID: String? {
         get { UserDefaults.standard.string(forKey: cameraKey) }
@@ -58,5 +63,41 @@ enum DevicePreferences {
     static var bubbleSize: BubbleSize {
         get { UserDefaults.standard.string(forKey: bubbleSizeKey).flatMap(BubbleSize.init) ?? .medium }
         set { UserDefaults.standard.set(newValue.rawValue, forKey: bubbleSizeKey) }
+    }
+
+    static var toggleShortcut: Shortcut {
+        get { shortcut(forKey: toggleShortcutKey) ?? .defaultToggle }
+        set { store(newValue, forKey: toggleShortcutKey) }
+    }
+
+    static var finishShortcut: Shortcut {
+        get { shortcut(forKey: finishShortcutKey) ?? .defaultFinish }
+        set { store(newValue, forKey: finishShortcutKey) }
+    }
+
+    /// Absent means on: in screen mode the window would otherwise sit over the
+    /// presentation being recorded.
+    static var autoMinimizes: Bool {
+        get { UserDefaults.standard.object(forKey: autoMinimizesKey) as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: autoMinimizesKey) }
+    }
+
+    /// Absent means on: in a tutorial, seeing where the click went is the point.
+    static var showsMouseClicks: Bool {
+        get { UserDefaults.standard.object(forKey: showsMouseClicksKey) as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: showsMouseClicksKey) }
+    }
+
+    static var hasCompletedOnboarding: Bool {
+        get { UserDefaults.standard.bool(forKey: completedOnboardingKey) }
+        set { UserDefaults.standard.set(newValue, forKey: completedOnboardingKey) }
+    }
+
+    private static func shortcut(forKey key: String) -> Shortcut? {
+        UserDefaults.standard.data(forKey: key).flatMap { try? JSONDecoder().decode(Shortcut.self, from: $0) }
+    }
+
+    private static func store(_ shortcut: Shortcut, forKey key: String) {
+        UserDefaults.standard.set(try? JSONEncoder().encode(shortcut), forKey: key)
     }
 }

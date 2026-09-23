@@ -13,4 +13,4 @@ pkill -f "Mac-Monologue.app/Contents/MacOS/Mac-Monologue" 2>/dev/null || true
 sleep 1
 
 APP="build/Build/Products/Debug/Mac-Monologue.app/Contents/MacOS/Mac-Monologue"
-"$APP" --self-test
+"$APP" --self-test "$@"

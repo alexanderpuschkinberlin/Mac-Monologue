@@ -42,6 +42,7 @@ struct ContentView: View {
                         Text(option.displayName).tag(Optional(option.id))
                     }
                 }
+                .labelsHidden()
             }
             labelled("Microphone") {
                 Picker("Microphone", selection: $capture.selectedMicrophoneID) {
@@ -49,9 +50,15 @@ struct ContentView: View {
                         Text(option.displayName).tag(Optional(option.id))
                     }
                 }
+                .labelsHidden()
             }
+            Toggle("Mirror the recording", isOn: $capture.mirrorsRecording)
+                .toggleStyle(.checkbox)
+                .padding(.bottom, 3)
+                .help("The preview always looks like a mirror. Turn this on only if "
+                      + "you want the saved file mirrored too — text you hold up to "
+                      + "the camera will then read backwards.")
         }
-        .labelsHidden()
         .disabled(capture.devicePickersLocked)
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -76,7 +83,7 @@ struct ContentView: View {
             if capture.state == .preview, let player = capture.player {
                 VideoPlayer(player: player)
             } else {
-                CameraPreviewView(session: capture.session)
+                CameraPreviewView(session: capture.session, generation: capture.sessionGeneration)
             }
 
             statusPill

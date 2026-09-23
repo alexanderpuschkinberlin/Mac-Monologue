@@ -8,6 +8,7 @@ import Foundation
 enum DevicePreferences {
     private static let cameraKey = "selectedCameraID"
     private static let microphoneKey = "selectedMicrophoneID"
+    private static let mirrorsRecordingKey = "mirrorsRecording"
 
     static var cameraID: String? {
         get { UserDefaults.standard.string(forKey: cameraKey) }
@@ -18,5 +19,11 @@ enum DevicePreferences {
     static var microphoneID: String? {
         get { UserDefaults.standard.string(forKey: microphoneKey) }
         set { UserDefaults.standard.set(newValue, forKey: microphoneKey) }
+    }
+
+    /// Absent means off: the saved file reads the right way round by default.
+    static var mirrorsRecording: Bool {
+        get { UserDefaults.standard.bool(forKey: mirrorsRecordingKey) }
+        set { UserDefaults.standard.set(newValue, forKey: mirrorsRecordingKey) }
     }
 }

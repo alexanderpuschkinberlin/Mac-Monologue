@@ -37,7 +37,8 @@ enum SelfTest {
                 log("FAIL: never reached ready (state=\(capture.state.label))")
                 exit(1)
             }
-            log("ready · \(capture.formatSummary) · audio=\(capture.hasAudio)")
+            if CommandLine.arguments.contains("--mirror") { capture.mirrorsRecording = true }
+            log("ready · \(capture.formatSummary) · audio=\(capture.hasAudio) · mirrored=\(capture.mirrorsRecording)")
 
             capture.toggleRecording()
             guard await waitUntil({ capture.state == .recording }) else {

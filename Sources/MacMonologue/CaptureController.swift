@@ -77,6 +77,24 @@ final class CaptureController: ObservableObject {
         }
     }
 
+    /// Whether the saved file is mirrored. The live preview is always mirrored —
+    /// that is what makes moving around in it feel natural — so this decides only
+    /// what the file looks like.
+    @Published var mirrorsRecording = false {
+        didSet {
+            guard mirrorsRecording != oldValue else { return }
+            if persistsPreferences { DevicePreferences.mirrorsRecording = mirrorsRecording }
+            configureRouter()
+        }
+    }
+
+    /// Bumped after every session reconfiguration, so the preview can re-apply
+    /// settings to a connection that may have been rebuilt.
+    @Published private(set) var sessionGeneration = 0
+
+    /// The hardware self-test must not overwrite the user's own settings.
+    private var persistsPreferences: Bool { !SelfTest.isEnabled }
+
     var devicePickersLocked: Bool {
         state == .recording || state == .paused || state == .finishing
     }
@@ -120,6 +138,8 @@ final class CaptureController: ObservableObject {
 
     func start() {
         wireRecorder()
+        mirrorsRecording = DevicePreferences.mirrorsRecording
+        configureRouter()
         selectedCameraID = DevicePreferences.cameraID
         selectedMicrophoneID = DevicePreferences.microphoneID ?? DeviceOption.noAudioID
         observeDeviceChanges()
@@ -267,6 +287,8 @@ final class CaptureController: ObservableObject {
         let router = self.router
         sessionQueue.async { [weak self] in
             guard let self else { return }
+            // Registered first so it runs last: after the commit below.
+            defer { Task { @MainActor in self.sessionGeneration &+= 1 } }
             self.session.beginConfiguration()
             defer { self.session.commitConfiguration() }
 
@@ -363,6 +385,10 @@ final class CaptureController: ObservableObject {
     }
 
     // MARK: - Takes
+
+    private func configureRouter() {
+        router.configure(CaptureRouter.Configuration(mirrorsRecording: mirrorsRecording))
+    }
 
     private func wireRecorder() {
         recorder.onStatusChange = { [weak self] status in

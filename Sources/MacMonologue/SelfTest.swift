@@ -13,8 +13,22 @@ enum SelfTest {
         CommandLine.arguments.contains("--self-test")
     }
 
-    static let recordSeconds: Double = 2
     static let pauseSeconds: Double = 3
+
+    /// `--seconds=N` records N seconds on each side of the pause instead of 2 —
+    /// long enough for the file size to say something about the bitrate.
+    static var recordSeconds: Double {
+        value(of: "--seconds").flatMap(Double.init) ?? 2
+    }
+
+    /// `--quality=high` and so on; otherwise the user's own choice.
+    static var quality: VideoQuality? {
+        value(of: "--quality").flatMap(VideoQuality.init)
+    }
+
+    private static func value(of flag: String) -> String? {
+        CommandLine.arguments.first { $0.hasPrefix(flag + "=") }.map { String($0.dropFirst(flag.count + 1)) }
+    }
 
     static func run(capture: CaptureController) {
         Task {
@@ -41,6 +55,7 @@ enum SelfTest {
             }
             capture.mode = screenMode ? .screenAndCamera : .camera
             capture.mirrorsRecording = CommandLine.arguments.contains("--mirror")
+            if let quality { capture.videoQuality = quality }
             if CommandLine.arguments.contains("--no-mic") {
                 capture.selectedMicrophoneID = DeviceOption.noAudioID
             }
@@ -147,6 +162,22 @@ enum SelfTest {
 
             var failures: [String] = []
             if videoTracks.isEmpty { failures.append("no video track") }
+            // Size per ten minutes, from the recorded length. Keyframes and the
+            // file header weigh more in a short take, so only an order of
+            // magnitude is checked; --seconds=20 gives a meaningful number.
+            let quality = capture.videoQuality
+            let perTenMinutes = duration > 0 ? Double(size) / duration * 600 / 1_000_000 : 0
+            log(String(format: "quality %@ · %.0f MB per 10 min (promised %@)",
+                       quality.title, perTenMinutes, quality.sizeLabel))
+            if perTenMinutes > quality.estimatedMegabytes(minutes: 10) * 2 {
+                failures.append(String(format: "%.0f MB per 10 min, more than twice the promise", perTenMinutes))
+            }
+            if !screenMode {
+                let expected = quality.cameraSize(width: Int(naturalSize.width), height: Int(naturalSize.height))
+                if Int(naturalSize.width) != expected.width || Int(naturalSize.height) != expected.height {
+                    failures.append("frame is \(naturalSize), larger than the quality allows")
+                }
+            }
             if screenMode, naturalSize != capture.canvasSize {
                 failures.append("frame is \(naturalSize), expected the canvas \(capture.canvasSize)")
             }

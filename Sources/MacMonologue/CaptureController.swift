@@ -94,6 +94,16 @@ final class CaptureController: ObservableObject {
         }
     }
 
+    /// Resolution and bitrate of the next take. Changing it rebuilds the screen
+    /// canvas, so it is locked during a take like the device pickers.
+    @Published var videoQuality: VideoQuality = .standard {
+        didSet {
+            guard videoQuality != oldValue else { return }
+            if persistsPreferences { DevicePreferences.videoQuality = videoQuality }
+            reconfigure()
+        }
+    }
+
     // MARK: Screen mode
 
     @Published var mode: CaptureMode = .camera {
@@ -274,6 +284,7 @@ final class CaptureController: ObservableObject {
         showsMouseClicks = DevicePreferences.showsMouseClicks
         registerHotkeys()
         mirrorsRecording = DevicePreferences.mirrorsRecording
+        videoQuality = DevicePreferences.videoQuality
         bubbleCorner = DevicePreferences.bubbleCorner
         bubbleSize = DevicePreferences.bubbleSize
         selectedDisplayID = DevicePreferences.displayID
@@ -479,8 +490,9 @@ final class CaptureController: ObservableObject {
                 configureRouter()
                 return
             }
-            activeDimensions = cameraDimensions
-            formatSummary = "\(cameraDimensions.width) × \(cameraDimensions.height) · up to \(Int(Self.targetFPS)) fps"
+            activeDimensions = videoQuality.cameraSize(width: cameraDimensions.width, height: cameraDimensions.height)
+            formatSummary = "\(activeDimensions.width) × \(activeDimensions.height) · up to \(Int(Self.targetFPS)) fps"
+                + " · \(videoQuality.sizeLabel)"
 
         case .screenAndCamera:
             if camera == nil, !cameraAccessDenied {
@@ -649,10 +661,11 @@ final class CaptureController: ObservableObject {
             return
         }
 
-        let canvas = ScreenCanvas.size(forDisplayWidth: chosen.pixelWidth, height: chosen.pixelHeight)
+        let canvas = ScreenCanvas.size(forDisplayWidth: chosen.pixelWidth, height: chosen.pixelHeight,
+                                       longEdge: videoQuality.screenLongEdge)
         canvasSize = CGSize(width: canvas.width, height: canvas.height)
         activeDimensions = canvas
-        formatSummary = "\(canvas.width) × \(canvas.height) · \(Int(Self.targetFPS)) fps · Screen + Camera"
+        formatSummary = "\(canvas.width) × \(canvas.height) · \(Int(Self.targetFPS)) fps · \(videoQuality.sizeLabel)"
         configureRouter()
 
         let settings = ScreenCaptureSource.Settings(
@@ -927,8 +940,9 @@ final class CaptureController: ObservableObject {
             // Screen mode writes the mixer's output — mono 48 kHz Float32 — so it
             // gets settings for exactly that, not a recommendation made for the
             // microphone's own format.
-            audioSettings: screenMode ? Self.mixedAudioSettings : (hasAudio ? recommendedAudioSettings() : nil),
-            averageBitRate: screenMode ? TakeRecorder.screenBitRate : TakeRecorder.cameraBitRate
+            audioSettings: screenMode ? Self.mixedAudioSettings(bitRate: videoQuality.audioBitRate)
+                : (hasAudio ? recommendedAudioSettings(bitRate: videoQuality.audioBitRate) : nil),
+            averageBitRate: videoQuality.videoBitRate
         )
         clockReading = nil
         router.prepareTake(microphonePresent: hasAudio)
@@ -941,19 +955,21 @@ final class CaptureController: ObservableObject {
         }
     }
 
-    static let mixedAudioSettings: [String: Any] = [
-        AVFormatIDKey: kAudioFormatMPEG4AAC,
-        AVSampleRateKey: AudioMixerCore.sampleRate,
-        AVNumberOfChannelsKey: 1,
-        AVEncoderBitRateKey: 128_000,
-    ]
+    static func mixedAudioSettings(bitRate: Int) -> [String: Any] {
+        [
+            AVFormatIDKey: kAudioFormatMPEG4AAC,
+            AVSampleRateKey: AudioMixerCore.sampleRate,
+            AVNumberOfChannelsKey: 1,
+            AVEncoderBitRateKey: bitRate,
+        ]
+    }
 
     /// AVFoundation has no recommendation to give until the audio connection is
     /// live, so a take started moments after launch gets nil back — and without
     /// the fallback below that silently produces a file with no audio track at
     /// all. Started by hand, seconds later, it always works; which is precisely
     /// the kind of bug that ships.
-    private func recommendedAudioSettings() -> [String: Any] {
+    private func recommendedAudioSettings(bitRate: Int) -> [String: Any] {
         var settings: [String: Any] = [:]
         if let recommended = audioOutput.recommendedAudioSettingsForAssetWriter(writingTo: .mp4) {
             for (key, value) in recommended {
@@ -965,9 +981,14 @@ final class CaptureController: ObservableObject {
                 AVFormatIDKey: kAudioFormatMPEG4AAC,
                 AVSampleRateKey: 48_000,
                 AVNumberOfChannelsKey: 1,
-                AVEncoderBitRateKey: 128_000,
+                AVEncoderBitRateKey: bitRate,
             ]
         }
+        // The recommendation is sized for the microphone, not for the step the
+        // user chose; only the rate is overridden.
+        settings.removeValue(forKey: AVEncoderBitRatePerChannelKey)
+        settings.removeValue(forKey: AVEncoderBitRateStrategyKey)
+        settings[AVEncoderBitRateKey] = bitRate
         return settings
     }
 

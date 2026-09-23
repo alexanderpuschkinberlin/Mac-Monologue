@@ -12,6 +12,8 @@
 #     --no-mic    "No audio" for the microphone (screen mode: system audio only)
 #     --keep      keep the file in ~/Movies/Monologue to look at
 #     --hotkeys   drive the take through the global shortcuts
+#     --quality=economical|medium|high|veryHigh   record at this step
+#     --seconds=N  record N s either side of the pause (default 2; 20 checks the size)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 

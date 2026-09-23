@@ -31,16 +31,9 @@ final class TakeRecorder: @unchecked Sendable {
         var height: Int
         var frameRate: Double
         var audioSettings: [String: Any]?
-        var averageBitRate: Int = TakeRecorder.cameraBitRate
+        /// From the chosen `VideoQuality`.
+        var averageBitRate: Int
     }
-
-    /// 10 Mbps HEVC at 1080p30. A webcam's sensor noise is what eats bitrate, and
-    /// a few wasted megabytes beat discovering grain artifacts after the fact.
-    static let cameraBitRate = 10_000_000
-
-    /// 12 Mbps at the 2560-px screen canvas: a fixed rate, chosen over
-    /// quality-based control so a take's size stays predictable.
-    static let screenBitRate = 12_000_000
 
     private let queue: DispatchQueue
     private var writer: AVAssetWriter?
@@ -252,6 +245,9 @@ final class TakeRecorder: @unchecked Sendable {
             AVVideoCodecKey: AVVideoCodecType.hevc,
             AVVideoWidthKey: configuration.width,
             AVVideoHeightKey: configuration.height,
+            // Camera frames arrive at the camera's own size; the writer scales
+            // them to the step's size on the way into the encoder.
+            AVVideoScalingModeKey: AVVideoScalingModeResizeAspect,
             AVVideoCompressionPropertiesKey: [
                 AVVideoAverageBitRateKey: configuration.averageBitRate,
                 AVVideoExpectedSourceFrameRateKey: Int(configuration.frameRate),

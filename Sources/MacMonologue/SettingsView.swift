@@ -89,6 +89,18 @@ struct SettingsView: View {
                 }
             }
 
+            Section {
+                QualityCards(selection: $capture.videoQuality)
+                    .disabled(capture.devicePickersLocked)
+            } header: {
+                Text("Quality")
+            } footer: {
+                Text("Sizes are for ten minutes of recording, picture and sound together. "
+                     + "A still slide takes less, a lot of movement a little more.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("Screen + Camera") {
                 Toggle("Minimise the window while recording", isOn: $capture.autoMinimizes)
                 Text("Keeps it off the slides you are presenting. It is never in the recording either way.")

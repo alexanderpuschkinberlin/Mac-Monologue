@@ -7,7 +7,7 @@ struct OnboardingView: View {
     @ObservedObject var capture: CaptureController
 
     private enum Step: Int, CaseIterable {
-        case welcome, camera, microphone, screen, shortcuts, done
+        case welcome, camera, microphone, screen, quality, shortcuts, done
     }
 
     @State private var step: Step = .welcome
@@ -36,7 +36,7 @@ struct OnboardingView: View {
             }
             .padding(16)
         }
-        .frame(width: 600, height: 500)
+        .frame(width: 600, height: 560)
     }
 
     // MARK: - Steps
@@ -60,6 +60,8 @@ struct OnboardingView: View {
             permissionPage(.screen, symbol: "rectangle.on.rectangle",
                            text: "So you can record presentations and demos. Mac-Monologue only records "
                                + "while you are recording, and never records its own window.")
+        case .quality:
+            qualityPage
         case .shortcuts:
             shortcutsPage
         case .done:
@@ -108,6 +110,24 @@ struct OnboardingView: View {
                     Button("Open System Settings…") { permission.openSettings() }
                 }
             }
+        }
+    }
+
+    private var qualityPage: some View {
+        VStack(spacing: 12) {
+            Text("How sharp should your videos be?")
+                .font(.title.weight(.semibold))
+            Text("Sharper means bigger files. Pick what suits how you share your videos: "
+                 + "by email, as a link, or for editing. Medium fits most people.")
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 480)
+                .fixedSize(horizontal: false, vertical: true)
+            QualityCards(selection: $capture.videoQuality)
+                .frame(maxWidth: 520)
+            Text("You can change this any time, in the main window or in Settings.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 

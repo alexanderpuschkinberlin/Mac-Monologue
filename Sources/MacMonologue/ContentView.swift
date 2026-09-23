@@ -83,6 +83,16 @@ struct ContentView: View {
                     }
                     .labelsHidden()
                 }
+                labelled("Quality") {
+                    Picker("Quality", selection: $capture.videoQuality) {
+                        ForEach(VideoQuality.allCases) { quality in
+                            Text("\(quality.title) · \(quality.sizeLabel)").tag(quality)
+                        }
+                    }
+                    .labelsHidden()
+                    .fixedSize()
+                    .help("How sharp the video is, and how big the file gets. More in Settings.")
+                }
             }
 
             if capture.mode == .screenAndCamera {
@@ -328,7 +338,7 @@ struct ContentView: View {
             }
 
             if capture.state == .preview, let url = capture.lastRecordingURL {
-                Text(url.lastPathComponent)
+                Text([url.lastPathComponent, Self.fileSize(of: url)].compactMap { $0 }.joined(separator: " · "))
                     .font(.system(.caption, design: .monospaced))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -359,6 +369,12 @@ struct ContentView: View {
         case .preview: capture.isPlaying ? "pause.circle" : "play.circle"
         default: "record.circle"
         }
+    }
+
+    /// As Finder shows it, so the number matches what the user sees there.
+    static func fileSize(of url: URL) -> String? {
+        guard let bytes = try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize else { return nil }
+        return ByteCountFormatter.string(fromByteCount: Int64(bytes), countStyle: .file)
     }
 
     static func timecode(_ seconds: Double) -> String {

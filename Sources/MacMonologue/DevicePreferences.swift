@@ -24,6 +24,7 @@ enum DevicePreferences {
     private static let checksForUpdatesKey = "checksForUpdatesAutomatically"
     private static let skippedUpdateKey = "skippedUpdateVersion"
     private static let lastUpdateCheckKey = "lastUpdateCheck"
+    private static let videoQualityKey = "videoQuality"
 
     static var cameraID: String? {
         get { UserDefaults.standard.string(forKey: cameraKey) }
@@ -57,6 +58,13 @@ enum DevicePreferences {
     static var displayName: String? {
         get { UserDefaults.standard.string(forKey: displayNameKey) }
         set { UserDefaults.standard.set(newValue, forKey: displayNameKey) }
+    }
+
+    /// Absent means the standard step — also for everyone updating from 0.3,
+    /// whose takes were written at several times the size of any step.
+    static var videoQuality: VideoQuality {
+        get { UserDefaults.standard.string(forKey: videoQualityKey).flatMap(VideoQuality.init) ?? .standard }
+        set { UserDefaults.standard.set(newValue.rawValue, forKey: videoQualityKey) }
     }
 
     static var bubbleCorner: BubbleCorner {

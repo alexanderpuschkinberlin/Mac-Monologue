@@ -42,6 +42,8 @@ targets:
       - sdk: CoreImage.framework
       - sdk: Metal.framework
       - sdk: ScreenCaptureKit.framework
+      - sdk: CryptoKit.framework
+      - sdk: Security.framework
       # RegisterEventHotKey: global hotkeys without the Input Monitoring
       # permission a global NSEvent monitor would need.
       - sdk: Carbon.framework

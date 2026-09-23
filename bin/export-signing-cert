@@ -17,6 +17,7 @@ NAME="${SIGNING_IDENTITY:-Mac-Monologue Self-Signed}"
 OUT="${1:-$HOME/Desktop/Mac-Monologue-Signing.p12}"
 
 [ -e "$OUT" ] && { echo "✗ $OUT already exists." >&2; exit 1; }
+[ -t 0 ] || { echo "✗ Run this in a terminal window: it asks for a password." >&2; exit 1; }
 
 read -r -s -p "Choose a password for the file: " PASSWORD; echo
 read -r -s -p "Repeat it: " REPEAT; echo
@@ -46,11 +47,16 @@ let identity = identities.first { identity in
 }
 guard let identity else { print("✗ No identity named '\(name)'."); exit(1) }
 
+// Held for the whole export: an unretained temporary is freed before
+// SecItemExport reads it, and the export crashes.
+let passphrase = password as CFString
 var parameters = SecItemImportExportKeyParameters()
 parameters.version = UInt32(SEC_KEY_IMPORT_EXPORT_PARAMS_VERSION)
-parameters.passphrase = Unmanaged.passUnretained(password as CFString)
+parameters.passphrase = Unmanaged.passUnretained(passphrase)
 var data: CFData?
-let status = SecItemExport(identity, .formatPKCS12, [], &parameters, &data)
+let status = withExtendedLifetime(passphrase) {
+    SecItemExport(identity, .formatPKCS12, [], &parameters, &data)
+}
 guard status == errSecSuccess, let data else { print("✗ Export failed (\(status))."); exit(1) }
 try! (data as Data).write(to: URL(fileURLWithPath: path), options: .withoutOverwriting)
 print("✓ Saved to \(path)")

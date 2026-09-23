@@ -94,16 +94,26 @@ final class UpdateChecker: ObservableObject {
                 let updates = ReleaseFeed.updates(in: releases, newerThan: installedVersion)
                 handle(updates, userInitiated: userInitiated)
             } catch {
+                log("check failed: \(error.localizedDescription)")
                 state = userInitiated ? .failed(error.localizedDescription) : .idle
             }
         }
     }
 
+    /// For bin/test-update, which reads what happened from standard output.
+    private func log(_ message: String) {
+        guard installsWithoutAsking else { return }
+        print("[update] \(message)")
+        fflush(stdout)
+    }
+
     private func handle(_ updates: [Release], userInitiated: Bool) {
         guard let newest = updates.first else {
+            log("up to date at \(installedVersion)")
             state = userInitiated ? .upToDate : .idle
             return
         }
+        log("found \(newest.version?.description ?? newest.tagName)")
         if !userInitiated, let skipped = DevicePreferences.skippedUpdateVersion.flatMap(AppVersion.init),
            newest.version == skipped {
             state = .idle
@@ -155,10 +165,12 @@ final class UpdateChecker: ObservableObject {
                 try await UpdateInstaller.install(release) { step in
                     Task { @MainActor in self.state = .working(step) }
                 }
+                log("installed \(release.version?.description ?? release.tagName), relaunching")
                 Relauncher.relaunch()
             } catch is CancellationError {
                 state = .available(offered)
             } catch {
+                log("refused: \(error.localizedDescription)")
                 state = .failed(error.localizedDescription)
             }
             installation = nil

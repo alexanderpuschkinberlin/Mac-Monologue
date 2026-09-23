@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+# The whole update, end to end, without publishing anything.
+#
+# Builds Mac-Monologue as 0.3.0 into a throwaway "Applications" folder and a
+# 0.3.1 zip beside it, points the 0.3.0 at a local release feed, and checks that
+# it downloads, verifies, replaces itself and relaunches as 0.3.1. Then twice
+# more with a bad update — wrong checksum, ad hoc signature — where the
+# installed app must stay exactly as it was.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}"
+IDENTITY="${SIGNING_IDENTITY:-Mac-Monologue Self-Signed}"
+if ! security find-identity -p codesigning 2>/dev/null | grep -q "$IDENTITY"; then
+  echo "The signing certificate '$IDENTITY' is not in this keychain — run bin/make-signing-cert." >&2
+  exit 1
+fi
+
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/mac-monologue-test-update.XXXXXX")"
+APPS="$WORK/Applications"
+APP="$APPS/Mac-Monologue.app"
+LOG="$WORK/app.log"
+mkdir -p "$APPS"
+trap 'pkill -f "$APP/Contents/MacOS/Mac-Monologue" 2>/dev/null || true; rm -rf "$WORK"' EXIT
+
+build() { # version → path of a signed Mac-Monologue.app
+  xcodegen generate --quiet
+  xcodebuild -project Mac-Monologue.xcodeproj -scheme Mac-Monologue -configuration Release \
+    -derivedDataPath build/test-update MARKETING_VERSION="$1" build >/dev/null 2>&1
+  local out="$WORK/build-$1"
+  mkdir -p "$out"
+  ditto build/test-update/Build/Products/Release/Mac-Monologue.app "$out/Mac-Monologue.app"
+  codesign --force --sign "$IDENTITY" --timestamp=none "$out/Mac-Monologue.app" 2>/dev/null
+  echo "$out/Mac-Monologue.app"
+}
+
+version_of() { /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$1/Contents/Info.plist"; }
+
+echo "building 0.3.0 and 0.3.1…"
+INSTALLED="$(build 0.3.0)"
+UPDATE="$(build 0.3.1)"
+
+feed() { # zip, digest → feed.json
+  cat > "$WORK/feed.json" <<JSON
+[{
+  "tag_name": "v0.3.1", "name": "Mac-Monologue 0.3.1",
+  "body": "* A test update\r\n* Built by bin/test-update",
+  "draft": false, "prerelease": false, "published_at": "2026-10-02T09:30:00Z",
+  "html_url": "https://github.com/alexanderpuschkinberlin/Mac-Monologue/releases",
+  "assets": [{
+    "name": "Mac-Monologue.zip", "size": $(stat -f%z "$1"),
+    "browser_download_url": "file://$1", "digest": "sha256:$2"
+  }]
+}]
+JSON
+}
+
+attempt() { # label → runs the installed 0.3.0 against the feed, waits for an outcome
+  rm -rf "$APP"
+  ditto "$INSTALLED" "$APP"
+  : > "$LOG"
+  "$APP/Contents/MacOS/Mac-Monologue" \
+    -UpdateFeedURL "file://$WORK/feed.json" -UpdateInstallWithoutAsking YES -UpdateCheckDelay 1 \
+    -checksForUpdatesAutomatically YES -hasCompletedOnboarding NO >"$LOG" 2>&1 &
+  disown
+  for _ in $(seq 60); do
+    grep -qE "^\[update\] (installed|refused|check failed)" "$LOG" && break
+    sleep 0.5
+  done
+  grep -E "^\[update\]" "$LOG" | sed "s/^/  $1: /"
+}
+
+failures=0
+check() { if eval "$2"; then echo "  ✓ $1"; else echo "  ✗ $1"; failures=$((failures + 1)); fi; }
+
+echo "— a genuine update —"
+ZIP="$WORK/good/Mac-Monologue.zip"; mkdir -p "$WORK/good"
+ditto -c -k --keepParent "$UPDATE" "$ZIP"
+feed "$ZIP" "$(shasum -a 256 "$ZIP" | cut -d' ' -f1)"
+attempt "good"
+for _ in $(seq 40); do
+  [ "$(version_of "$APP" 2>/dev/null)" = "0.3.1" ] && pgrep -f "$APP/Contents/MacOS/Mac-Monologue" >/dev/null && break
+  sleep 0.5
+done
+check "the app in Applications is now 0.3.1" '[ "$(version_of "$APP")" = "0.3.1" ]'
+check "and it relaunched from there" 'pgrep -f "$APP/Contents/MacOS/Mac-Monologue" >/dev/null'
+# Not grep -q: it exits at the first match, codesign then dies of SIGPIPE, and
+# pipefail reports the whole check as failed.
+check "still signed with the certificate" 'codesign -dvv "$APP" 2>&1 | grep "Authority=$IDENTITY" >/dev/null'
+pkill -f "$APP/Contents/MacOS/Mac-Monologue" 2>/dev/null || true; sleep 1
+
+echo "— a download that is not what was published —"
+feed "$ZIP" "$(printf '0%.0s' $(seq 64))"
+attempt "bad checksum"
+check "refused, naming the checksum" 'grep -q "refused: The download is not the file that was published" "$LOG"'
+check "the installed app is untouched" '[ "$(version_of "$APP")" = "0.3.0" ]'
+pkill -f "$APP/Contents/MacOS/Mac-Monologue" 2>/dev/null || true; sleep 1
+
+echo "— an update signed by someone else —"
+FORGED="$WORK/forged/Mac-Monologue.app"; mkdir -p "$WORK/forged"
+ditto "$UPDATE" "$FORGED"
+codesign --force --sign - "$FORGED" 2>/dev/null
+ZIP="$WORK/forged/Mac-Monologue.zip"
+ditto -c -k --keepParent "$FORGED" "$ZIP"
+feed "$ZIP" "$(shasum -a 256 "$ZIP" | cut -d' ' -f1)"
+attempt "ad hoc"
+check "refused, naming the signature" 'grep -q "refused: The downloaded app is not signed by the developer" "$LOG"'
+check "the installed app is untouched" '[ "$(version_of "$APP")" = "0.3.0" ]'
+
+echo
+if [ "$failures" -eq 0 ]; then echo "update test passed"; else echo "update test FAILED ($failures)"; exit 1; fi

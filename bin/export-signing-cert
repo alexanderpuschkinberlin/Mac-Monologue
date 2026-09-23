@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# Exports the signing certificate and its private key to a password-protected
+# .p12 file, for safekeeping.
+#
+# That certificate is the only key to updates: every installed copy accepts an
+# update only if it is signed with it. Lose it — with this Mac — and no installed
+# copy can ever update again. Keep the file and its password somewhere safe and
+# separate, such as a password manager.
+#
+#   bin/export-signing-cert [output.p12]
+#
+# macOS will ask for your login password to allow exporting the private key.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+NAME="${SIGNING_IDENTITY:-Mac-Monologue Self-Signed}"
+OUT="${1:-$HOME/Desktop/Mac-Monologue-Signing.p12}"
+
+[ -e "$OUT" ] && { echo "✗ $OUT already exists." >&2; exit 1; }
+
+read -r -s -p "Choose a password for the file: " PASSWORD; echo
+read -r -s -p "Repeat it: " REPEAT; echo
+[ "$PASSWORD" = "$REPEAT" ] || { echo "✗ The passwords differ." >&2; exit 1; }
+[ ${#PASSWORD} -ge 8 ] || { echo "✗ Use at least 8 characters." >&2; exit 1; }
+
+# Exported by name, from Swift: `security export` would write every identity in
+# the keychain into the file, not just this one.
+EXPORT_NAME="$NAME" EXPORT_PASSWORD="$PASSWORD" EXPORT_PATH="$OUT" swift - <<'SWIFT'
+import Foundation
+import Security
+
+let env = ProcessInfo.processInfo.environment
+let name = env["EXPORT_NAME"]!, password = env["EXPORT_PASSWORD"]!, path = env["EXPORT_PATH"]!
+
+var items: CFTypeRef?
+let query: [String: Any] = [kSecClass as String: kSecClassIdentity,
+                            kSecMatchLimit as String: kSecMatchLimitAll,
+                            kSecReturnRef as String: true]
+guard SecItemCopyMatching(query as CFDictionary, &items) == errSecSuccess,
+      let identities = items as? [SecIdentity] else { print("✗ No identities found."); exit(1) }
+
+let identity = identities.first { identity in
+    var certificate: SecCertificate?
+    SecIdentityCopyCertificate(identity, &certificate)
+    return certificate.flatMap { SecCertificateCopySubjectSummary($0) as String? } == name
+}
+guard let identity else { print("✗ No identity named '\(name)'."); exit(1) }
+
+var parameters = SecItemImportExportKeyParameters()
+parameters.version = UInt32(SEC_KEY_IMPORT_EXPORT_PARAMS_VERSION)
+parameters.passphrase = Unmanaged.passUnretained(password as CFString)
+var data: CFData?
+let status = SecItemExport(identity, .formatPKCS12, [], &parameters, &data)
+guard status == errSecSuccess, let data else { print("✗ Export failed (\(status))."); exit(1) }
+try! (data as Data).write(to: URL(fileURLWithPath: path), options: .withoutOverwriting)
+print("✓ Saved to \(path)")
+SWIFT
+
+chmod 600 "$OUT"
+echo "  Store it, with its password, somewhere safe and not on this Mac."
+echo "  To restore it on a new Mac, see DEVELOPMENT.md › The signing certificate."

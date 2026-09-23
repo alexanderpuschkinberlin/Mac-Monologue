@@ -132,6 +132,29 @@ several decisions below that would be wrong for a product with real users.
   mouse clicks in screen mode, the state of all three permissions. Deliberately no
   save location and no quality setting.
 
+### Updates
+
+- Mac-Monologue offers new versions itself, from the repository's **GitHub
+  releases**: shortly after launch and once a day (switchable off), and on *Check
+  for Updates…*. Never during a take — an offer found then waits until it is over.
+- **Its own updater, not Sparkle.** GitHub's REST API already gives the version,
+  the notes and a SHA-256 digest of every asset, so there is no appcast to host
+  and no second signing key to keep safe, and the update window can show the notes
+  of every version skipped over. The one hard part Sparkle would have solved —
+  replacing a running app — is an atomic `replaceItemAt` followed by the
+  `Relauncher`.
+- **An update must be signed like the app it replaces.** The download's checksum
+  must match GitHub's digest; the new app must satisfy the running app's own
+  designated requirement, which pins the certificate; bundle ID and version must
+  match the release. So a compromised GitHub account alone cannot ship an update.
+- It refuses, with an explanation, where it cannot succeed: running from the
+  download location (App Translocation), a folder it may not write, a development
+  build it would overwrite.
+- The asset is always named `Mac-Monologue.zip`, which makes
+  `…/releases/latest/download/Mac-Monologue.zip` a permanent download link.
+- `CHANGELOG.md` is the single source of release notes; `bin/publish` builds,
+  signs, tags and publishes, and never falls back to an ad hoc signature.
+
 ### Storage
 
 - Record to a temp file; **move into `~/Movies/Monologue/` on Finish.** A crash or a
@@ -267,3 +290,10 @@ Tests/MacMonologueTests/       all of the above, plus compositing on synthetic f
   for predictable file sizes.
 - **The menu bar item is always there**, even between takes: without it, a minimised
   window and forgotten shortcuts would lock you out of the recorder.
+- **The signing certificate is the only key to updates.** Every installed copy
+  accepts only updates signed with it. Losing it means no installed copy can ever
+  update again — hence `bin/export-signing-cert`. It is valid until 2036; what
+  happens to builds signed with it after that is not documented.
+- **Not notarized**, so every first install needs *Open Anyway*. An Apple
+  Developer ID would remove that, but switching later changes the signature: every
+  user would reinstall once.

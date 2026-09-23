@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+# Publishes a version: builds it, signs it, tags it, and makes it a GitHub
+# release that the app's updater will offer.
+#
+#   bin/publish 0.3.0          asks once before anything becomes public
+#   bin/publish 0.3.0 --yes    does not ask
+#
+# Everything that can fail is checked first. Nothing leaves this Mac until the
+# build is signed with the certificate and you have confirmed.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+VERSION="${1:-}"
+CONFIRMED="${2:-}"
+IDENTITY="${SIGNING_IDENTITY:-Mac-Monologue Self-Signed}"
+REPOSITORY="alexanderpuschkinberlin/Mac-Monologue"
+TAG="v$VERSION"
+
+fail() { echo "✗ $*" >&2; exit 1; }
+
+# — checks —
+
+[[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "usage: bin/publish <version>, e.g. bin/publish 0.3.0"
+[ "$(git branch --show-current)" = "main" ] || fail "check out main first"
+[ -z "$(git status --porcelain --untracked-files=no)" ] || fail "commit or stash your changes first"
+
+git fetch --quiet --tags origin
+git merge-base --is-ancestor origin/main HEAD || fail "main is behind GitHub — pull first"
+git rev-parse --quiet --verify "refs/tags/$TAG" >/dev/null && fail "$TAG already exists"
+
+# Anything but this certificate would cost every user their camera, microphone
+# and screen permissions — and the updater would refuse it anyway.
+security find-identity -p codesigning 2>/dev/null | grep "$IDENTITY" >/dev/null \
+  || fail "the signing certificate '$IDENTITY' is not in this keychain. Never publish without it."
+
+LATEST="$(gh release list --repo "$REPOSITORY" --exclude-drafts --exclude-pre-releases --limit 1 \
+  --json tagName --jq '.[0].tagName // ""' | sed 's/^v//')"
+if [ -n "$LATEST" ]; then
+  NEWEST="$(printf '%s\n%s\n' "$LATEST" "$VERSION" | sort -V | tail -1)"
+  { [ "$NEWEST" = "$VERSION" ] && [ "$LATEST" != "$VERSION" ]; } || fail "$VERSION is not newer than $LATEST"
+fi
+
+# The section of CHANGELOG.md for this version, without the heading or the blank
+# lines around it — the release notes the app will show.
+NOTES="$(awk -v version="$VERSION" '
+  /^## / { if (found) exit; if ($2 == version) { found = 1; next } }
+  found  { lines[++n] = $0 }
+  END    { first = 1; while (first <= n && lines[first] == "") first++
+           last = n;  while (last >= first && lines[last] == "") last--
+           for (i = first; i <= last; i++) print lines[i] }
+' CHANGELOG.md)"
+[ -n "$NOTES" ] || fail "CHANGELOG.md has no section '## $VERSION'"
+
+# — build —
+
+echo "Building ${VERSION}…"
+TODAY="$(date +%Y-%m-%d)"
+BUILD_NUMBER="$(( $(grep -m1 'CURRENT_PROJECT_VERSION:' project.yml | grep -o '[0-9]\+') + 1 ))"
+sed -i '' "s/MARKETING_VERSION: \"[^\"]*\"/MARKETING_VERSION: \"$VERSION\"/" project.yml
+sed -i '' "s/CURRENT_PROJECT_VERSION: \"[^\"]*\"/CURRENT_PROJECT_VERSION: \"$BUILD_NUMBER\"/" project.yml
+# Stamp the date into the heading, as the earlier versions have it.
+sed -i '' "s/^## $VERSION\$/## $VERSION — $TODAY/" CHANGELOG.md
+
+restore() { git checkout -- project.yml CHANGELOG.md; }
+trap restore ERR
+
+BUILD_LOG="$(mktemp)"
+./bin/release >"$BUILD_LOG" 2>&1 || { cat "$BUILD_LOG" >&2; fail "the build failed"; }
+rm -f "$BUILD_LOG"
+APP="build/Build/Products/Release/Mac-Monologue.app"
+BUILT="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Contents/Info.plist")"
+[ "$BUILT" = "$VERSION" ] || fail "the build says $BUILT, expected $VERSION"
+codesign -dvv "$APP" 2>&1 | grep "Authority=$IDENTITY" >/dev/null || fail "the build is not signed with '$IDENTITY'"
+
+ASSET_DIR="$(mktemp -d)"
+ASSET="$ASSET_DIR/Mac-Monologue.zip"   # the same name in every release: the permanent download link
+cp "dist/Mac-Monologue-$VERSION.zip" "$ASSET"
+
+# — confirm —
+
+echo
+echo "  Mac-Monologue $VERSION  (build $BUILD_NUMBER, $(du -h "$ASSET" | cut -f1))"
+echo "  signed with $IDENTITY"
+echo "  notes:"
+echo "$NOTES" | sed 's/^/    /'
+echo
+if [ "$CONFIRMED" != "--yes" ]; then
+  read -r -p "Publish this to GitHub now? It is public from here on. [y/N] " answer
+  [[ "$answer" =~ ^[yY]$ ]] || { restore; trap - ERR; echo "Nothing published."; exit 1; }
+fi
+trap - ERR
+
+# — publish —
+
+git add project.yml CHANGELOG.md
+git -c commit.gpgsign=false commit -q -m "Release $VERSION"
+git tag -a "$TAG" -m "Mac-Monologue $VERSION"
+git push --quiet origin main "$TAG"
+
+NOTES_FILE="$ASSET_DIR/notes.md"
+printf '%s\n' "$NOTES" > "$NOTES_FILE"
+if ! gh release create "$TAG" "$ASSET" --repo "$REPOSITORY" \
+    --title "Mac-Monologue $VERSION" --notes-file "$NOTES_FILE"; then
+  echo "✗ The tag is pushed, but creating the release failed. To retry:" >&2
+  echo "  gh release create $TAG '$ASSET' --repo $REPOSITORY --title 'Mac-Monologue $VERSION' --notes-file '$NOTES_FILE'" >&2
+  exit 1
+fi
+rm -rf "$ASSET_DIR"
+
+echo
+echo "✓ Published: https://github.com/$REPOSITORY/releases/tag/$TAG"
+echo "  Download:  https://github.com/$REPOSITORY/releases/latest/download/Mac-Monologue.zip"
+echo "  The certificate is the only key to future updates. Back it up: bin/export-signing-cert"

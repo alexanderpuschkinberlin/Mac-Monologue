@@ -262,6 +262,12 @@ final class CaptureController: ObservableObject {
     private var accessPolling: Task<Void, Never>?
     private var cameraWatch: Task<Void, Never>?
 
+    /// How far the camera's picture is turned to stand upright — an iPhone on a
+    /// stand in portrait, or upside down, reports it; a built-in camera stays at 0.
+    @Published private(set) var cameraRotationAngle: CGFloat = 0
+    private var rotationCoordinator: AVCaptureDevice.RotationCoordinator?
+    private var rotationObservation: NSKeyValueObservation?
+
     /// How long the selected camera may stay silent before the window says so.
     static let cameraSilenceSeconds: CFTimeInterval = 5
 
@@ -475,13 +481,16 @@ final class CaptureController: ObservableObject {
             isClipping = false
         }
 
+        followRotation(of: camera)
         if let camera, let format = Self.bestFormat(for: camera) {
             applyFormat(format, to: camera)
             let d = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
-            cameraDimensions = (Int(d.width), Int(d.height))
+            cameraDimensions = Self.isSideways(cameraRotationAngle)
+                ? (Int(d.height), Int(d.width))
+                : (Int(d.width), Int(d.height))
         }
 
-        configureSession(camera: camera, microphone: microphone)
+        configureSession(camera: camera, microphone: microphone, rotationAngle: cameraRotationAngle)
         watchCamera(camera != nil)
         banner = nil
 
@@ -510,6 +519,33 @@ final class CaptureController: ObservableObject {
 
         if state == .unavailable || state == .needsAccess { state = .ready }
         configureRouter()
+    }
+
+    /// Keeps the picture upright whichever way the camera stands. Read when the
+    /// camera is chosen and whenever it is turned — but never applied mid-take:
+    /// the file keeps the shape it started with, and the new angle applies to the
+    /// next take.
+    private func followRotation(of camera: AVCaptureDevice?) {
+        guard let camera else {
+            rotationObservation = nil
+            rotationCoordinator = nil
+            cameraRotationAngle = 0
+            return
+        }
+        if rotationCoordinator?.device?.uniqueID != camera.uniqueID {
+            let coordinator = AVCaptureDevice.RotationCoordinator(device: camera, previewLayer: nil)
+            rotationCoordinator = coordinator
+            // Delivered on the main queue, as documented.
+            rotationObservation = coordinator.observe(\.videoRotationAngleForHorizonLevelCapture,
+                                                      options: [.new]) { [weak self] _, _ in
+                Task { @MainActor in self?.reconfigure() }
+            }
+        }
+        cameraRotationAngle = rotationCoordinator?.videoRotationAngleForHorizonLevelCapture ?? 0
+    }
+
+    static func isSideways(_ angle: CGFloat) -> Bool {
+        Int(angle.rounded()).quotientAndRemainder(dividingBy: 180).remainder.magnitude == 90
     }
 
     /// Continuity Camera can be listed as connected and still never deliver a
@@ -541,7 +577,8 @@ final class CaptureController: ObservableObject {
         selectedCameraID = alternativeCamera.id
     }
 
-    private func configureSession(camera: AVCaptureDevice?, microphone: AVCaptureDevice?) {
+    private func configureSession(camera: AVCaptureDevice?, microphone: AVCaptureDevice?,
+                                  rotationAngle: CGFloat) {
         let router = self.router
         sessionQueue.async { [weak self] in
             guard let self else { return }
@@ -574,6 +611,12 @@ final class CaptureController: ObservableObject {
                let videoInput = try? AVCaptureDeviceInput(device: camera),
                self.session.canAddInput(videoInput) {
                 self.session.addInput(videoInput)
+                // Frames arrive already upright, so the recorder, the bubble and
+                // the mirroring never need to know the camera was turned.
+                if let connection = self.videoOutput.connection(with: .video),
+                   connection.isVideoRotationAngleSupported(rotationAngle) {
+                    connection.videoRotationAngle = rotationAngle
+                }
             }
 
             if let microphone,
@@ -1009,6 +1052,11 @@ final class CaptureController: ObservableObject {
                     self.lastRecordingURL = url
                     self.preparePlayer(for: url)
                     self.state = .preview
+                    // The camera may have been turned during the take.
+                    if let turned = self.rotationCoordinator?.videoRotationAngleForHorizonLevelCapture,
+                       turned != self.cameraRotationAngle {
+                        self.reconfigure()
+                    }
                 case .failure(let error):
                     self.banner = TakeRecorder.describe(error)
                     self.state = .ready

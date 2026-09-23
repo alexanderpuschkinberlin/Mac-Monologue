@@ -9,10 +9,13 @@ struct CameraPreviewView: NSViewRepresentable {
     let session: AVCaptureSession
     /// Changes whenever the session was reconfigured and its connection may be new.
     var generation: Int = 0
+    /// The same turn the recording gets, so the preview stands upright too.
+    var rotationAngle: CGFloat = 0
 
     func makeNSView(context: Context) -> PreviewNSView {
         let view = PreviewNSView()
         view.previewLayer.session = session
+        view.rotationAngle = rotationAngle
         view.applyMirroring()
         return view
     }
@@ -21,11 +24,13 @@ struct CameraPreviewView: NSViewRepresentable {
         if nsView.previewLayer.session !== session {
             nsView.previewLayer.session = session
         }
+        nsView.rotationAngle = rotationAngle
         nsView.applyMirroring()
     }
 
     final class PreviewNSView: NSView {
         let previewLayer = AVCaptureVideoPreviewLayer()
+        var rotationAngle: CGFloat = 0
 
         override init(frame frameRect: NSRect) {
             super.init(frame: frameRect)
@@ -40,8 +45,12 @@ struct CameraPreviewView: NSViewRepresentable {
         required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
 
         func applyMirroring() {
-            guard let connection = previewLayer.connection,
-                  connection.isVideoMirroringSupported else { return }
+            guard let connection = previewLayer.connection else { return }
+            if connection.isVideoRotationAngleSupported(rotationAngle),
+               connection.videoRotationAngle != rotationAngle {
+                connection.videoRotationAngle = rotationAngle
+            }
+            guard connection.isVideoMirroringSupported else { return }
             connection.automaticallyAdjustsVideoMirroring = false
             connection.isVideoMirrored = true
         }

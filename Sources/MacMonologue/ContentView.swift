@@ -52,9 +52,18 @@ struct ContentView: View {
                 Spacer()
 
                 if capture.mode.usesCamera {
-                    Toggle("Mirror the recording", isOn: $capture.mirrorsRecording)
-                        .toggleStyle(.checkbox)
-                        .help(mirrorHelp)
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Toggle("Mirror the recording", isOn: $capture.mirrorsRecording)
+                            .toggleStyle(.checkbox)
+                            .help(mirrorHelp)
+                        // On is rarely what anyone wants, and easy to forget:
+                        // say what it does for as long as it is on.
+                        if capture.mirrorsRecording {
+                            Label("Text reads backwards in the saved file", systemImage: "exclamationmark.triangle.fill")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        }
+                    }
                 }
             }
 
@@ -159,7 +168,8 @@ struct ContentView: View {
                 LivePreviewView(onAttach: capture.attachPreview)
                     .overlay { cornerHints }
             } else {
-                CameraPreviewView(session: capture.session, generation: capture.sessionGeneration)
+                CameraPreviewView(session: capture.session, generation: capture.sessionGeneration,
+                                  rotationAngle: capture.cameraRotationAngle)
             }
 
             statusPill

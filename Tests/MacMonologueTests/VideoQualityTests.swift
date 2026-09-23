@@ -39,3 +39,15 @@ final class VideoQualityTests: XCTestCase {
         XCTAssertTrue(VideoQuality.economical.cameraSize(width: 1080, height: 1920) == (720, 1280))
     }
 }
+
+@MainActor
+final class CameraRotationTests: XCTestCase {
+    func testSidewaysAnglesSwapWidthAndHeight() {
+        XCTAssertFalse(CaptureController.isSideways(0))
+        XCTAssertTrue(CaptureController.isSideways(90))
+        XCTAssertFalse(CaptureController.isSideways(180))
+        XCTAssertTrue(CaptureController.isSideways(270))
+        XCTAssertTrue(CaptureController.isSideways(-90))
+        XCTAssertTrue(CaptureController.isSideways(89.9999))
+    }
+}

@@ -5,7 +5,7 @@ options:
   createIntermediateGroups: true
   developmentLanguage: en
   deploymentTarget:
-    macOS: "14.0"
+    macOS: "15.0"
 
 settings:
   base:
@@ -38,6 +38,13 @@ targets:
       - sdk: AVFoundation.framework
       - sdk: AVKit.framework
       - sdk: CoreMedia.framework
+      - sdk: CoreVideo.framework
+      - sdk: CoreImage.framework
+      - sdk: Metal.framework
+      - sdk: ScreenCaptureKit.framework
+      # RegisterEventHotKey: global hotkeys without the Input Monitoring
+      # permission a global NSEvent monitor would need.
+      - sdk: Carbon.framework
     settings:
       base:
         PRODUCT_NAME: Mac-Monologue

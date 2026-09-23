@@ -88,11 +88,12 @@ final class CaptureController: ObservableObject {
     private let sessionQueue = DispatchQueue(label: "io.github.alexanderpuschkinberlin.mac-monologue.session")
     /// Sample buffers are delivered here, separately from session configuration,
     /// so reconfiguring never stalls behind frame delivery.
-    private let outputQueue = DispatchQueue(label: "io.github.alexanderpuschkinberlin.mac-monologue.output")
+    private let outputQueue: DispatchQueue
 
     nonisolated(unsafe) private let videoOutput = AVCaptureVideoDataOutput()
     nonisolated(unsafe) private let audioOutput = AVCaptureAudioDataOutput()
-    private lazy var recorder = TakeRecorder(queue: outputQueue)
+    private let recorder: TakeRecorder
+    private let router: CaptureRouter
 
     /// Confined to `outputQueue`: only the meter's readings cross to the main actor.
     nonisolated(unsafe) private let meter = AudioLevelMeter()
@@ -106,6 +107,14 @@ final class CaptureController: ObservableObject {
     /// `sessionQueue` — they are not Sendable and must not cross actors.
     @Published private(set) var hasAudio = false
     private var observers: [NSObjectProtocol] = []
+
+    init() {
+        let outputQueue = DispatchQueue(label: "io.github.alexanderpuschkinberlin.mac-monologue.output")
+        let recorder = TakeRecorder(queue: outputQueue)
+        self.outputQueue = outputQueue
+        self.recorder = recorder
+        self.router = CaptureRouter(queue: outputQueue, recorder: recorder)
+    }
 
     // MARK: - Lifecycle
 
@@ -255,6 +264,7 @@ final class CaptureController: ObservableObject {
             formatSummary = Self.summary(for: format, hasAudio: microphone != nil)
         }
 
+        let router = self.router
         sessionQueue.async { [weak self] in
             guard let self else { return }
             self.session.beginConfiguration()
@@ -273,11 +283,11 @@ final class CaptureController: ObservableObject {
                 }
                 self.videoOutput.alwaysDiscardsLateVideoFrames = false
                 self.session.addOutput(self.videoOutput)
-                self.videoOutput.setSampleBufferDelegate(self.recorder, queue: self.outputQueue)
+                self.videoOutput.setSampleBufferDelegate(router, queue: self.outputQueue)
             }
             if !self.session.outputs.contains(self.audioOutput), self.session.canAddOutput(self.audioOutput) {
                 self.session.addOutput(self.audioOutput)
-                self.audioOutput.setSampleBufferDelegate(self.recorder, queue: self.outputQueue)
+                self.audioOutput.setSampleBufferDelegate(router, queue: self.outputQueue)
             }
 
             if let videoInput = try? AVCaptureDeviceInput(device: camera),
@@ -369,7 +379,7 @@ final class CaptureController: ObservableObject {
         recorder.onDurationChange = { [weak self] seconds in
             Task { @MainActor in self?.elapsed = seconds }
         }
-        recorder.onAudioBuffer = { [weak self] buffer in
+        router.onMicrophoneBuffer = { [weak self] buffer in
             guard let self else { return }
             self.meter.consume(buffer)
 

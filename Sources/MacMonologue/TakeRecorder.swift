@@ -8,9 +8,17 @@ import Foundation
 /// control. Pause becomes arithmetic: `TakeClock` subtracts the paused intervals
 /// and one continuous file comes out.
 ///
-/// All state is confined to `queue`, which is also the queue the capture outputs
-/// deliver on. The class is `@unchecked Sendable` on that basis.
-final class TakeRecorder: NSObject, @unchecked Sendable {
+/// All state is confined to `queue`, which is also the queue `CaptureRouter`
+/// delivers on. The class is `@unchecked Sendable` on that basis.
+final class TakeRecorder: @unchecked Sendable {
+    /// Which writer input a buffer belongs to. Explicit rather than inferred from
+    /// the delivering `AVCaptureOutput`: a composited frame or a mixed audio block
+    /// has no capture output behind it.
+    enum Track: Sendable {
+        case video
+        case audio
+    }
+
     enum Status: Equatable {
         case idle
         case recording
@@ -23,11 +31,16 @@ final class TakeRecorder: NSObject, @unchecked Sendable {
         var height: Int
         var frameRate: Double
         var audioSettings: [String: Any]?
+        var averageBitRate: Int = TakeRecorder.cameraBitRate
     }
 
     /// 10 Mbps HEVC at 1080p30. A webcam's sensor noise is what eats bitrate, and
     /// a few wasted megabytes beat discovering grain artifacts after the fact.
-    static let averageBitRate = 10_000_000
+    static let cameraBitRate = 10_000_000
+
+    /// 12 Mbps at the 2560-px screen canvas: a fixed rate, chosen over
+    /// quality-based control so a take's size stays predictable.
+    static let screenBitRate = 12_000_000
 
     private let queue: DispatchQueue
     private var writer: AVAssetWriter?
@@ -49,14 +62,9 @@ final class TakeRecorder: NSObject, @unchecked Sendable {
     var onStatusChange: (@Sendable (Status) -> Void)?
     var onDurationChange: (@Sendable (Double) -> Void)?
     var onFailure: (@Sendable (String) -> Void)?
-    /// Every audio buffer, including while idle or paused — the meter has to be
-    /// live before you start, which is the whole point of having one.
-    /// Called on `queue`; the buffer must not escape it.
-    var onAudioBuffer: ((CMSampleBuffer) -> Void)?
 
     init(queue: DispatchQueue) {
         self.queue = queue
-        super.init()
     }
 
     // MARK: - Destination
@@ -241,7 +249,7 @@ final class TakeRecorder: NSObject, @unchecked Sendable {
             AVVideoWidthKey: configuration.width,
             AVVideoHeightKey: configuration.height,
             AVVideoCompressionPropertiesKey: [
-                AVVideoAverageBitRateKey: averageBitRate,
+                AVVideoAverageBitRateKey: configuration.averageBitRate,
                 AVVideoExpectedSourceFrameRateKey: Int(configuration.frameRate),
             ],
         ]
@@ -280,16 +288,25 @@ final class TakeRecorder: NSObject, @unchecked Sendable {
 
 // MARK: - Sample buffers
 
-extension TakeRecorder: AVCaptureVideoDataOutputSampleBufferDelegate,
-                        AVCaptureAudioDataOutputSampleBufferDelegate {
-    func captureOutput(
-        _ output: AVCaptureOutput,
-        didOutput sampleBuffer: CMSampleBuffer,
-        from connection: AVCaptureConnection
-    ) {
-        // Already on `queue` — the capture outputs deliver here.
-        let isVideo = output is AVCaptureVideoDataOutput
-        if !isVideo { onAudioBuffer?(sampleBuffer) }
+extension TakeRecorder {
+    /// Whether a take is currently being written. Call on `queue`.
+    var isWriting: Bool {
+        (status == .recording || status == .paused) && writer?.status == .writing
+    }
+
+    /// Maps a capture timestamp onto take time, or nil while paused or before the
+    /// take began. Call on `queue`.
+    ///
+    /// Exposed so a second audio source can be placed on the same timeline as the
+    /// microphone before it is mixed — the pause arithmetic stays in one place.
+    func takeTime(for captureTime: CMTime) -> CMTime? {
+        guard sessionStarted, status == .recording else { return nil }
+        return clock.takeTime(for: captureTime)
+    }
+
+    /// Appends one buffer to the take. Must be called on `queue`.
+    func append(_ sampleBuffer: CMSampleBuffer, to track: Track) {
+        let isVideo = track == .video
 
         guard status == .recording, let writer, writer.status == .writing else { return }
 
@@ -328,6 +345,29 @@ extension TakeRecorder: AVCaptureVideoDataOutputSampleBufferDelegate,
         } else {
             lastAudioTime = takeTime
         }
+    }
+
+    /// Appends a buffer whose timestamp is already take time — a mixed audio
+    /// block built downstream of `takeTime(for:)`. Must be called on `queue`.
+    func appendInTakeTime(_ sampleBuffer: CMSampleBuffer, to track: Track) {
+        guard status == .recording, sessionStarted,
+              let writer, writer.status == .writing else { return }
+
+        let takeTime = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
+        let lastTime = track == .video ? lastVideoTime : lastAudioTime
+        if let lastTime, takeTime <= lastTime { return }
+
+        let input = track == .video ? videoInput : audioInput
+        guard let input, input.isReadyForMoreMediaData else { return }
+
+        if !input.append(sampleBuffer) {
+            let reason = writer.error.map(Self.describe) ?? "the encoder rejected a sample"
+            onFailure?("Recording stopped: \(reason)")
+            discard()
+            return
+        }
+
+        if track == .video { lastVideoTime = takeTime } else { lastAudioTime = takeTime }
     }
 
     private static func retime(_ sampleBuffer: CMSampleBuffer, to time: CMTime) -> CMSampleBuffer? {

@@ -12,8 +12,8 @@ settings:
     SWIFT_VERSION: "6.0"
     ARCHS: arm64
     ONLY_ACTIVE_ARCH: YES
-    MARKETING_VERSION: "0.2.0"
-    CURRENT_PROJECT_VERSION: "1"
+    MARKETING_VERSION: "0.3.0"
+    CURRENT_PROJECT_VERSION: "2"
     # Self-signed identity comes later (see DESIGN.md, Distribution).
     # Ad-hoc for now; sandbox and hardened runtime stay off by design.
     CODE_SIGN_IDENTITY: "-"

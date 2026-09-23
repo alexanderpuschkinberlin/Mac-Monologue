@@ -4,7 +4,7 @@ Every version of Mac-Monologue, newest first. `bin/publish` takes the section of
 the version it publishes as that release's notes, and the app shows them when it
 offers an update.
 
-## 0.3.0
+## 0.3.0 — 2026-09-24
 
 - Mac-Monologue now tells you when a new version is out, shows what changed, and
   installs it for you with one click — only if it is signed by the same developer.

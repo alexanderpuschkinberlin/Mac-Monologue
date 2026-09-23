@@ -4,7 +4,7 @@ Every version of Mac-Monologue, newest first. `bin/publish` takes the section of
 the version it publishes as that release's notes, and the app shows them when it
 offers an update.
 
-## 0.3.2
+## 0.3.2 — 2026-09-24
 
 - When the camera is connected but sends no picture - usually an iPhone that is
   locked away or out of reach - the window now says so instead of staying black,

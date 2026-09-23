@@ -23,7 +23,7 @@ final class CaptureRouter: NSObject, @unchecked Sendable {
         var canvasWidth = 0
         var canvasHeight = 0
 
-        var isScreenMode: Bool { mode == .screenAndCamera && canvasWidth > 0 && canvasHeight > 0 }
+        var isScreenMode: Bool { mode.recordsScreen && canvasWidth > 0 && canvasHeight > 0 }
     }
 
     /// If no camera frame has arrived for this long in screen mode, the screen is

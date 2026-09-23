@@ -4,6 +4,7 @@ import SwiftUI
 enum LaunchMode: String, CaseIterable, Identifiable, Sendable {
     case lastUsed
     case camera
+    case screen
     case screenAndCamera
 
     var id: String { rawValue }
@@ -12,6 +13,7 @@ enum LaunchMode: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .lastUsed: "The mode I used last"
         case .camera: "Camera"
+        case .screen: "Screen"
         case .screenAndCamera: "Screen + Camera"
         }
     }
@@ -101,7 +103,7 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Section("Screen + Camera") {
+            Section("Screen and Screen + Camera") {
                 Toggle("Minimise the window while recording", isOn: $capture.autoMinimizes)
                 Text("Keeps it off the slides you are presenting. It is never in the recording either way.")
                     .font(.caption)

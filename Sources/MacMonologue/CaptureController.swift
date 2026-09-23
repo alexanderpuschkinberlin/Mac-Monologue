@@ -111,7 +111,7 @@ final class CaptureController: ObservableObject {
             guard mode != oldValue else { return }
             if persistsPreferences { DevicePreferences.mode = mode }
             // macOS shows its prompt only the first time; afterwards this is a no-op.
-            if captureBegun, mode == .screenAndCamera, !ScreenAccess.isGranted { ScreenAccess.request() }
+            if captureBegun, mode.recordsScreen, !ScreenAccess.isGranted { ScreenAccess.request() }
             reconfigure()
         }
     }
@@ -162,7 +162,7 @@ final class CaptureController: ObservableObject {
 
     /// Whether the file gets an audio track at all. In screen mode it always does:
     /// system audio is recorded even with "No audio" chosen for the microphone.
-    var recordsAudio: Bool { mode == .screenAndCamera || hasAudio }
+    var recordsAudio: Bool { mode.recordsScreen || hasAudio }
 
     /// How the screen's clock related to the camera's in the last screen take.
     @Published private(set) var clockReading: ClockProbe.Reading?
@@ -196,7 +196,7 @@ final class CaptureController: ObservableObject {
         didSet {
             guard showsMouseClicks != oldValue else { return }
             if persistsPreferences { DevicePreferences.showsMouseClicks = showsMouseClicks }
-            if mode == .screenAndCamera { reconfigure() }
+            if mode.recordsScreen { reconfigure() }
         }
     }
 
@@ -227,7 +227,7 @@ final class CaptureController: ObservableObject {
         switch mode {
         case .camera:
             return state != .needsAccess && state != .unavailable
-        case .screenAndCamera:
+        case .screen, .screenAndCamera:
             return screenAccess == .granted && isScreenCaptureRunning
         }
     }
@@ -292,6 +292,7 @@ final class CaptureController: ObservableObject {
         switch launchMode {
         case .lastUsed: mode = DevicePreferences.mode
         case .camera: mode = .camera
+        case .screen: mode = .screen
         case .screenAndCamera: mode = .screenAndCamera
         }
         configureRouter()
@@ -327,7 +328,8 @@ final class CaptureController: ObservableObject {
 
         Task {
             let granted = await requestAccess()
-            guard granted else {
+            // Recording just the screen needs no camera.
+            guard granted || mode == .screen else {
                 state = .needsAccess
                 return
             }
@@ -396,7 +398,7 @@ final class CaptureController: ObservableObject {
         let screens = center.addObserver(forName: NSApplication.didChangeScreenParametersNotification,
                                          object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
-                guard let self, self.mode == .screenAndCamera, !self.devicePickersLocked else { return }
+                guard let self, self.mode.recordsScreen, !self.devicePickersLocked else { return }
                 self.refreshScreenCapture()
             }
         }
@@ -449,6 +451,8 @@ final class CaptureController: ObservableObject {
         case .screenAndCamera:
             // The presentation matters more than the bubble: keep recording.
             banner = "The camera disconnected. The screen keeps recording without the bubble."
+        case .screen:
+            break
         }
     }
 
@@ -461,7 +465,7 @@ final class CaptureController: ObservableObject {
     private func reconfigure() {
         guard captureBegun, !devicePickersLocked else { return }
 
-        let camera = selectedCameraID.flatMap(Self.device(id:))
+        let camera = mode.usesCamera ? selectedCameraID.flatMap(Self.device(id:)) : nil
         let microphone = selectedMicrophoneID
             .flatMap { $0 == DeviceOption.noAudioID ? nil : Self.device(id: $0) }
         hasAudio = microphone != nil
@@ -484,7 +488,7 @@ final class CaptureController: ObservableObject {
         switch mode {
         case .camera:
             stopScreenCapture()
-            guard camera != nil else {
+            guard camera != nil, !cameraAccessDenied else {
                 state = cameraAccessDenied ? .needsAccess : .unavailable
                 formatSummary = ""
                 configureRouter()
@@ -498,6 +502,9 @@ final class CaptureController: ObservableObject {
             if camera == nil, !cameraAccessDenied {
                 banner = "No camera available — the screen will be recorded without the bubble."
             }
+            refreshScreenCapture()
+
+        case .screen:
             refreshScreenCapture()
         }
 
@@ -612,7 +619,7 @@ final class CaptureController: ObservableObject {
         ScreenCaptureSource.fetchDisplays { [weak self] result in
             Task { @MainActor in
                 guard let self, generation == self.screenRefreshGeneration,
-                      self.mode == .screenAndCamera, !self.devicePickersLocked else { return }
+                      self.mode.recordsScreen, !self.devicePickersLocked else { return }
                 switch result {
                 case .failure:
                     // Preflight says yes, ScreenCaptureKit says no: granted in System
@@ -727,7 +734,7 @@ final class CaptureController: ObservableObject {
         accessPolling = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(1.5))
-                guard let self, self.mode == .screenAndCamera else { return }
+                guard let self, self.mode.recordsScreen else { return }
                 if ScreenAccess.isGranted {
                     self.accessPolling = nil
                     self.refreshScreenCapture()
@@ -791,8 +798,8 @@ final class CaptureController: ObservableObject {
             mode: mode,
             mirrorsRecording: mirrorsRecording,
             bubble: BubbleLayout(corner: bubbleCorner, size: bubbleSize),
-            canvasWidth: mode == .screenAndCamera ? Int(canvasSize.width) : 0,
-            canvasHeight: mode == .screenAndCamera ? Int(canvasSize.height) : 0
+            canvasWidth: mode.recordsScreen ? Int(canvasSize.width) : 0,
+            canvasHeight: mode.recordsScreen ? Int(canvasSize.height) : 0
         ))
     }
 
@@ -932,7 +939,7 @@ final class CaptureController: ObservableObject {
         elapsed = 0
         banner = nil
 
-        let screenMode = mode == .screenAndCamera
+        let screenMode = mode.recordsScreen
         let configuration = TakeRecorder.Configuration(
             width: activeDimensions.width,
             height: activeDimensions.height,

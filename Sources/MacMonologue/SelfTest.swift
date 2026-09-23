@@ -47,13 +47,14 @@ enum SelfTest {
                 return false
             }
 
-            let screenMode = CommandLine.arguments.contains("--screen")
+            let screenOnly = CommandLine.arguments.contains("--screen-only")
+            let screenMode = screenOnly || CommandLine.arguments.contains("--screen")
             if screenMode, !ScreenAccess.isGranted {
                 log("SKIP: no screen recording permission for this process — the screen phase "
                     + "needs it (System Settings › Privacy & Security › Screen & System Audio Recording).")
                 exit(0)
             }
-            capture.mode = screenMode ? .screenAndCamera : .camera
+            capture.mode = screenOnly ? .screen : screenMode ? .screenAndCamera : .camera
             capture.mirrorsRecording = CommandLine.arguments.contains("--mirror")
             if let quality { capture.videoQuality = quality }
             if CommandLine.arguments.contains("--no-mic") {

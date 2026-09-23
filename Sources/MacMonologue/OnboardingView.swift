@@ -169,7 +169,7 @@ struct OnboardingView: View {
         } else {
             page(symbol: "checkmark.circle",
                  title: "Ready",
-                 text: "Choose Camera or Screen + Camera at the top, press Record, and talk.")
+                 text: "Choose Camera, Screen or Screen + Camera at the top, press Record, and talk.")
         }
     }
 

@@ -51,13 +51,15 @@ struct ContentView: View {
 
                 Spacer()
 
-                Toggle("Mirror the recording", isOn: $capture.mirrorsRecording)
-                    .toggleStyle(.checkbox)
-                    .help(mirrorHelp)
+                if capture.mode.usesCamera {
+                    Toggle("Mirror the recording", isOn: $capture.mirrorsRecording)
+                        .toggleStyle(.checkbox)
+                        .help(mirrorHelp)
+                }
             }
 
             HStack(alignment: .bottom, spacing: 16) {
-                if capture.mode == .screenAndCamera {
+                if capture.mode.recordsScreen {
                     labelled("Screen") {
                         Picker("Screen", selection: $capture.selectedDisplayID) {
                             ForEach(capture.displays) { display in
@@ -67,13 +69,15 @@ struct ContentView: View {
                         .labelsHidden()
                     }
                 }
-                labelled(capture.state == .preview ? "Recording" : "Camera") {
-                    Picker("Camera", selection: $capture.selectedCameraID) {
-                        ForEach(capture.cameras) { option in
-                            Text(option.displayName).tag(Optional(option.id))
+                if capture.mode.usesCamera {
+                    labelled(capture.state == .preview ? "Recording" : "Camera") {
+                        Picker("Camera", selection: $capture.selectedCameraID) {
+                            ForEach(capture.cameras) { option in
+                                Text(option.displayName).tag(Optional(option.id))
+                            }
                         }
+                        .labelsHidden()
                     }
-                    .labelsHidden()
                 }
                 labelled("Microphone") {
                     Picker("Microphone", selection: $capture.selectedMicrophoneID) {
@@ -128,6 +132,8 @@ struct ContentView: View {
                 + "saved file mirrored too — text you hold up to the camera will then read backwards."
         case .screenAndCamera:
             "Mirrors the camera bubble in the saved file. The screen itself is never mirrored."
+        case .screen:
+            "The screen is never mirrored."
         }
     }
 
@@ -149,7 +155,7 @@ struct ContentView: View {
         ZStack(alignment: .topLeading) {
             if capture.state == .preview, let player = capture.player {
                 VideoPlayer(player: player)
-            } else if capture.mode == .screenAndCamera {
+            } else if capture.mode.recordsScreen {
                 LivePreviewView(onAttach: capture.attachPreview)
                     .overlay { cornerHints }
             } else {
@@ -167,7 +173,7 @@ struct ContentView: View {
 
             if capture.state == .needsAccess {
                 accessOverlay
-            } else if capture.mode == .screenAndCamera, capture.state != .preview,
+            } else if capture.mode.recordsScreen, capture.state != .preview,
                       capture.screenAccess == .denied || capture.screenAccess == .needsRelaunch {
                 screenAccessOverlay
             }
@@ -193,7 +199,7 @@ struct ContentView: View {
     /// once recording starts: the corner is fixed for the whole take.
     @ViewBuilder
     private var cornerHints: some View {
-        if capture.state == .ready, capture.canvasSize.width > 0 {
+        if capture.mode == .screenAndCamera, capture.state == .ready, capture.canvasSize.width > 0 {
             GeometryReader { geometry in
                 let video = AVMakeRect(aspectRatio: capture.canvasSize,
                                        insideRect: CGRect(origin: .zero, size: geometry.size))

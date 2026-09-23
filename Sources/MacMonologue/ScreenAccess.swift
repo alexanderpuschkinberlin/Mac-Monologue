@@ -26,14 +26,10 @@ enum ScreenAccess {
         string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
     )!
 
-    /// Starts a fresh copy of the app and quits this one, which is what makes a
-    /// newly granted screen recording permission take effect.
+    /// Restarts the app, which is what makes a newly granted screen recording
+    /// permission take effect.
     @MainActor
     static func relaunch() {
-        let configuration = NSWorkspace.OpenConfiguration()
-        configuration.createsNewApplicationInstance = true
-        NSWorkspace.shared.openApplication(at: Bundle.main.bundleURL, configuration: configuration) { _, _ in
-            Task { @MainActor in NSApp.terminate(nil) }
-        }
+        Relauncher.relaunch()
     }
 }

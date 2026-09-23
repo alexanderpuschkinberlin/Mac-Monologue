@@ -7,7 +7,7 @@ struct ContentView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            devicePickers
+            header
             preview
             controls
         }
@@ -32,36 +32,85 @@ struct ContentView: View {
         }
     }
 
-    // MARK: - Pickers
+    // MARK: - Header
 
-    private var devicePickers: some View {
-        HStack(alignment: .bottom, spacing: 16) {
-            labelled(capture.state == .preview ? "Recording" : "Camera") {
-                Picker("Camera", selection: $capture.selectedCameraID) {
-                    ForEach(capture.cameras) { option in
-                        Text(option.displayName).tag(Optional(option.id))
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .center) {
+                Picker("Mode", selection: $capture.mode) {
+                    ForEach(CaptureMode.allCases) { mode in
+                        Text(mode.label).tag(mode)
                     }
                 }
+                .pickerStyle(.segmented)
                 .labelsHidden()
+                .fixedSize()
+
+                Spacer()
+
+                Toggle("Mirror the recording", isOn: $capture.mirrorsRecording)
+                    .toggleStyle(.checkbox)
+                    .help(mirrorHelp)
             }
-            labelled("Microphone") {
-                Picker("Microphone", selection: $capture.selectedMicrophoneID) {
-                    ForEach(capture.microphones) { option in
-                        Text(option.displayName).tag(Optional(option.id))
+
+            HStack(alignment: .bottom, spacing: 16) {
+                if capture.mode == .screenAndCamera {
+                    labelled("Screen") {
+                        Picker("Screen", selection: $capture.selectedDisplayID) {
+                            ForEach(capture.displays) { display in
+                                Text(display.displayName).tag(Optional(display.id))
+                            }
+                        }
+                        .labelsHidden()
                     }
                 }
-                .labelsHidden()
+                labelled(capture.state == .preview ? "Recording" : "Camera") {
+                    Picker("Camera", selection: $capture.selectedCameraID) {
+                        ForEach(capture.cameras) { option in
+                            Text(option.displayName).tag(Optional(option.id))
+                        }
+                    }
+                    .labelsHidden()
+                }
+                labelled("Microphone") {
+                    Picker("Microphone", selection: $capture.selectedMicrophoneID) {
+                        ForEach(capture.microphones) { option in
+                            Text(option.displayName).tag(Optional(option.id))
+                        }
+                    }
+                    .labelsHidden()
+                }
             }
-            Toggle("Mirror the recording", isOn: $capture.mirrorsRecording)
-                .toggleStyle(.checkbox)
-                .padding(.bottom, 3)
-                .help("The preview always looks like a mirror. Turn this on only if "
-                      + "you want the saved file mirrored too — text you hold up to "
-                      + "the camera will then read backwards.")
+
+            if capture.mode == .screenAndCamera {
+                labelled("Camera bubble") {
+                    HStack(spacing: 12) {
+                        CornerPickerView(corner: $capture.bubbleCorner)
+                        Picker("Size", selection: $capture.bubbleSize) {
+                            ForEach(BubbleSize.allCases, id: \.self) { size in
+                                Text(size.label).tag(size)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .labelsHidden()
+                        .fixedSize()
+                    }
+                }
+            }
         }
         .disabled(capture.devicePickersLocked)
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
+    }
+
+    private var mirrorHelp: String {
+        switch capture.mode {
+        case .camera:
+            "The preview always looks like a mirror. Turn this on only if you want the "
+                + "saved file mirrored too — text you hold up to the camera will then read backwards."
+        case .screenAndCamera:
+            "Mirrors the camera bubble in the saved file. The screen itself is never mirrored."
+        }
     }
 
     private func labelled<Content: View>(
@@ -82,6 +131,9 @@ struct ContentView: View {
         ZStack(alignment: .topLeading) {
             if capture.state == .preview, let player = capture.player {
                 VideoPlayer(player: player)
+            } else if capture.mode == .screenAndCamera {
+                LivePreviewView(onAttach: capture.attachPreview)
+                    .overlay { cornerHints }
             } else {
                 CameraPreviewView(session: capture.session, generation: capture.sessionGeneration)
             }
@@ -97,6 +149,9 @@ struct ContentView: View {
 
             if capture.state == .needsAccess {
                 accessOverlay
+            } else if capture.mode == .screenAndCamera, capture.state != .preview,
+                      capture.screenAccess == .denied || capture.screenAccess == .needsRelaunch {
+                screenAccessOverlay
             }
 
             if let banner = capture.banner {
@@ -111,6 +166,33 @@ struct ContentView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(.black)
+    }
+
+    /// Before a take, the other three corners are outlined, so choosing one is a
+    /// deliberate look at where the bubble would cover the slide. They disappear
+    /// once recording starts: the corner is fixed for the whole take.
+    @ViewBuilder
+    private var cornerHints: some View {
+        if capture.state == .ready, capture.canvasSize.width > 0 {
+            GeometryReader { geometry in
+                let video = AVMakeRect(aspectRatio: capture.canvasSize,
+                                       insideRect: CGRect(origin: .zero, size: geometry.size))
+                ForEach(BubbleCorner.allCases, id: \.self) { corner in
+                    let frame = BubbleLayout(corner: corner, size: capture.bubbleSize)
+                        .normalizedFrame(canvasWidth: Int(capture.canvasSize.width),
+                                         canvasHeight: Int(capture.canvasSize.height))
+                    Circle()
+                        .strokeBorder(style: StrokeStyle(lineWidth: corner == capture.bubbleCorner ? 2 : 1.5,
+                                                         dash: corner == capture.bubbleCorner ? [] : [5, 4]))
+                        .foregroundStyle(corner == capture.bubbleCorner
+                                         ? Color.accentColor : Color.white.opacity(0.55))
+                        .frame(width: frame.width * video.width, height: frame.height * video.height)
+                        .position(x: video.minX + frame.midX * video.width,
+                                  y: video.minY + frame.midY * video.height)
+                        .onTapGesture { capture.bubbleCorner = corner }
+                }
+            }
+        }
     }
 
     private var statusPill: some View {
@@ -162,6 +244,30 @@ struct ContentView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    private var screenAccessOverlay: some View {
+        VStack(spacing: 12) {
+            Text("Mac-Monologue needs permission to record your screen.")
+                .font(.headline)
+            Text(capture.screenAccess == .needsRelaunch
+                 ? "Permission is on. macOS only applies it after Mac-Monologue restarts."
+                 : "Switch on Mac-Monologue under Screen & System Audio Recording, "
+                   + "then restart the app — macOS only applies it after a restart.")
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: 380)
+            HStack(spacing: 12) {
+                if capture.screenAccess != .needsRelaunch {
+                    Button("Open System Settings…") { capture.openScreenRecordingSettings() }
+                }
+                Button("Restart Mac-Monologue") { capture.relaunch() }
+                    .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(24)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
     // MARK: - Controls
 
     private var controls: some View {
@@ -170,9 +276,10 @@ struct ContentView: View {
                 Label(recordButtonTitle, systemImage: recordButtonIcon)
                     .frame(minWidth: 84)
             }
-            .disabled(capture.state == .needsAccess
-                      || capture.state == .unavailable
-                      || capture.state == .finishing)
+            .disabled(capture.state == .finishing
+                      || (capture.state == .ready && !capture.canRecord)
+                      || capture.state == .needsAccess
+                      || capture.state == .unavailable)
 
             if capture.state == .recording || capture.state == .paused {
                 Button("Finish") { capture.finishTake() }

@@ -19,9 +19,10 @@ struct AppCommands: Commands {
         CommandMenu("Recording") {
             Button(recordTitle) { capture.toggleRecording() }
                 .keyboardShortcut(.space, modifiers: [])
-                .disabled(capture.state == .needsAccess
-                          || capture.state == .unavailable
-                          || capture.state == .finishing)
+                .disabled(capture.state == .finishing
+                          || (capture.state == .ready && !capture.canRecord)
+                          || capture.state == .needsAccess
+                          || capture.state == .unavailable)
 
             Button("Finish") { capture.finishTake() }
                 .keyboardShortcut(.return, modifiers: .command)

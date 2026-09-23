@@ -294,6 +294,11 @@ extension TakeRecorder {
         (status == .recording || status == .paused) && writer?.status == .writing
     }
 
+    /// The capture clock's current time — for frames that have no timestamp of
+    /// their own, such as the screen shown on its own while the camera is gone.
+    /// Call on `queue`.
+    func currentCaptureTime() -> CMTime { now() }
+
     /// Maps a capture timestamp onto take time, or nil while paused or before the
     /// take began. Call on `queue`.
     ///

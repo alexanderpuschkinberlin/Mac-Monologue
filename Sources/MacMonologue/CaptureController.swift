@@ -64,7 +64,7 @@ final class CaptureController: ObservableObject {
     @Published var selectedCameraID: String? {
         didSet {
             guard selectedCameraID != oldValue else { return }
-            DevicePreferences.cameraID = selectedCameraID
+            if persistsPreferences { DevicePreferences.cameraID = selectedCameraID }
             reconfigure()
         }
     }
@@ -72,14 +72,15 @@ final class CaptureController: ObservableObject {
     @Published var selectedMicrophoneID: String? {
         didSet {
             guard selectedMicrophoneID != oldValue else { return }
-            DevicePreferences.microphoneID = selectedMicrophoneID
+            if persistsPreferences { DevicePreferences.microphoneID = selectedMicrophoneID }
             reconfigure()
         }
     }
 
-    /// Whether the saved file is mirrored. The live preview is always mirrored —
-    /// that is what makes moving around in it feel natural — so this decides only
-    /// what the file looks like.
+    /// Whether the saved file is mirrored. The live preview in camera mode is
+    /// always mirrored — that is what makes moving around in it feel natural — so
+    /// this decides only what the file looks like. In screen mode it applies to
+    /// the bubble alone: screen content is never mirrored.
     @Published var mirrorsRecording = false {
         didSet {
             guard mirrorsRecording != oldValue else { return }
@@ -88,9 +89,61 @@ final class CaptureController: ObservableObject {
         }
     }
 
+    // MARK: Screen mode
+
+    @Published var mode: CaptureMode = .camera {
+        didSet {
+            guard mode != oldValue else { return }
+            if persistsPreferences { DevicePreferences.mode = mode }
+            // macOS shows its prompt only the first time; afterwards this is a no-op.
+            if mode == .screenAndCamera, !ScreenAccess.isGranted { ScreenAccess.request() }
+            reconfigure()
+        }
+    }
+
+    @Published private(set) var displays: [DisplayOption] = []
+
+    @Published var selectedDisplayID: CGDirectDisplayID? {
+        didSet {
+            guard selectedDisplayID != oldValue else { return }
+            if persistsPreferences, let id = selectedDisplayID,
+               let display = displays.first(where: { $0.id == id && $0.isAvailable }) {
+                DevicePreferences.displayID = id
+                DevicePreferences.displayName = display.name
+            }
+            reconfigure()
+        }
+    }
+
+    @Published var bubbleCorner: BubbleCorner = .bottomTrailing {
+        didSet {
+            guard bubbleCorner != oldValue else { return }
+            if persistsPreferences { DevicePreferences.bubbleCorner = bubbleCorner }
+            configureRouter()
+        }
+    }
+
+    @Published var bubbleSize: BubbleSize = .medium {
+        didSet {
+            guard bubbleSize != oldValue else { return }
+            if persistsPreferences { DevicePreferences.bubbleSize = bubbleSize }
+            configureRouter()
+        }
+    }
+
+    @Published private(set) var screenAccess: ScreenAccessState = .unknown
+    @Published private(set) var isScreenCaptureRunning = false
+    /// The recorded frame size in screen mode.
+    @Published private(set) var canvasSize: CGSize = .zero
+
     /// Bumped after every session reconfiguration, so the preview can re-apply
     /// settings to a connection that may have been rebuilt.
     @Published private(set) var sessionGeneration = 0
+
+    /// Whether the configured session currently has an audio input.
+    /// The `AVCaptureDeviceInput` objects themselves stay confined to
+    /// `sessionQueue` — they are not Sendable and must not cross actors.
+    @Published private(set) var hasAudio = false
 
     /// The hardware self-test must not overwrite the user's own settings.
     private var persistsPreferences: Bool { !SelfTest.isEnabled }
@@ -99,32 +152,44 @@ final class CaptureController: ObservableObject {
         state == .recording || state == .paused || state == .finishing
     }
 
+    /// Whether a take can be started right now.
+    var canRecord: Bool {
+        switch mode {
+        case .camera:
+            return state != .needsAccess && state != .unavailable
+        case .screenAndCamera:
+            return screenAccess == .granted && isScreenCaptureRunning
+        }
+    }
+
     /// Only ever touched on `sessionQueue`, except when handed to the preview
     /// layer at view-construction time (AVCaptureVideoPreviewLayer takes a
     /// reference and does its own internal locking).
     nonisolated(unsafe) let session = AVCaptureSession()
     private let sessionQueue = DispatchQueue(label: "io.github.alexanderpuschkinberlin.mac-monologue.session")
-    /// Sample buffers are delivered here, separately from session configuration,
-    /// so reconfiguring never stalls behind frame delivery.
+    /// Sample buffers are delivered here — camera, microphone and screen alike —
+    /// separately from session configuration, so reconfiguring never stalls
+    /// behind frame delivery.
     private let outputQueue: DispatchQueue
 
     nonisolated(unsafe) private let videoOutput = AVCaptureVideoDataOutput()
     nonisolated(unsafe) private let audioOutput = AVCaptureAudioDataOutput()
     private let recorder: TakeRecorder
     private let router: CaptureRouter
+    private let screenSource = ScreenCaptureSource()
 
     /// Confined to `outputQueue`: only the meter's readings cross to the main actor.
     nonisolated(unsafe) private let meter = AudioLevelMeter()
     nonisolated(unsafe) private var lastMeterPublish: CFTimeInterval = 0
 
-    /// Dimensions of the active capture format, handed to the encoder.
+    /// Dimensions handed to the encoder: the camera's format, or the screen canvas.
     private var activeDimensions = (width: 1920, height: 1080)
+    private var cameraDimensions = (width: 1920, height: 1080)
+    private var cameraFrameRateSummary = ""
 
-    /// Whether the configured session currently has an audio input.
-    /// The `AVCaptureDeviceInput` objects themselves stay confined to
-    /// `sessionQueue` — they are not Sendable and must not cross actors.
-    @Published private(set) var hasAudio = false
     private var observers: [NSObjectProtocol] = []
+    private var screenRefreshGeneration = 0
+    private var accessPolling: Task<Void, Never>?
 
     init() {
         let outputQueue = DispatchQueue(label: "io.github.alexanderpuschkinberlin.mac-monologue.output")
@@ -138,7 +203,12 @@ final class CaptureController: ObservableObject {
 
     func start() {
         wireRecorder()
+        wireScreenSource()
         mirrorsRecording = DevicePreferences.mirrorsRecording
+        bubbleCorner = DevicePreferences.bubbleCorner
+        bubbleSize = DevicePreferences.bubbleSize
+        selectedDisplayID = DevicePreferences.displayID
+        mode = DevicePreferences.mode
         configureRouter()
         selectedCameraID = DevicePreferences.cameraID
         selectedMicrophoneID = DevicePreferences.microphoneID ?? DeviceOption.noAudioID
@@ -161,6 +231,8 @@ final class CaptureController: ObservableObject {
     func stop() {
         observers.forEach(NotificationCenter.default.removeObserver)
         observers.removeAll()
+        accessPolling?.cancel()
+        stopScreenCapture()
         sessionQueue.async { [session] in
             if session.isRunning { session.stopRunning() }
         }
@@ -208,6 +280,15 @@ final class CaptureController: ObservableObject {
             }
             observers.append(token)
         }
+        // A monitor plugged in or out changes which screens can be recorded.
+        let screens = center.addObserver(forName: NSApplication.didChangeScreenParametersNotification,
+                                         object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, self.mode == .screenAndCamera, !self.devicePickersLocked else { return }
+                self.refreshScreenCapture()
+            }
+        }
+        observers.append(screens)
     }
 
     private func refreshDevices() {
@@ -244,11 +325,18 @@ final class CaptureController: ObservableObject {
             reconfigure()
             return
         }
+        guard let id = selectedCameraID, Self.device(id: id) == nil else { return }
+
         // Mid-take disconnects are routine on a Mac — Continuity Camera drops every
-        // time the iPhone locks. Stopping and keeping the partial take is handled by
-        // TakeRecorder; this only surfaces the banner.
-        if let id = selectedCameraID, Self.device(id: id) == nil {
+        // time the iPhone locks.
+        switch mode {
+        case .camera:
+            // Nothing left to record: finish, and keep what there is.
             banner = "The camera disconnected. The take has been stopped and kept."
+            finishTake()
+        case .screenAndCamera:
+            // The presentation matters more than the bubble: keep recording.
+            banner = "The camera disconnected. The screen keeps recording without the bubble."
         }
     }
 
@@ -260,12 +348,8 @@ final class CaptureController: ObservableObject {
 
     private func reconfigure() {
         guard !devicePickersLocked else { return }
-        guard let cameraID = selectedCameraID, let camera = Self.device(id: cameraID) else {
-            state = cameraAccessDenied ? .needsAccess : .unavailable
-            formatSummary = ""
-            return
-        }
 
+        let camera = selectedCameraID.flatMap(Self.device(id:))
         let microphone = selectedMicrophoneID
             .flatMap { $0 == DeviceOption.noAudioID ? nil : Self.device(id: $0) }
         hasAudio = microphone != nil
@@ -275,15 +359,39 @@ final class CaptureController: ObservableObject {
             isClipping = false
         }
 
-
-        let format = Self.bestFormat(for: camera)
-        if let format {
+        if let camera, let format = Self.bestFormat(for: camera) {
             applyFormat(format, to: camera)
             let d = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
-            activeDimensions = (Int(d.width), Int(d.height))
-            formatSummary = Self.summary(for: format, hasAudio: microphone != nil)
+            cameraDimensions = (Int(d.width), Int(d.height))
         }
 
+        configureSession(camera: camera, microphone: microphone)
+        banner = nil
+
+        switch mode {
+        case .camera:
+            stopScreenCapture()
+            guard camera != nil else {
+                state = cameraAccessDenied ? .needsAccess : .unavailable
+                formatSummary = ""
+                configureRouter()
+                return
+            }
+            activeDimensions = cameraDimensions
+            formatSummary = "\(cameraDimensions.width) × \(cameraDimensions.height) · up to \(Int(Self.targetFPS)) fps"
+
+        case .screenAndCamera:
+            if camera == nil, !cameraAccessDenied {
+                banner = "No camera available — the screen will be recorded without the bubble."
+            }
+            refreshScreenCapture()
+        }
+
+        if state == .unavailable || state == .needsAccess { state = .ready }
+        configureRouter()
+    }
+
+    private func configureSession(camera: AVCaptureDevice?, microphone: AVCaptureDevice?) {
         let router = self.router
         sessionQueue.async { [weak self] in
             guard let self else { return }
@@ -312,7 +420,8 @@ final class CaptureController: ObservableObject {
                 self.audioOutput.setSampleBufferDelegate(router, queue: self.outputQueue)
             }
 
-            if let videoInput = try? AVCaptureDeviceInput(device: camera),
+            if let camera,
+               let videoInput = try? AVCaptureDeviceInput(device: camera),
                self.session.canAddInput(videoInput) {
                 self.session.addInput(videoInput)
             }
@@ -323,9 +432,6 @@ final class CaptureController: ObservableObject {
                 self.session.addInput(audioInput)
             }
         }
-
-        if state == .unavailable || state == .needsAccess { state = .ready }
-        banner = nil
     }
 
     private func applyFormat(_ format: AVCaptureDevice.Format, to device: AVCaptureDevice) {
@@ -343,6 +449,156 @@ final class CaptureController: ObservableObject {
         } catch {
             // Some virtual cameras refuse configuration; the session default is fine.
         }
+    }
+
+    // MARK: - Screen capture
+
+    /// Finds the screens, picks one, and (re)starts the stream for it.
+    private func refreshScreenCapture() {
+        screenRefreshGeneration += 1
+        let generation = screenRefreshGeneration
+
+        guard ScreenAccess.isGranted else {
+            screenAccess = .denied
+            stopScreenCapture()
+            formatSummary = ""
+            pollForScreenAccess()
+            return
+        }
+
+        ScreenCaptureSource.fetchDisplays { [weak self] result in
+            Task { @MainActor in
+                guard let self, generation == self.screenRefreshGeneration,
+                      self.mode == .screenAndCamera, !self.devicePickersLocked else { return }
+                switch result {
+                case .failure:
+                    // Preflight says yes, ScreenCaptureKit says no: granted in System
+                    // Settings, but only a freshly started app gets to see the screen.
+                    self.screenAccess = .needsRelaunch
+                    self.stopScreenCapture()
+                    self.formatSummary = ""
+                case .success(let found):
+                    self.screenAccess = .granted
+                    self.accessPolling?.cancel()
+                    self.startScreenCapture(on: self.named(found), generation: generation)
+                }
+            }
+        }
+    }
+
+    private func startScreenCapture(on found: [DisplayOption], generation: Int) {
+        var options = found
+        var chosen = selectedDisplayID.flatMap { id in found.first { $0.id == id } }
+
+        if chosen == nil, let name = DevicePreferences.displayName,
+           let byName = found.first(where: { $0.name == name }) {
+            // The same monitor, re-plugged under a new ID.
+            chosen = byName
+        }
+        if chosen == nil, let remembered = selectedDisplayID ?? DevicePreferences.displayID {
+            // A remembered screen that is not connected stays in the list, greyed
+            // out — recording a different screen than intended is the worse outcome.
+            options.append(DisplayOption(id: remembered, name: DevicePreferences.displayName ?? "Screen",
+                                         pixelWidth: 0, pixelHeight: 0, isAvailable: false))
+        }
+        if chosen == nil, selectedDisplayID == nil, DevicePreferences.displayID == nil {
+            chosen = found.first { $0.id == CGMainDisplayID() } ?? found.first
+        }
+
+        displays = options
+        if let chosen, selectedDisplayID != chosen.id {
+            selectedDisplayID = chosen.id        // re-enters via didSet → reconfigure
+            return
+        }
+
+        guard let chosen else {
+            banner = "The screen you chose last time is not connected. Pick another one."
+            stopScreenCapture()
+            formatSummary = ""
+            return
+        }
+
+        let canvas = ScreenCanvas.size(forDisplayWidth: chosen.pixelWidth, height: chosen.pixelHeight)
+        canvasSize = CGSize(width: canvas.width, height: canvas.height)
+        activeDimensions = canvas
+        formatSummary = "\(canvas.width) × \(canvas.height) · \(Int(Self.targetFPS)) fps · Screen + Camera"
+        configureRouter()
+
+        let settings = ScreenCaptureSource.Settings(
+            displayID: chosen.id, width: canvas.width, height: canvas.height,
+            showsMouseClicks: true, capturesAudio: false
+        )
+        screenSource.apply(settings, output: router, outputQueue: outputQueue) { [weak self] error in
+            Task { @MainActor in
+                guard let self, generation == self.screenRefreshGeneration else { return }
+                if let error {
+                    self.isScreenCaptureRunning = false
+                    self.banner = "The screen could not be recorded: \(TakeRecorder.describe(error))"
+                } else {
+                    self.isScreenCaptureRunning = true
+                }
+            }
+        }
+    }
+
+    private func stopScreenCapture() {
+        isScreenCaptureRunning = false
+        screenSource.apply(nil, output: router, outputQueue: outputQueue) { _ in }
+    }
+
+    private func wireScreenSource() {
+        screenSource.onUnexpectedStop = { [weak self] reason in
+            Task { @MainActor in
+                guard let self else { return }
+                self.isScreenCaptureRunning = false
+                if self.state == .recording || self.state == .paused {
+                    self.banner = "The screen being recorded went away. The take has been stopped and kept."
+                    self.finishTake()
+                } else {
+                    self.banner = "Screen recording stopped: \(reason)"
+                }
+            }
+        }
+    }
+
+    /// Screen names as the user knows them, from AppKit — ScreenCaptureKit has none.
+    private func named(_ found: [DisplayOption]) -> [DisplayOption] {
+        var names: [CGDirectDisplayID: String] = [:]
+        for screen in NSScreen.screens {
+            if let number = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber {
+                names[number.uint32Value] = screen.localizedName
+            }
+        }
+        return found.enumerated().map { index, display in
+            var display = display
+            display.name = names[display.id] ?? "Screen \(index + 1)"
+            return display
+        }
+    }
+
+    /// Picks up a grant made in System Settings while the app is open, where macOS
+    /// allows that without a relaunch.
+    private func pollForScreenAccess() {
+        guard accessPolling == nil || accessPolling?.isCancelled == true else { return }
+        accessPolling = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(1.5))
+                guard let self, self.mode == .screenAndCamera else { return }
+                if ScreenAccess.isGranted {
+                    self.accessPolling = nil
+                    self.refreshScreenCapture()
+                    return
+                }
+            }
+        }
+    }
+
+    func openScreenRecordingSettings() {
+        NSWorkspace.shared.open(ScreenAccess.settingsURL)
+    }
+
+    func relaunch() {
+        ScreenAccess.relaunch()
     }
 
     // MARK: - Format selection
@@ -387,7 +643,17 @@ final class CaptureController: ObservableObject {
     // MARK: - Takes
 
     private func configureRouter() {
-        router.configure(CaptureRouter.Configuration(mirrorsRecording: mirrorsRecording))
+        router.configure(CaptureRouter.Configuration(
+            mode: mode,
+            mirrorsRecording: mirrorsRecording,
+            bubble: BubbleLayout(corner: bubbleCorner, size: bubbleSize),
+            canvasWidth: mode == .screenAndCamera ? Int(canvasSize.width) : 0,
+            canvasHeight: mode == .screenAndCamera ? Int(canvasSize.height) : 0
+        ))
+    }
+
+    func attachPreview(_ sink: PreviewSink?) {
+        router.setPreviewSink(sink)
     }
 
     private func wireRecorder() {
@@ -445,7 +711,7 @@ final class CaptureController: ObservableObject {
     }
 
     private func startTake() {
-        guard selectedCameraID.flatMap(Self.device(id:)) != nil else { return }
+        guard canRecord else { return }
         lastRecordingURL = nil
         elapsed = 0
         banner = nil
@@ -454,7 +720,8 @@ final class CaptureController: ObservableObject {
             width: activeDimensions.width,
             height: activeDimensions.height,
             frameRate: Self.targetFPS,
-            audioSettings: hasAudio ? recommendedAudioSettings() : nil
+            audioSettings: hasAudio ? recommendedAudioSettings() : nil,
+            averageBitRate: mode == .screenAndCamera ? TakeRecorder.screenBitRate : TakeRecorder.cameraBitRate
         )
 
         sessionQueue.async { [weak self] in
@@ -588,10 +855,5 @@ final class CaptureController: ObservableObject {
         } else {
             NSWorkspace.shared.open(directory)
         }
-    }
-
-    static func summary(for format: AVCaptureDevice.Format, hasAudio: Bool) -> String {
-        let d = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
-        return "\(d.width) × \(d.height) · up to \(Int(targetFPS)) fps"
     }
 }

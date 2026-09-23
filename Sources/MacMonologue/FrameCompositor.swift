@@ -41,6 +41,83 @@ final class FrameCompositor {
         return render(image, width: width, height: height)
     }
 
+    /// Screen mode: the screen fills the canvas, the camera sits on top as a
+    /// circle in `bubble` — a pixel rect, origin top-left. With no camera, or an
+    /// empty bubble rect, the screen is rendered alone.
+    func renderScreen(
+        screen: CVPixelBuffer?,
+        camera: CVPixelBuffer?,
+        canvasWidth: Int,
+        canvasHeight: Int,
+        bubble: CGRect,
+        mirrorsCamera: Bool
+    ) -> CVPixelBuffer? {
+        let canvas = CGRect(x: 0, y: 0, width: canvasWidth, height: canvasHeight)
+
+        var background = CIImage(color: .black).cropped(to: canvas)
+        if let screen {
+            var image = CIImage(cvPixelBuffer: screen)
+            let extent = image.extent
+            if extent.size != canvas.size, extent.width > 0, extent.height > 0 {
+                image = image.transformed(by: CGAffineTransform(
+                    scaleX: canvas.width / extent.width, y: canvas.height / extent.height))
+            }
+            background = image.composited(over: background)
+        }
+
+        var result = background
+        if let camera, bubble.width >= 2 {
+            result = Self.bubble(camera: CIImage(cvPixelBuffer: camera), in: bubble,
+                                 canvasHeight: canvas.height, mirrored: mirrorsCamera)
+                .applyingFilter("CIBlendWithAlphaMask", parameters: [
+                    kCIInputBackgroundImageKey: background,
+                    kCIInputMaskImageKey: circleMask(diameter: Int(bubble.width))
+                        .transformed(by: Self.placement(of: bubble, canvasHeight: canvas.height)),
+                ])
+        }
+        return render(result.cropped(to: canvas), width: canvasWidth, height: canvasHeight)
+    }
+
+    // MARK: - Bubble
+
+    private var masks: [Int: CIImage] = [:]
+
+    /// A white disc with an antialiased edge, transparent outside. Built once per
+    /// diameter, not per frame.
+    private func circleMask(diameter: Int) -> CIImage {
+        if let cached = masks[diameter] { return cached }
+        let radius = CGFloat(diameter) / 2
+        let mask = CIFilter(name: "CIRadialGradient", parameters: [
+            "inputCenter": CIVector(x: radius, y: radius),
+            "inputRadius0": max(0, radius - 1.5),
+            "inputRadius1": radius,
+            "inputColor0": CIColor.white,
+            "inputColor1": CIColor.clear,
+        ])!.outputImage!.cropped(to: CGRect(x: 0, y: 0, width: diameter, height: diameter))
+        masks[diameter] = mask
+        return mask
+    }
+
+    /// The camera, cropped to a centred square, scaled to the bubble, optionally
+    /// mirrored, and moved to its place on the canvas.
+    private static func bubble(camera: CIImage, in rect: CGRect, canvasHeight: CGFloat,
+                               mirrored: Bool) -> CIImage {
+        let extent = camera.extent
+        let side = min(extent.width, extent.height)
+        let square = CGRect(x: extent.midX - side / 2, y: extent.midY - side / 2, width: side, height: side)
+
+        var image = camera.cropped(to: square)
+            .transformed(by: CGAffineTransform(translationX: -square.minX, y: -square.minY))
+            .transformed(by: CGAffineTransform(scaleX: rect.width / side, y: rect.width / side))
+        if mirrored { image = Self.mirrored(image) }
+        return image.transformed(by: placement(of: rect, canvasHeight: canvasHeight))
+    }
+
+    /// From a top-left pixel rect to Core Image's bottom-left coordinates.
+    private static func placement(of rect: CGRect, canvasHeight: CGFloat) -> CGAffineTransform {
+        CGAffineTransform(translationX: rect.minX, y: canvasHeight - rect.maxY)
+    }
+
     // MARK: - Internals
 
     private func render(_ image: CIImage, width: Int, height: Int) -> CVPixelBuffer? {

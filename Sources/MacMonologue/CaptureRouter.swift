@@ -1,24 +1,43 @@
 import AVFoundation
+import CoreImage
 import Foundation
+import ScreenCaptureKit
 
 /// The one place sample buffers arrive, and the one place that decides where they
-/// go: to the recorder, the level meter, and later the compositor and mixer.
+/// go: to the recorder, the level meter, the compositor and the live preview.
 ///
 /// `CaptureController` is `@MainActor` and cannot be a capture delegate, and
 /// `TakeRecorder` should not know where its buffers come from. This is the seam.
 ///
-/// All state is confined to `queue` — the same queue `TakeRecorder` is confined to,
-/// so calls into it never hop. `@unchecked Sendable` on that basis.
+/// Camera, microphone *and* screen all deliver on `queue` — the queue
+/// `TakeRecorder` is confined to — so nothing here needs a lock and calls into the
+/// recorder never hop. `@unchecked Sendable` on that basis.
 final class CaptureRouter: NSObject, @unchecked Sendable {
-    /// What the router does with incoming frames. Replaced as a whole, on `queue`.
+    /// What the router does with incoming frames. Replaced as a whole.
     struct Configuration: Equatable, Sendable {
+        var mode: CaptureMode = .camera
         var mirrorsRecording = false
+        var bubble = BubbleLayout()
+        var canvasWidth = 0
+        var canvasHeight = 0
+
+        var isScreenMode: Bool { mode == .screenAndCamera && canvasWidth > 0 && canvasHeight > 0 }
     }
+
+    /// If no camera frame has arrived for this long in screen mode, the screen is
+    /// recorded on its own rather than freezing — Continuity Camera drops out every
+    /// time the iPhone locks, and a presentation must not stop because of it.
+    static let cameraStallSeconds: CFTimeInterval = 0.25
+    private static let frameDuration = CMTime(value: 1, timescale: 30)
 
     private let queue: DispatchQueue
     private let recorder: TakeRecorder
     private let compositor = FrameCompositor()
     private var configuration = Configuration()
+    private var latestScreen: CVPixelBuffer?
+    private var lastCameraFrame: CFTimeInterval = 0
+    private var previewSink: PreviewSink?
+    private var fallbackTimer: DispatchSourceTimer?
 
     /// Every microphone buffer, including while idle or paused — the meter has to
     /// be live before you start, which is the whole point of having one.
@@ -29,14 +48,37 @@ final class CaptureRouter: NSObject, @unchecked Sendable {
         self.queue = queue
         self.recorder = recorder
         super.init()
+        startFallbackTimer()
     }
 
     /// Takes effect from the next frame. Safe to call from any thread.
     func configure(_ configuration: Configuration) {
-        queue.async { [self] in self.configuration = configuration }
+        queue.async { [self] in
+            self.configuration = configuration
+            if !configuration.isScreenMode { latestScreen = nil }
+        }
     }
 
+    func setPreviewSink(_ sink: PreviewSink?) {
+        queue.async { [self] in previewSink = sink }
+    }
+
+    // MARK: - Camera
+
     private func handleCameraFrame(_ sampleBuffer: CMSampleBuffer) {
+        lastCameraFrame = CACurrentMediaTime()
+
+        if configuration.isScreenMode {
+            // The camera sets the pace in screen mode: ScreenCaptureKit only sends
+            // a frame when the screen changes, and a still slide would otherwise
+            // freeze the face talking over it.
+            guard let camera = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+            composeScreen(camera: camera,
+                          presentationTime: CMSampleBufferGetPresentationTimeStamp(sampleBuffer),
+                          duration: CMSampleBufferGetDuration(sampleBuffer))
+            return
+        }
+
         guard configuration.mirrorsRecording else {
             // The unmirrored camera is passed through untouched — the path every
             // take used before the compositor existed, byte for byte.
@@ -57,6 +99,58 @@ final class CaptureRouter: NSObject, @unchecked Sendable {
         onMicrophoneBuffer?(sampleBuffer)
         recorder.append(sampleBuffer, to: .audio)
     }
+
+    // MARK: - Screen
+
+    private func handleScreenFrame(_ sampleBuffer: CMSampleBuffer) {
+        // Only a complete frame carries a new image; idle frames mean "unchanged",
+        // and the last image stays valid.
+        guard let info = (CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, createIfNecessary: false)
+                            as? [[SCStreamFrameInfo: Any]])?.first,
+              let rawStatus = info[.status] as? Int,
+              let status = SCFrameStatus(rawValue: rawStatus),
+              status == .complete || status == .started,
+              let image = CMSampleBufferGetImageBuffer(sampleBuffer)
+        else { return }
+        latestScreen = image
+    }
+
+    private func startFallbackTimer() {
+        let timer = DispatchSource.makeTimerSource(queue: queue)
+        timer.schedule(deadline: .now(), repeating: .milliseconds(33))
+        timer.setEventHandler { [weak self] in self?.fallbackTick() }
+        timer.resume()
+        fallbackTimer = timer
+    }
+
+    /// Keeps screen mode moving while no camera frames arrive.
+    private func fallbackTick() {
+        guard configuration.isScreenMode, latestScreen != nil,
+              CACurrentMediaTime() - lastCameraFrame > Self.cameraStallSeconds else { return }
+        composeScreen(camera: nil, presentationTime: recorder.currentCaptureTime(),
+                      duration: Self.frameDuration)
+    }
+
+    private func composeScreen(camera: CVPixelBuffer?, presentationTime: CMTime, duration: CMTime) {
+        let writing = recorder.isWriting
+        guard writing || previewSink != nil else { return }
+
+        let bubble = camera == nil ? .zero : configuration.bubble.frame(
+            canvasWidth: configuration.canvasWidth, canvasHeight: configuration.canvasHeight)
+        guard let rendered = compositor.renderScreen(
+            screen: latestScreen, camera: camera,
+            canvasWidth: configuration.canvasWidth, canvasHeight: configuration.canvasHeight,
+            bubble: bubble, mirrorsCamera: configuration.mirrorsRecording
+        ) else { return }
+
+        previewSink?.show(rendered)
+
+        if writing, let frame = ImageSampleBuffer.make(imageBuffer: rendered,
+                                                        presentationTime: presentationTime,
+                                                        duration: duration) {
+            recorder.append(frame, to: .video)
+        }
+    }
 }
 
 extension CaptureRouter: AVCaptureVideoDataOutputSampleBufferDelegate,
@@ -71,6 +165,17 @@ extension CaptureRouter: AVCaptureVideoDataOutputSampleBufferDelegate,
             handleCameraFrame(sampleBuffer)
         } else {
             handleMicrophone(sampleBuffer)
+        }
+    }
+}
+
+extension CaptureRouter: SCStreamOutput {
+    func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer,
+                of type: SCStreamOutputType) {
+        // Already on `queue` — ScreenCaptureKit was handed it as its sample queue.
+        switch type {
+        case .screen: handleScreenFrame(sampleBuffer)
+        default: break
         }
     }
 }

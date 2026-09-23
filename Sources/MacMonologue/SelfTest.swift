@@ -33,11 +33,18 @@ enum SelfTest {
                 return false
             }
 
-            guard await waitUntil({ capture.state == .ready }) else {
-                log("FAIL: never reached ready (state=\(capture.state.label))")
+            let screenMode = CommandLine.arguments.contains("--screen")
+            capture.mode = screenMode ? .screenAndCamera : .camera
+            capture.mirrorsRecording = CommandLine.arguments.contains("--mirror")
+
+            guard await waitUntil(timeout: 15, { capture.state == .ready && capture.canRecord }) else {
+                log("FAIL: never became ready to record (state=\(capture.state.label), "
+                    + "screenAccess=\(capture.screenAccess), banner=\(capture.banner ?? "-"))")
                 exit(1)
             }
-            if CommandLine.arguments.contains("--mirror") { capture.mirrorsRecording = true }
+            // Let a couple of seconds of frames flow, so the take opens on real
+            // screen content rather than the black before the first frame.
+            if screenMode { try? await Task.sleep(for: .seconds(1)) }
             log("ready · \(capture.formatSummary) · audio=\(capture.hasAudio) · mirrored=\(capture.mirrorsRecording)")
 
             capture.toggleRecording()
@@ -87,10 +94,15 @@ enum SelfTest {
             let videoTracks = (try? await asset.loadTracks(withMediaType: .video)) ?? []
             let audioTracks = (try? await asset.loadTracks(withMediaType: .audio)) ?? []
 
-            log("file · \(String(format: "%.2f", duration))s · video=\(videoTracks.count) audio=\(audioTracks.count) · \(size) bytes")
+            let naturalSize = (try? await videoTracks.first?.load(.naturalSize)) ?? .zero
+            log("file · \(String(format: "%.2f", duration))s · \(Int(naturalSize.width))×\(Int(naturalSize.height)) · "
+                + "video=\(videoTracks.count) audio=\(audioTracks.count) · \(size) bytes")
 
             var failures: [String] = []
             if videoTracks.isEmpty { failures.append("no video track") }
+            if screenMode, naturalSize != capture.canvasSize {
+                failures.append("frame is \(naturalSize), expected the canvas \(capture.canvasSize)")
+            }
             if capture.hasAudio && audioTracks.isEmpty { failures.append("no audio track") }
 
             // 2s + 2s recorded around a 3s pause: the pause must not be in the file.
@@ -103,9 +115,14 @@ enum SelfTest {
                 log("FAIL: \(failures.joined(separator: "; "))")
                 exit(1)
             }
-            // A test that leaves takes in the user's Movies folder is a bad test.
-            try? FileManager.default.removeItem(at: url)
-            log("OK · verified and removed \(url.lastPathComponent)")
+            // A test that leaves takes in the user's Movies folder is a bad test —
+            // unless asked to, so a person can look at what was recorded.
+            if CommandLine.arguments.contains("--keep") {
+                log("OK · verified and kept \(url.path)")
+            } else {
+                try? FileManager.default.removeItem(at: url)
+                log("OK · verified and removed \(url.lastPathComponent)")
+            }
             exit(0)
         }
     }

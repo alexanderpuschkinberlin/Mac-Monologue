@@ -1,6 +1,7 @@
 import AVFoundation
 import AVKit
 import SwiftUI
+import Translation
 
 struct ContentView: View {
     @ObservedObject var capture: CaptureController
@@ -9,8 +10,12 @@ struct ContentView: View {
         VStack(spacing: 0) {
             header
             preview
+            SubtitleProgressView(subtitles: capture.subtitles)
             controls
         }
+        // The one place translation packs are fetched from: macOS only offers
+        // it through a view, and the main window is always there.
+        .modifier(TranslationPreparation(subtitles: capture.subtitles))
         .background(Color(nsColor: .windowBackgroundColor))
         .background(WindowAccessor { capture.setMainWindow($0) })
         .onAppear {
@@ -422,5 +427,31 @@ struct ContentView: View {
     static func timecode(_ seconds: Double) -> String {
         let total = Int(seconds.rounded(.down))
         return String(format: "%02d:%02d", total / 60, total % 60)
+    }
+}
+
+/// Hands the translation pack the subtitle settings asked for to macOS.
+private struct TranslationPreparation: ViewModifier {
+    @ObservedObject var subtitles: SubtitleCenter
+
+    func body(content: Content) -> some View {
+        content.translationTask(subtitles.translationToPrepare) { session in
+            do {
+                try await Self.prepare(SessionHandle(session: session))
+                subtitles.translationPrepared(nil)
+            } catch {
+                subtitles.translationPrepared(error)
+            }
+        }
+    }
+
+    /// The session SwiftUI hands over is main-actor bound, and preparing it runs
+    /// off the main actor. Nothing else touches it meanwhile: this task owns it.
+    private struct SessionHandle: @unchecked Sendable {
+        let session: TranslationSession
+    }
+
+    private nonisolated static func prepare(_ handle: SessionHandle) async throws {
+        try await handle.session.prepareTranslation()
     }
 }

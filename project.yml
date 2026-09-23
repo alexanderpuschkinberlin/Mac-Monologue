@@ -44,6 +44,9 @@ targets:
       - sdk: ScreenCaptureKit.framework
       - sdk: CryptoKit.framework
       - sdk: Security.framework
+      - sdk: Vision.framework
+      - sdk: Speech.framework
+      - sdk: Translation.framework
       # RegisterEventHotKey: global hotkeys without the Input Monitoring
       # permission a global NSEvent monitor would need.
       - sdk: Carbon.framework

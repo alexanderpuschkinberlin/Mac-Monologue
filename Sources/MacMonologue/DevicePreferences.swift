@@ -26,6 +26,9 @@ enum DevicePreferences {
     private static let lastUpdateCheckKey = "lastUpdateCheck"
     private static let videoQualityKey = "videoQuality"
     private static let keepsInFrameKey = "keepsInFrame"
+    private static let subtitlesEnabledKey = "subtitlesEnabled"
+    private static let spokenLanguageKey = "subtitleSpokenLanguage"
+    private static let subtitleLanguagesKey = "subtitleLanguages"
 
     static var cameraID: String? {
         get { UserDefaults.standard.string(forKey: cameraKey) }
@@ -79,6 +82,23 @@ enum DevicePreferences {
         var all = (UserDefaults.standard.dictionary(forKey: keepsInFrameKey) as? [String: Bool]) ?? [:]
         all[cameraID] = keeps
         UserDefaults.standard.set(all, forKey: keepsInFrameKey)
+    }
+
+    /// The main switch. Off keeps the languages chosen, for turning it back on.
+    static var subtitlesEnabled: Bool {
+        get { UserDefaults.standard.bool(forKey: subtitlesEnabledKey) }
+        set { UserDefaults.standard.set(newValue, forKey: subtitlesEnabledKey) }
+    }
+
+    static var spokenLanguage: SubtitleLanguage {
+        get { UserDefaults.standard.string(forKey: spokenLanguageKey).flatMap(SubtitleLanguage.init) ?? .systemDefault }
+        set { UserDefaults.standard.set(newValue.rawValue, forKey: spokenLanguageKey) }
+    }
+
+    /// Nothing chosen until the user chooses.
+    static var subtitleLanguages: Set<SubtitleLanguage> {
+        get { Set((UserDefaults.standard.stringArray(forKey: subtitleLanguagesKey) ?? []).compactMap(SubtitleLanguage.init)) }
+        set { UserDefaults.standard.set(newValue.map(\.rawValue).sorted(), forKey: subtitleLanguagesKey) }
     }
 
     static var bubbleCorner: BubbleCorner {

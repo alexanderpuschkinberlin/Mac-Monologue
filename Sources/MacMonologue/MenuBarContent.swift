@@ -40,11 +40,16 @@ struct MenuBarLabel: View {
 struct MenuBarMenu: View {
     @ObservedObject var capture: CaptureController
     @ObservedObject var updates: UpdateChecker
+    @ObservedObject var subtitles: SubtitleCenter
     @Environment(\.openWindow) private var openWindow
     @Environment(\.openSettings) private var openSettings
 
     var body: some View {
         Text(statusLine)
+
+        if let job = subtitles.job, job.state == .running {
+            Text("Creating subtitles · \(job.progress.percent)%")
+        }
 
         if let newest = updates.availableReleases.first?.version {
             Button("Update Available: \(newest.description)…") {

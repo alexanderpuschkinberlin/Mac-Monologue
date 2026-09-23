@@ -31,6 +31,8 @@ struct SettingsView: View {
                 .tabItem { Label("Recording", systemImage: "record.circle") }
             permissions
                 .tabItem { Label("Permissions", systemImage: "lock.shield") }
+            SubtitleSettingsTab(subtitles: capture.subtitles)
+                .tabItem { Label("Subtitles", systemImage: "captions.bubble") }
             updatesTab
                 .tabItem { Label("Updates", systemImage: "arrow.down.circle") }
         }
@@ -227,5 +229,30 @@ struct PermissionBadge: View {
             Image(systemName: "xmark.circle.fill").foregroundStyle(.red)
                 .accessibilityLabel("Not allowed")
         }
+    }
+}
+
+/// The subtitle choices from the welcome steps, again, with a main switch.
+private struct SubtitleSettingsTab: View {
+    @ObservedObject var subtitles: SubtitleCenter
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            if SubtitleCenter.isSupported {
+                Toggle("Create subtitles after each take", isOn: $subtitles.isEnabled)
+                    .toggleStyle(.switch)
+                    .font(.headline)
+                Text("Turning this off keeps the languages below for next time.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                SubtitleLanguagePicker(subtitles: subtitles)
+                    .disabled(!subtitles.isEnabled)
+                    .opacity(subtitles.isEnabled ? 1 : 0.55)
+            } else {
+                Label("Subtitles need macOS 26 or later.", systemImage: "info.circle")
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(20)
     }
 }

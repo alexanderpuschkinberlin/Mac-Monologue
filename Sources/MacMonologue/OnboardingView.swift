@@ -7,7 +7,7 @@ struct OnboardingView: View {
     @ObservedObject var capture: CaptureController
 
     private enum Step: Int, CaseIterable {
-        case welcome, camera, microphone, screen, quality, shortcuts, done
+        case welcome, camera, microphone, screen, quality, subtitles, shortcuts, done
     }
 
     @State private var step: Step = .welcome
@@ -62,6 +62,8 @@ struct OnboardingView: View {
                                + "while you are recording, and never records its own window.")
         case .quality:
             qualityPage
+        case .subtitles:
+            subtitlesPage
         case .shortcuts:
             shortcutsPage
         case .done:
@@ -131,6 +133,25 @@ struct OnboardingView: View {
         }
     }
 
+    private var subtitlesPage: some View {
+        VStack(spacing: 12) {
+            Text("Subtitles, made by your Mac")
+                .font(.title.weight(.semibold))
+            Text("After each take, your Mac can write down what you said and add it as subtitles, "
+                 + "in the language you speak and translated. Viewers switch them on in their player, "
+                 + "and each language is also saved as a file for YouTube or Vimeo.")
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 500)
+                .fixedSize(horizontal: false, vertical: true)
+            SubtitleLanguagePicker(subtitles: capture.subtitles)
+                .frame(maxWidth: 540)
+            Text("You can change this any time in Settings › Subtitles.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
     private var shortcutsPage: some View {
         VStack(spacing: 14) {
             Text("Control it from anywhere")
@@ -195,6 +216,20 @@ struct OnboardingView: View {
                 capture.completeOnboarding(relaunch: needsRestart)
             }
             .keyboardShortcut(.defaultAction)
+        } else if step == .subtitles {
+            HStack {
+                Button("Not Now") {
+                    capture.subtitles.isEnabled = false
+                    move(1)
+                }
+                Button("Continue") {
+                    capture.subtitles.isEnabled = true
+                    if capture.subtitles.needsDownload { capture.subtitles.downloadMissing() }
+                    move(1)
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(capture.subtitles.languages.isEmpty)
+            }
         } else if let permission = currentPermission, permission.status == .notAsked {
             HStack {
                 Button("Not Now") { move(1) }
@@ -219,7 +254,7 @@ struct OnboardingView: View {
 
     private var progress: some View {
         HStack(spacing: 6) {
-            ForEach(Step.allCases, id: \.self) { candidate in
+            ForEach(Step.allCases.filter { $0 != .subtitles || SubtitleCenter.isSupported }, id: \.self) { candidate in
                 Circle()
                     .fill(candidate == step ? Color.accentColor : Color.secondary.opacity(0.3))
                     .frame(width: 7, height: 7)
@@ -230,7 +265,12 @@ struct OnboardingView: View {
     }
 
     private func move(_ delta: Int) {
-        guard let next = Step(rawValue: step.rawValue + delta) else { return }
+        guard var next = Step(rawValue: step.rawValue + delta) else { return }
+        // Subtitles need macOS 26; before that the step is not shown at all.
+        if next == .subtitles, !SubtitleCenter.isSupported,
+           let skipped = Step(rawValue: next.rawValue + delta) {
+            next = skipped
+        }
         step = next
     }
 }

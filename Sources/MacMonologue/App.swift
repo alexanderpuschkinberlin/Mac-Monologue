@@ -21,7 +21,7 @@ struct MacMonologueApp: App {
         // Always in the menu bar: the recorder has to be reachable while its
         // window is minimised and a presentation is in front.
         MenuBarExtra {
-            MenuBarMenu(capture: capture, updates: updates)
+            MenuBarMenu(capture: capture, updates: updates, subtitles: capture.subtitles)
         } label: {
             MenuBarLabel(capture: capture)
         }

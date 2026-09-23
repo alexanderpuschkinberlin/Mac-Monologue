@@ -293,6 +293,9 @@ final class CaptureController: ObservableObject {
     private var accessPolling: Task<Void, Never>?
     private var cameraWatch: Task<Void, Never>?
 
+    /// Subtitles for finished takes, made in the background.
+    let subtitles = SubtitleCenter()
+
     /// How far the camera's picture is turned to stand upright — an iPhone on a
     /// stand in portrait, or upside down, reports it; a built-in camera stays at 0.
     @Published private(set) var cameraRotationAngle: CGFloat = 0
@@ -313,6 +316,12 @@ final class CaptureController: ObservableObject {
     // MARK: - Lifecycle
 
     func start() {
+        subtitles.onFinished = { [weak self] video in
+            // The file was replaced; show the one with subtitles.
+            guard let self, self.state == .preview, self.lastRecordingURL == video else { return }
+            self.tearDownPlayer()
+            self.preparePlayer(for: video)
+        }
         wireRecorder()
         wireScreenSource()
         toggleShortcut = DevicePreferences.toggleShortcut
@@ -1120,6 +1129,7 @@ final class CaptureController: ObservableObject {
                     self.lastRecordingURL = url
                     self.preparePlayer(for: url)
                     self.state = .preview
+                    if self.recordsAudio { self.subtitles.start(for: url) }
                     // The camera may have been turned during the take.
                     if let turned = self.rotationCoordinator?.videoRotationAngleForHorizonLevelCapture,
                        turned != self.cameraRotationAngle {
@@ -1193,6 +1203,7 @@ final class CaptureController: ObservableObject {
         } else if state == .preview, let url = lastRecordingURL {
             // Finished takes go to the Trash, so Finder's Put Back works.
             tearDownPlayer()
+            subtitles.discard(url)
             try? FileManager.default.trashItem(at: url, resultingItemURL: nil)
         }
 

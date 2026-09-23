@@ -40,6 +40,7 @@ struct AppCommands: Commands {
         CommandGroup(replacing: .help) {
             Button("Keyboard Shortcuts") { capture.isShowingHelp = true }
                 .keyboardShortcut("?", modifiers: [])
+            Button("Welcome to Mac-Monologue…") { capture.showOnboarding() }
         }
     }
 

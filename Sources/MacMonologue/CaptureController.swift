@@ -96,7 +96,7 @@ final class CaptureController: ObservableObject {
             guard mode != oldValue else { return }
             if persistsPreferences { DevicePreferences.mode = mode }
             // macOS shows its prompt only the first time; afterwards this is a no-op.
-            if mode == .screenAndCamera, !ScreenAccess.isGranted { ScreenAccess.request() }
+            if captureBegun, mode == .screenAndCamera, !ScreenAccess.isGranted { ScreenAccess.request() }
             reconfigure()
         }
     }
@@ -185,6 +185,16 @@ final class CaptureController: ObservableObject {
         }
     }
 
+    @Published var launchMode: LaunchMode = .lastUsed {
+        didSet { if persistsPreferences { DevicePreferences.launchMode = launchMode } }
+    }
+
+    @Published var isShowingOnboarding = false
+
+    /// Nothing touches a camera or microphone before this — on a first launch not
+    /// until the welcome steps have said why, so macOS never asks out of the blue.
+    private var captureBegun = false
+
     private let hotkeys = GlobalHotkeys()
     private weak var mainWindow: NSWindow?
     private var minimizesWhenRecordingStarts = false
@@ -258,11 +268,42 @@ final class CaptureController: ObservableObject {
         bubbleCorner = DevicePreferences.bubbleCorner
         bubbleSize = DevicePreferences.bubbleSize
         selectedDisplayID = DevicePreferences.displayID
-        mode = DevicePreferences.mode
+        launchMode = DevicePreferences.launchMode
+        switch launchMode {
+        case .lastUsed: mode = DevicePreferences.mode
+        case .camera: mode = .camera
+        case .screenAndCamera: mode = .screenAndCamera
+        }
         configureRouter()
         selectedCameraID = DevicePreferences.cameraID
         selectedMicrophoneID = DevicePreferences.microphoneID ?? DeviceOption.noAudioID
         observeDeviceChanges()
+
+        if DevicePreferences.hasCompletedOnboarding || SelfTest.isEnabled {
+            beginCapture()
+        } else {
+            isShowingOnboarding = true
+        }
+    }
+
+    func showOnboarding() {
+        showMainWindow()
+        isShowingOnboarding = true
+    }
+
+    func completeOnboarding(relaunch: Bool) {
+        if persistsPreferences { DevicePreferences.hasCompletedOnboarding = true }
+        isShowingOnboarding = false
+        if relaunch {
+            ScreenAccess.relaunch()
+        } else {
+            beginCapture()
+        }
+    }
+
+    private func beginCapture() {
+        guard !captureBegun else { return }
+        captureBegun = true
 
         Task {
             let granted = await requestAccess()
@@ -397,7 +438,7 @@ final class CaptureController: ObservableObject {
     // MARK: - Session configuration
 
     private func reconfigure() {
-        guard !devicePickersLocked else { return }
+        guard captureBegun, !devicePickersLocked else { return }
 
         let camera = selectedCameraID.flatMap(Self.device(id:))
         let microphone = selectedMicrophoneID
@@ -723,6 +764,16 @@ final class CaptureController: ObservableObject {
         }
         hotkeys.register([.toggleRecording: toggleShortcut, .finish: finishShortcut])
         unavailableShortcuts = hotkeys.failed
+    }
+
+    /// Switched off while a new shortcut is being recorded in Settings, so pressing
+    /// the current combination records it rather than starting a take.
+    func setHotkeysSuspended(_ suspended: Bool) {
+        if suspended {
+            hotkeys.unregisterAll()
+        } else {
+            registerHotkeys()
+        }
     }
 
     func setMainWindow(_ window: NSWindow?) {

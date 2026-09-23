@@ -104,6 +104,11 @@ struct ContentView: View {
         .disabled(capture.devicePickersLocked)
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
+        // On its own view: two sheets on one view do not both present reliably.
+        .sheet(isPresented: $capture.isShowingOnboarding) {
+            OnboardingView(capture: capture)
+                .interactiveDismissDisabled()
+        }
     }
 
     private var mirrorHelp: String {

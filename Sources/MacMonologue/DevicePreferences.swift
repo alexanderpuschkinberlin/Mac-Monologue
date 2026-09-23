@@ -20,6 +20,7 @@ enum DevicePreferences {
     private static let autoMinimizesKey = "autoMinimizes"
     private static let showsMouseClicksKey = "showsMouseClicks"
     private static let completedOnboardingKey = "hasCompletedOnboarding"
+    private static let launchModeKey = "launchMode"
 
     static var cameraID: String? {
         get { UserDefaults.standard.string(forKey: cameraKey) }
@@ -86,6 +87,11 @@ enum DevicePreferences {
     static var showsMouseClicks: Bool {
         get { UserDefaults.standard.object(forKey: showsMouseClicksKey) as? Bool ?? true }
         set { UserDefaults.standard.set(newValue, forKey: showsMouseClicksKey) }
+    }
+
+    static var launchMode: LaunchMode {
+        get { UserDefaults.standard.string(forKey: launchModeKey).flatMap(LaunchMode.init) ?? .lastUsed }
+        set { UserDefaults.standard.set(newValue.rawValue, forKey: launchModeKey) }
     }
 
     static var hasCompletedOnboarding: Bool {

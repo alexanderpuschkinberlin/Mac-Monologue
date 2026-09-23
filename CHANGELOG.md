@@ -4,6 +4,13 @@ Every version of Mac-Monologue, newest first. `bin/publish` takes the section of
 the version it publishes as that release's notes, and the app shows them when it
 offers an update.
 
+## 0.3.1
+
+- The download page now explains the message macOS shows the first time you open
+  Mac-Monologue, and how to get past it once.
+- It also says which permissions the welcome steps ask for, and that they are kept
+  when you install Mac-Monologue again.
+
 ## 0.3.0 — 2026-09-24
 
 - Mac-Monologue now tells you when a new version is out, shows what changed, and

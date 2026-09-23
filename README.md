@@ -191,10 +191,26 @@
   </tr>
 </table>
 
-Step 3 happens because Mac-Monologue is not registered with Apple, which costs
-developers a yearly fee. Apple explains how to open such an app:
+<h4 id="first-open">The first time you open it</h4>
+
+macOS stops the app with **“Mac-Monologue.app” Not Opened** and says Apple could not
+verify that it is free of malware. That is expected: Apple only vouches for apps whose
+developers pay a yearly registration, and Mac-Monologue is free. To open it:
+
+1. Click **Done** - not *Move to Trash*.
+2. Open **System Settings › Privacy & Security** and scroll to the bottom.
+3. Next to *“Mac-Monologue.app” was blocked*, click **Open Anyway**, and confirm with
+   your password or Touch ID.
+
+You only do this once. Apple explains the same steps in
 [Open a Mac app from an unknown developer](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unknown-developer-mh40616/mac).
-You only need to do it the first time.
+
+#### Camera, microphone and screen
+
+The welcome steps ask for each permission in turn. Screen recording is only needed for
+**Screen + Camera**, and the app restarts once after you allow it. Used
+Mac-Monologue on this Mac before? It keeps the permissions you already gave, so you are
+not asked again.
 
 ### Updates
 
@@ -209,8 +225,9 @@ off in Settings.
 <br>
 Apple only lets apps through without asking once the developer has paid for a
 yearly registration. Mac-Monologue is free and not registered, so macOS asks you to
-confirm once in <i>System Settings › Privacy & Security</i>. After that it opens
-normally, and updates do not ask again.
+confirm once in <i>System Settings › Privacy & Security</i> - see
+<a href="#first-open">The first time you open it</a>. After that it
+opens normally.
 </details>
 
 <details>
@@ -228,10 +245,11 @@ record yourself, you can skip that step. Mac-Monologue never records its own win
 </details>
 
 <details>
-<summary><b>It does not see my camera or microphone.</b></summary>
+<summary><b>It does not see my camera, microphone or screen.</b></summary>
 <br>
-Check <i>System Settings › Privacy & Security › Camera</i> (and <i>Microphone</i>) and
-switch on Mac-Monologue. An iPhone used as a camera needs to be nearby and unlocked.
+Check <i>System Settings › Privacy & Security › Camera</i> (and <i>Microphone</i>, and
+<i>Screen & System Audio Recording</i> for your screen) and switch on Mac-Monologue.
+An iPhone used as a camera needs to be nearby and unlocked.
 </details>
 
 <details>

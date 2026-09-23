@@ -28,7 +28,7 @@ enum ReadmeArt {
     static let all: [Motif] = [
         hero, downloadButton,
         stepMode, stepPress, stepShare,
-        corners, screens, pause, keys, audio, mirror, privacy,
+        corners, screens, iphoneCamera, pause, keys, subtitles, audio, mirror, privacy,
         installDownload, installDrag, installOpenAnyway, installWelcome,
     ]
 
@@ -354,6 +354,74 @@ enum ReadmeArt {
         s.text("second screen", at: CGPoint(x: 321, y: 244), font: Hand.bold(20))
         s.check(at: CGPoint(x: 268, y: 272), size: 16, color: s.ink.accent)
         s.text("gets recorded", at: CGPoint(x: 330, y: 272), font: Hand.light(19), color: s.ink.accent)
+    }
+
+    /// An iPhone clipped to the top of a Mac, standing in for its camera.
+    static let iphoneCamera = Motif(name: "iphone-camera", size: CGSize(width: 440, height: 300), seed: 47) { s, _ in
+        // The Mac
+        let screen = CGRect(x: 40, y: 110, width: 250, height: 150)
+        s.rect(screen, radius: 10, width: 2.4)
+        s.stroke([CGPoint(x: 24, y: 262), CGPoint(x: 306, y: 262), CGPoint(x: 322, y: 280), CGPoint(x: 8, y: 280)],
+                 closed: true, width: 2.4)
+        for (y, length) in [(146.0, 110.0), (164.0, 140.0), (182.0, 90.0)] {
+            s.line(CGPoint(x: 62, y: y), CGPoint(x: 62 + length, y: y), color: s.ink.soft, width: 1.4)
+        }
+        // You, sharp, in the corner of what is recorded
+        let bubble = CGRect(x: 214, y: 186, width: 62, height: 62)
+        s.context.fill(Path(ellipseIn: bubble), with: .color(s.ink.line.opacity(0.06)))
+        s.ellipse(bubble, width: 2)
+        s.person(in: bubble, width: 1.8)
+
+        // The iPhone, its back to us, on a clip over the top edge
+        let phone = CGRect(x: 138, y: 22, width: 54, height: 100)
+        s.rect(CGRect(x: 150, y: 104, width: 30, height: 14), radius: 3, width: 2)
+        s.context.fill(Path(roundedRect: phone, cornerRadius: 11), with: .color(s.ink.line.opacity(0.05)))
+        s.rect(phone, radius: 11, width: 2.4)
+        let lenses = CGRect(x: phone.minX + 7, y: phone.minY + 7, width: 26, height: 26)
+        s.rect(lenses, radius: 6, width: 1.6)
+        s.ellipse(CGRect(x: lenses.minX + 3, y: lenses.minY + 3, width: 9, height: 9), width: 1.4)
+        s.ellipse(CGRect(x: lenses.minX + 13, y: lenses.minY + 13, width: 9, height: 9), width: 1.4)
+
+        // No cable: the waves of a wireless link, off to the left
+        for radius in [14.0, 26.0] {
+            let points = stride(from: .pi - 0.7, through: .pi + 0.7, by: 0.1).map { angle in
+                CGPoint(x: phone.minX - 6 + cos(angle) * radius, y: phone.midY + sin(angle) * radius)
+            }
+            s.stroke(points, color: s.ink.soft, width: 1.8, wobble: 0.4)
+        }
+
+        s.text("your iPhone", at: CGPoint(x: 290, y: 48), font: Hand.bold(24), anchor: .leading)
+        s.text("as the camera", at: CGPoint(x: 290, y: 78), font: Hand.light(20), color: s.ink.accent, anchor: .leading)
+        s.arrow(from: CGPoint(x: 284, y: 58), to: CGPoint(x: 200, y: 54), bend: 0.2)
+        s.text("no cable", at: CGPoint(x: 62, y: 70), font: Hand.light(19), color: s.ink.soft)
+        s.text("keeps you", at: CGPoint(x: 322, y: 196), font: Hand.light(19), color: s.ink.soft, anchor: .leading)
+        s.text("in frame", at: CGPoint(x: 322, y: 220), font: Hand.light(19), color: s.ink.soft, anchor: .leading)
+        s.arrow(from: CGPoint(x: 318, y: 214), to: CGPoint(x: 282, y: 218), bend: 0.3, color: s.ink.soft)
+    }
+
+    /// Speech in the take, subtitles in four languages out, all on the Mac.
+    static let subtitles = Motif(name: "subtitles", size: CGSize(width: 440, height: 280), seed: 48) { s, _ in
+        // The video, with a subtitle along the bottom
+        let frame = CGRect(x: 24, y: 34, width: 250, height: 170)
+        s.rect(frame, radius: 10, width: 2.4)
+        let bubble = CGRect(x: frame.midX - 44, y: frame.minY + 16, width: 88, height: 88)
+        s.person(in: bubble, width: 2)
+        let bar = CGRect(x: frame.minX + 26, y: frame.maxY - 50, width: frame.width - 52, height: 32)
+        s.context.fill(Path(roundedRect: bar, cornerRadius: 5), with: .color(s.ink.line.opacity(0.1)))
+        s.text("Hello and welcome!", at: CGPoint(x: bar.midX, y: bar.midY), font: Hand.bold(18))
+
+        // The languages to switch between
+        let codes = [("DE", true), ("EN", true), ("FR", false), ("ES", true)]
+        for (index, (code, chosen)) in codes.enumerated() {
+            let pill = CGRect(x: 318, y: 30 + CGFloat(index) * 44, width: 64, height: 32)
+            s.rect(pill, radius: 16, color: chosen ? s.ink.line : s.ink.soft, width: chosen ? 2.2 : 1.6)
+            s.text(code, at: CGPoint(x: pill.midX - 6, y: pill.midY), font: Hand.bold(18),
+                   color: chosen ? s.ink.line : s.ink.soft)
+            if chosen { s.check(at: CGPoint(x: pill.maxX + 18, y: pill.midY), size: 14) }
+        }
+
+        s.text("made on your Mac", at: CGPoint(x: frame.midX, y: 236), font: Hand.bold(20))
+        s.text("nothing uploaded", at: CGPoint(x: frame.midX, y: 262), font: Hand.light(18), color: s.ink.soft)
     }
 
     static let mirror = Motif(name: "mirror", size: CGSize(width: 440, height: 280), seed: 44) { s, _ in

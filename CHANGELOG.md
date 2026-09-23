@@ -4,6 +4,26 @@ Every version of Mac-Monologue, newest first. `bin/publish` takes the section of
 the version it publishes as that release's notes, and the app shows them when it
 offers an update.
 
+## 0.4.0
+
+- **Choose the quality**, by what the file will weigh: Economical, Medium, High
+  or Very high, from about 30 MB to about 310 MB for ten minutes. Medium is the
+  new standard, also after this update - your videos get much smaller than
+  before. Change it in the main window or in Settings.
+- **Record just the screen**, without yourself in the corner: the new Screen mode.
+- **Subtitles** (macOS 26 or later): after each take your Mac writes down what you
+  said and adds it as subtitles, in your language and translated into German,
+  English, French or Spanish. Everything happens on your Mac. Choose the
+  languages in Settings › Subtitles. A card shows how far it has got and how long
+  it will take, and you can cancel it.
+- **Keep me in frame**: follows you as you move. Cameras with Center Stage, like an
+  iPhone, do it themselves; for others Mac-Monologue zooms in slightly and moves
+  with you. Off until you turn it on.
+- An iPhone used as the camera is now always the right way up, whether it stands
+  upright or sideways.
+- "Mirror the recording" now warns, while it is on, that text reads backwards in
+  the saved file.
+
 ## 0.3.2 — 2026-09-24
 
 - When the camera is connected but sends no picture - usually an iPhone that is

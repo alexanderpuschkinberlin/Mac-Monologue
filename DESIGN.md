@@ -113,6 +113,37 @@ several decisions below that would be wrong for a product with real users.
   otherwise record a live preview of itself.
 - Mirroring in screen mode applies to the bubble only. Screen content is never mirrored.
 
+### Quality, framing, subtitles (v0.4)
+
+- **Four quality steps, fixed bitrates.** Economical (720p, 0.35 Mbit/s),
+  Medium (1080p, 0.7), High (1080p, 1.18) and Very high (2560-px screen or the
+  camera's own size, 4). Fixed rates rather than quality-based control, so the
+  size a step promises holds: High stays under 100 MB for ten minutes. Medium is
+  the default, also for everyone updating: 0.3 wrote about 750–900 MB per ten
+  minutes. The writer scales camera frames down (`AVVideoScalingModeKey`); the
+  screen canvas is sized by the step.
+- **Screen**, a third mode, records the screen alone: no camera input, no camera
+  permission needed; the fallback timer that keeps screen mode moving without
+  camera frames paces it.
+- **Keep me in frame** is the user's choice, per camera, off by default. With
+  Center Stage (iPhone, Studio Display) the app switches it cooperatively, so
+  Control Center and the switch agree. Without, `FaceFraming` moves a 1.4×
+  window after the face Vision finds eight times a second, with a dead zone and a
+  glide; the preview then shows the compositor's cropped frames.
+- **Turned cameras stand upright**: `AVCaptureDevice.RotationCoordinator` gives
+  the angle, the video connection applies it, so everything downstream receives
+  upright frames. A turn during a take applies to the next one.
+- **No image stabilisation for the iPhone**: `preferredVideoStabilizationMode` is
+  unavailable on macOS; a Mac app cannot ask Continuity Camera for it.
+- **Subtitles run after the take, in the background, on the Mac**:
+  `SpeechAnalyzer` for the words and their times, `SubtitleSegmenter` for
+  readable cues (two lines of 42, one to seven seconds), `TranslationSession` for
+  other languages, `.srt` files next to the take, and `SubtitleMuxer` adding one
+  tx3g track per language by copying picture and sound sample for sample into a
+  new file that replaces the take in one step. Cancelling leaves the take as it
+  was. macOS 26 or later: before that, neither API works without a window.
+  Language tools are downloaded only when the user asks, with a plain warning.
+
 ### Audio in screen mode
 
 - System audio and the microphone are **summed into one mono 48 kHz AAC track** —

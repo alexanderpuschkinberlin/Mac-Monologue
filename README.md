@@ -42,7 +42,7 @@
         <img src="docs/images/step-mode-light.png" width="240" alt="">
       </picture>
       <h3>1 · Choose</h3>
-      <p>Just the camera, or your screen with you in a corner.</p>
+      <p>Just the camera, just your screen, or your screen with you in a corner.</p>
     </td>
     <td width="33%" align="center">
       <picture>
@@ -77,7 +77,7 @@
     </td>
     <td width="50%">
       <h3>You, in the corner</h3>
-      <p>Record a presentation or a demo with yourself in a round bubble - the look of the tutorials you know, without putting it together afterwards. Pick one of four corners and one of three sizes; the preview shows exactly what gets recorded.</p>
+      <p>Record a presentation or a demo with yourself in a round bubble - the look of the tutorials you know, without putting it together afterwards. Pick one of four corners and one of three sizes; the preview shows exactly what gets recorded. Or record just the screen, without the bubble.</p>
     </td>
   </tr>
   <tr>
@@ -95,37 +95,61 @@
   <tr>
     <td width="50%">
       <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="docs/images/pause-dark.png">
-        <img src="docs/images/pause-light.png" alt="A recording with a pause in the middle, and the file with the pause cut out">
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/iphone-camera-dark.png">
+        <img src="docs/images/iphone-camera-light.png" alt="An iPhone clipped to the top of a Mac, used as its camera">
       </picture>
     </td>
     <td width="50%">
-      <h3>Pause without dead air</h3>
-      <p>Lost your thread? Pause, think, carry on. The pause is cut out, and one continuous video comes out - no stitching, no silent gaps.</p>
+      <h3>Your iPhone as a camera</h3>
+      <p>Clip your iPhone to the top of your Mac and pick it as the camera: a far sharper picture, no cable, nothing to install on the phone. Hold it upright or sideways, and the video is always the right way up. Turn on <b>Keep me in frame</b>, and Center Stage follows you as you move.</p>
     </td>
   </tr>
   <tr>
     <td width="50%">
-      <h3>Control it from anywhere</h3>
-      <p>While you present, your slides are in front. <kbd>⌃</kbd><kbd>⌥</kbd><kbd>⌘</kbd><kbd>R</kbd> still starts and pauses, <kbd>⌃</kbd><kbd>⌥</kbd><kbd>⌘</kbd><kbd>↩</kbd> finishes - and a red dot in the menu bar shows the time running. The window gets out of your way.</p>
+      <h3>Pause without dead air</h3>
+      <p>Lost your thread? Pause, think, carry on. The pause is cut out, and one continuous video comes out - no stitching, no silent gaps.</p>
     </td>
+    <td width="50%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/pause-dark.png">
+        <img src="docs/images/pause-light.png" alt="A recording with a pause in the middle, and the file with the pause cut out">
+      </picture>
+    </td>
+  </tr>
+  <tr>
     <td width="50%">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/images/keys-dark.png">
         <img src="docs/images/keys-light.png" alt="A hand holding Control, Option and Command and pressing R">
       </picture>
     </td>
+    <td width="50%">
+      <h3>Control it from anywhere</h3>
+      <p>While you present, your slides are in front. <kbd>⌃</kbd><kbd>⌥</kbd><kbd>⌘</kbd><kbd>R</kbd> still starts and pauses, <kbd>⌃</kbd><kbd>⌥</kbd><kbd>⌘</kbd><kbd>↩</kbd> finishes - and a red dot in the menu bar shows the time running. The window gets out of your way.</p>
+    </td>
   </tr>
   <tr>
+    <td width="50%">
+      <h3>Your voice and your Mac, together</h3>
+      <p>Play a video or music during your presentation, and it is in the recording along with what you say - in one track, in sync.</p>
+    </td>
     <td width="50%">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/images/audio-dark.png">
         <img src="docs/images/audio-light.png" alt="A microphone and the Mac's own sound, flowing into one track">
       </picture>
     </td>
+  </tr>
+  <tr>
     <td width="50%">
-      <h3>Your voice and your Mac, together</h3>
-      <p>Play a video or music during your presentation, and it is in the recording along with what you say - in one track, in sync.</p>
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/subtitles-dark.png">
+        <img src="docs/images/subtitles-light.png" alt="A video with a subtitle, and the languages German, English, French and Spanish to choose from">
+      </picture>
+    </td>
+    <td width="50%">
+      <h3>Subtitles in four languages</h3>
+      <p>After each take, your Mac writes down what you said and adds it as subtitles: in the language you speak, and translated into German, English, French or Spanish, whichever you choose. Viewers switch them on in their player, and each language is also saved as a file for YouTube or Vimeo. All of it happens on your Mac, with its own tools. Needs macOS 26 or later.</p>
     </td>
   </tr>
   <tr>
@@ -237,6 +261,21 @@ opens normally, and updates from inside the app do not ask again.
 <br>
 In your <b>Movies</b> folder, under <b>Monologue</b>, named by date and time. After
 each take, <i>Reveal in Finder</i> takes you straight to the file.
+</details>
+
+<details>
+<summary><b>How big are the files?</b></summary>
+<br>
+You choose, in the main window or in Settings. For ten minutes, picture and sound together:
+
+| Quality | Size | Good for |
+|---|---|---|
+| Economical | about 30 MB | email, slow connections |
+| Medium *(standard)* | about 60 MB | most things |
+| High | about 100 MB | crisp text, sharing as a link |
+| Very high | about 310 MB | editing, big screens |
+
+A still slide takes less, a lot of movement a little more.
 </details>
 
 <details>

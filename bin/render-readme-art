@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Renders the README illustrations into docs/images/, light and dark.
+# Deterministic: rendering again without changes produces identical files.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}"
+
+OUT="${1:-$(pwd)/docs/images}"
+mkdir -p "$OUT"
+xcodegen generate --quiet
+# xcodebuild hands variables prefixed TEST_RUNNER_ to the test process, unprefixed.
+TEST_RUNNER_README_ART_OUTPUT="$OUT" xcodebuild -project Mac-Monologue.xcodeproj -scheme Mac-Monologue \
+  -configuration Debug -derivedDataPath build \
+  test -only-testing:MacMonologueTests/ReadmeArtRenderer 2>&1 | grep -E "\.swift:[0-9]+.*error:|TEST (SUCCEEDED|FAILED)" || true
+ls "$OUT"

@@ -17,6 +17,30 @@ On macOS, `AVCaptureSession` delivers camera and microphone buffers on one
 synchronized clock, and `AVAssetWriter` writes a faststart-optimized file itself.
 The original is the specification; none of it is the implementation.
 
+## Relationship to the original
+
+A fork in provenance, not in code. `master` still holds
+[omacom/monologue](https://github.com/omacom/monologue) untouched; `main` removes
+that implementation and rebuilds the same idea natively.
+
+**Taken from the original:** the concept and the two-state flow (ready → preview),
+pause and resume as the feature the whole design turns on, the keyboard shortcuts,
+the device memory where a missing camera shows as *unavailable* rather than
+silently switching, the filename convention `Monologue-yyyy-MM-dd-HHmmss.mp4`, and
+the clipping red `#f06c6c` in the microphone meter.
+
+**Deliberately different:** 1080p30 instead of the camera's maximum advertised
+resolution — picking the maximum is what produces the original's "encoding cannot
+keep up" failure; HEVC instead of H.264; `~/Movies/Monologue` instead of a staging
+library with per-take manifests; Reveal in Finder instead of the Omacut handoff; and
+no crash recovery.
+
+**Not in the original at all:** Screen + Camera with the bubble and mixed system
+audio, global shortcuts, the menu bar item, mirroring, the welcome steps, and
+updates from GitHub.
+
+**Written from scratch:** all of `Sources/`, on AVFoundation.
+
 ## Scope
 
 **v1** recorded the camera and microphone only. **v2** adds a second mode, Screen +

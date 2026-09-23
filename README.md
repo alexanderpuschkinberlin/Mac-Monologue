@@ -1,140 +1,265 @@
-# Mac-Monologue
+<p align="center">
+  <img src="docs/images/icon.png" width="96" height="96" alt="">
+</p>
 
-> A fork of **[omacom/monologue](https://github.com/omacom/monologue)** — David
-> Heinemeier Hansson's webcam recorder for Omarchy, MIT licensed — rebuilt for
-> Apple Silicon Macs.
->
-> Not a line of the original C++ survives. It is Qt 6 on libpulse, with a
-> `xdg-desktop-portal` picker and an `ffmpeg` finalize step, and none of that
-> layer has an equivalent here. What carries over is the design. The
-> implementation is Swift on AVFoundation — written because my Mac currently
-> gives me the best video and audio quality I have available.
+<h1 align="center">Mac-Monologue</h1>
 
-A native macOS recorder for talking heads and screen tutorials. Pick a camera and a
-microphone once, press **Space**, talk, press **Space** to pause, **⌘↩** to finish —
-the clip lands in `~/Movies/Monologue`.
+<p align="center">
+  <b>Record yourself - or your screen, with you in the corner.</b><br>
+  Press one key, talk, press it again. Your video is ready. No editing afterwards.
+</p>
 
-Or switch to **Screen + Camera**: your screen, with you as a round bubble in a corner
-you pick — the tutorial look you know from YouTube, without editing it together
-afterwards. Pause and finish with a global shortcut while you present.
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/hero-dark.png">
+    <img src="docs/images/hero-light.png" width="780" alt="A laptop showing a slide, with the presenter in a round bubble in the corner and a red recording dot in the menu bar">
+  </picture>
+</p>
 
-It is not a port. The Linux original spends much of its code on problems macOS
-does not have — it bypasses Qt's audio layer to talk to libpulse directly just
-to get trustworthy capture timestamps, and shells out to `ffmpeg` to finalize
-each take. Here `AVCaptureSession` delivers camera and microphone buffers on one
-synchronized clock, and `AVAssetWriter` writes a faststart-optimized file
-itself, so **Mac-Monologue has no runtime dependencies at all**.
+<p align="center">
+  <a href="https://github.com/alexanderpuschkinberlin/Mac-Monologue/releases/latest/download/Mac-Monologue.zip">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/images/download-dark.png">
+      <img src="docs/images/download-light.png" width="300" alt="Download for Mac">
+    </picture>
+  </a>
+</p>
 
-## What it does
+<p align="center">
+  <sub>Free · Apple Silicon · macOS 15 or later · <a href="#install">How to install</a></sub><br>
+  <sub>A fork of <a href="https://github.com/omacom/monologue">omacom/monologue</a> by David Heinemeier Hansson, rebuilt for the Mac.</sub>
+</p>
 
-**Camera**
-- Camera and microphone at **1080p30**, encoded to **HEVC + AAC** in `.mp4`
-- **Pause and resume mid-take** — the paused interval is removed, and one
-  continuous file comes out
-- **Mirror the recording** if you want to: the preview always looks like a mirror,
-  the file only when you ask
+<br>
 
-**Screen + Camera**
-- Any connected screen at a **2560-px long edge** — slide text stays sharp
-- **You as a round bubble** in the corner you pick, in three sizes; the preview shows
-  exactly what is recorded, bubble included
-- **System audio mixed with your microphone** into one track, so a video in your
-  slides can be heard
-- The mouse pointer and your clicks are shown; Mac-Monologue never records its own window
-- If the camera drops out — an iPhone that locks — the screen keeps recording
+<h2 align="center">As simple as it gets</h2>
 
-**Everywhere**
-- **Global shortcuts** and an always-visible **menu bar item** with a red dot and the
-  running time, so you can pause and finish without leaving your presentation
-- Live **microphone meter** in dBFS with peak-hold and a clipping indicator
-- Play the finished take back before you keep it
-- Remembers your devices by unique ID; a missing one shows as *unavailable*
-  rather than silently switching to another
-- **Reveal in Finder**, and discard moves the file to the Trash
-- Welcome steps on first launch, with a drawing of where your fingers go
+<table>
+  <tr>
+    <td width="33%" align="center">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/step-mode-dark.png">
+        <img src="docs/images/step-mode-light.png" width="240" alt="">
+      </picture>
+      <h3>1 · Choose</h3>
+      <p>Just the camera, or your screen with you in a corner.</p>
+    </td>
+    <td width="33%" align="center">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/step-press-dark.png">
+        <img src="docs/images/step-press-light.png" width="240" alt="">
+      </picture>
+      <h3>2 · Talk</h3>
+      <p>Press <kbd>⌃</kbd><kbd>⌥</kbd><kbd>⌘</kbd><kbd>R</kbd> to start and to pause - from any app.</p>
+    </td>
+    <td width="33%" align="center">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/step-share-dark.png">
+        <img src="docs/images/step-share-light.png" width="240" alt="">
+      </picture>
+      <h3>3 · Share</h3>
+      <p>Finish, and the video is waiting in your Movies folder.</p>
+    </td>
+  </tr>
+</table>
 
-## Shortcuts
+<br>
 
-**From any app** — also while presenting. Changeable in Settings.
+<h2 align="center">What it does</h2>
 
-| Key | |
-|---|---|
-| `⌃⌥⌘R` | Record → Pause → Resume |
-| `⌃⌥⌘↩` | Finish the take |
+<table>
+  <tr>
+    <td width="50%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/corners-dark.png">
+        <img src="docs/images/corners-light.png" alt="A screen with four possible bubble positions, one chosen">
+      </picture>
+    </td>
+    <td width="50%">
+      <h3>You, in the corner</h3>
+      <p>Record a presentation or a demo with yourself in a round bubble - the look of the tutorials you know, without putting it together afterwards. Pick one of four corners and one of three sizes; the preview shows exactly what gets recorded.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <h3>Pick the screen you record</h3>
+      <p>More than one screen on your Mac? Choose which one gets recorded - your slides on the big display, while your notes stay on the laptop, out of the video.</p>
+    </td>
+    <td width="50%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/screens-dark.png">
+        <img src="docs/images/screens-light.png" alt="A laptop and a second screen; only the second screen, with you in the corner, is recorded">
+      </picture>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/pause-dark.png">
+        <img src="docs/images/pause-light.png" alt="A recording with a pause in the middle, and the file with the pause cut out">
+      </picture>
+    </td>
+    <td width="50%">
+      <h3>Pause without dead air</h3>
+      <p>Lost your thread? Pause, think, carry on. The pause is cut out, and one continuous video comes out - no stitching, no silent gaps.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <h3>Control it from anywhere</h3>
+      <p>While you present, your slides are in front. <kbd>⌃</kbd><kbd>⌥</kbd><kbd>⌘</kbd><kbd>R</kbd> still starts and pauses, <kbd>⌃</kbd><kbd>⌥</kbd><kbd>⌘</kbd><kbd>↩</kbd> finishes - and a red dot in the menu bar shows the time running. The window gets out of your way.</p>
+    </td>
+    <td width="50%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/keys-dark.png">
+        <img src="docs/images/keys-light.png" alt="A hand holding Control, Option and Command and pressing R">
+      </picture>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/audio-dark.png">
+        <img src="docs/images/audio-light.png" alt="A microphone and the Mac's own sound, flowing into one track">
+      </picture>
+    </td>
+    <td width="50%">
+      <h3>Your voice and your Mac, together</h3>
+      <p>Play a video or music during your presentation, and it is in the recording along with what you say - in one track, in sync.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <h3>Looks like a mirror, reads the right way</h3>
+      <p>The preview behaves like a mirror, so moving around feels natural. The video shows you the way others see you - so a sign you hold up reads correctly. Prefer it mirrored? One checkbox.</p>
+    </td>
+    <td width="50%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/mirror-dark.png">
+        <img src="docs/images/mirror-light.png" alt="The preview shows a sign mirrored, the saved file shows it the right way round">
+      </picture>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/privacy-dark.png">
+        <img src="docs/images/privacy-light.png" alt="A Mac with a padlock, and a crossed-out cloud">
+      </picture>
+    </td>
+    <td width="50%">
+      <h3>Nothing leaves your Mac</h3>
+      <p>No account, no cloud, no upload. Recordings are plain video files in your Movies folder, and they are yours.</p>
+    </td>
+  </tr>
+</table>
 
-**In the Mac-Monologue window**
+<br>
 
-| Key | |
-|---|---|
-| `Space` | Record → Pause → Resume, or play the finished clip |
-| `⌘↩` | Finish the take |
-| `⌫` | Discard (always confirms) |
-| `⌘N` | New recording |
-| `⇧⌘R` | Reveal in Finder |
-| `⌘,` | Settings |
-| `?` | Keyboard shortcuts |
+<h2 align="center" id="install">Install</h2>
 
-## Requirements
+<table>
+  <tr>
+    <td width="25%" align="center">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/install-1-dark.png">
+        <img src="docs/images/install-1-light.png" width="180" alt="">
+      </picture>
+      <br><b>1.</b> <a href="https://github.com/alexanderpuschkinberlin/Mac-Monologue/releases/latest/download/Mac-Monologue.zip">Download</a> and open the zip.
+    </td>
+    <td width="25%" align="center">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/install-2-dark.png">
+        <img src="docs/images/install-2-light.png" width="180" alt="">
+      </picture>
+      <br><b>2.</b> Drag Mac-Monologue into your <b>Applications</b> folder.
+    </td>
+    <td width="25%" align="center">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/install-3-dark.png">
+        <img src="docs/images/install-3-light.png" width="180" alt="">
+      </picture>
+      <br><b>3.</b> Open it. When macOS stops it, choose <b>Open Anyway</b> - once.
+    </td>
+    <td width="25%" align="center">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/install-4-dark.png">
+        <img src="docs/images/install-4-light.png" width="180" alt="">
+      </picture>
+      <br><b>4.</b> The welcome steps set up camera, microphone and screen.
+    </td>
+  </tr>
+</table>
 
-Apple Silicon, macOS 15 or later. Building needs Xcode and
-[XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`).
+Step 3 happens because Mac-Monologue is not registered with Apple, which costs
+developers a yearly fee. Apple explains how to open such an app:
+[Open a Mac app from an unknown developer](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unknown-developer-mh40616/mac).
+You only need to do it the first time.
 
-## Building
+### Updates
 
-```sh
-bin/build           # build Debug
-bin/run             # build and launch, replacing any running instance
-bin/test            # unit tests — no camera, microphone or screen access needed
-bin/test-camera     # real takes in both modes, the files inspected afterwards
-bin/release         # signed Release build plus a zip in dist/
-```
+Mac-Monologue tells you when a new version is out, shows what changed, and
+installs it with one click. It checks with GitHub once a day - you can switch that
+off in Settings.
 
-The scripts export `DEVELOPER_DIR` themselves, so `sudo xcode-select -s` is not
-required.
+## Questions
 
-**Run `bin/make-signing-cert` once** before working on screen recording. macOS ties
-the camera, microphone and screen recording permissions to the app's code signature;
-without a stable certificate every rebuild looks like a new app and has to be granted
-them again.
+<details>
+<summary><b>Why does macOS warn me the first time I open it?</b></summary>
+<br>
+Apple only lets apps through without asking once the developer has paid for a
+yearly registration. Mac-Monologue is free and not registered, so macOS asks you to
+confirm once in <i>System Settings › Privacy & Security</i>. After that it opens
+normally, and updates do not ask again.
+</details>
 
-## Installing
+<details>
+<summary><b>Where are my recordings?</b></summary>
+<br>
+In your <b>Movies</b> folder, under <b>Monologue</b>, named by date and time. After
+each take, <i>Reveal in Finder</i> takes you straight to the file.
+</details>
 
-The app is not notarized. On first launch macOS will refuse to open it; go to
-**System Settings → Privacy & Security** and choose **Open Anyway**. The welcome
-steps then ask for the camera, the microphone and screen recording, and restart the
-app once so screen recording takes effect. Nothing else to install.
+<details>
+<summary><b>Why does it want to record my screen?</b></summary>
+<br>
+Only for <b>Screen + Camera</b>, and only while you are recording. If you only ever
+record yourself, you can skip that step. Mac-Monologue never records its own window.
+</details>
 
-## Relationship to the original
+<details>
+<summary><b>It does not see my camera or microphone.</b></summary>
+<br>
+Check <i>System Settings › Privacy & Security › Camera</i> (and <i>Microphone</i>) and
+switch on Mac-Monologue. An iPhone used as a camera needs to be nearby and unlocked.
+</details>
 
-This is a fork in provenance, not in code. `master` still holds
-[omacom/monologue](https://github.com/omacom/monologue) untouched; `main` removes
-that implementation and rebuilds the same idea natively.
+<details>
+<summary><b>Can I change the shortcuts?</b></summary>
+<br>
+Yes, in <i>Settings › Shortcuts</i> - the drawing there shows where your fingers go.
+</details>
 
-**Taken from the original:** the concept and the two-state flow (ready → preview),
-pause and resume as the feature the whole design turns on, the keyboard shortcuts,
-the device-memory behaviour where a missing camera shows as *unavailable* rather
-than silently switching, the filename convention
-`Monologue-yyyy-MM-dd-HHmmss.mp4`, and the clipping red `#f06c6c` in the
-microphone meter.
+<details>
+<summary><b>How do I remove it?</b></summary>
+<br>
+Drag Mac-Monologue from Applications to the Trash. Your recordings stay in your
+Movies folder.
+</details>
 
-**Deliberately different:** 1080p30 instead of the camera's maximum advertised
-resolution — picking the maximum is what produces the original's "encoding cannot
-keep up" failure; HEVC instead of H.264; `~/Movies/Monologue` instead of a staging
-library with per-take manifests; Reveal in Finder instead of the Omacut handoff;
-and no crash recovery.
+<br>
 
-**Not in the original at all:** the Screen + Camera mode with the bubble and mixed
-system audio, global shortcuts, the menu bar item, mirroring, and the welcome steps. [`DESIGN.md`](DESIGN.md) records every such decision and
-why it was made.
+---
 
-**Written from scratch:** all of `Sources/`, on AVFoundation. `AVCaptureSession`
-delivers camera and microphone buffers on one synchronized clock, which is the
-problem the original solves by bypassing Qt for libpulse, and `AVAssetWriter`
-writes a faststart-optimized file itself, which is what the original calls
-`ffmpeg` for.
-
-## License
-
-MIT — see [`LICENSE`](LICENSE), which carries both copyright lines: David
-Heinemeier Hansson for the original Monologue, and Alexander Puschkin for this
-macOS rewrite.
+<sub>
+<b>Where it comes from.</b> Mac-Monologue is a fork of
+<a href="https://github.com/omacom/monologue">omacom/monologue</a>, David Heinemeier
+Hansson's webcam recorder for Omarchy, rewritten from scratch in Swift for the Mac -
+because a Mac is where I have the best camera and microphone. What was kept and what
+changed is in <a href="DESIGN.md">DESIGN.md</a>.
+<br><br>
+<b>For developers:</b> building, testing and releasing are in
+<a href="DEVELOPMENT.md">DEVELOPMENT.md</a>.
+<br><br>
+MIT licensed - see <a href="LICENSE">LICENSE</a>.
+</sub>

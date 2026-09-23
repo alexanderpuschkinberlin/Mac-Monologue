@@ -1,6 +1,7 @@
 import AVFoundation
 import CoreImage
 import Foundation
+import os
 import ScreenCaptureKit
 
 /// The one place sample buffers arrive, and the one place that decides where they
@@ -11,7 +12,8 @@ import ScreenCaptureKit
 ///
 /// Camera, microphone *and* screen all deliver on `queue` — the queue
 /// `TakeRecorder` is confined to — so nothing here needs a lock and calls into the
-/// recorder never hop. `@unchecked Sendable` on that basis.
+/// recorder never hop. `@unchecked Sendable` on that basis. The one exception is
+/// `lastCameraFrameTime`, read from the main actor and so behind a lock.
 final class CaptureRouter: NSObject, @unchecked Sendable {
     /// What the router does with incoming frames. Replaced as a whole.
     struct Configuration: Equatable, Sendable {
@@ -36,6 +38,7 @@ final class CaptureRouter: NSObject, @unchecked Sendable {
     private var configuration = Configuration()
     private var latestScreen: CVPixelBuffer?
     private var lastCameraFrame: CFTimeInterval = 0
+    private let cameraFrameStamp = OSAllocatedUnfairLock<CFTimeInterval>(initialState: 0)
     private var previewSink: PreviewSink?
     private var fallbackTimer: DispatchSourceTimer?
 
@@ -90,8 +93,13 @@ final class CaptureRouter: NSObject, @unchecked Sendable {
 
     // MARK: - Camera
 
+    /// When the camera last delivered a frame, in `CACurrentMediaTime()`; 0 if never.
+    /// Safe to read from any thread.
+    var lastCameraFrameTime: CFTimeInterval { cameraFrameStamp.withLock { $0 } }
+
     private func handleCameraFrame(_ sampleBuffer: CMSampleBuffer) {
         lastCameraFrame = CACurrentMediaTime()
+        cameraFrameStamp.withLock { [now = lastCameraFrame] in $0 = now }
 
         if configuration.isScreenMode {
             // The camera sets the pace in screen mode: ScreenCaptureKit only sends

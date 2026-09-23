@@ -50,6 +50,11 @@ final class CaptureController: ObservableObject {
     @Published private(set) var microphones: [DeviceOption] = [.noAudio]
     @Published private(set) var formatSummary: String = ""
     @Published private(set) var banner: String?
+    /// The selected camera is connected but has sent no picture for a while —
+    /// typically an iPhone that is locked away or out of reach.
+    @Published private(set) var cameraIsSilent = false
+    /// Another camera to offer while the selected one is silent.
+    @Published private(set) var alternativeCamera: DeviceOption?
     @Published private(set) var elapsed: Double = 0
     @Published private(set) var audioLevel: Float = AudioLevelMeter.floorDB
     @Published private(set) var audioPeak: Float = AudioLevelMeter.floorDB
@@ -245,6 +250,10 @@ final class CaptureController: ObservableObject {
     private var observers: [NSObjectProtocol] = []
     private var screenRefreshGeneration = 0
     private var accessPolling: Task<Void, Never>?
+    private var cameraWatch: Task<Void, Never>?
+
+    /// How long the selected camera may stay silent before the window says so.
+    static let cameraSilenceSeconds: CFTimeInterval = 5
 
     init() {
         let outputQueue = DispatchQueue(label: "io.github.alexanderpuschkinberlin.mac-monologue.output")
@@ -323,6 +332,7 @@ final class CaptureController: ObservableObject {
         observers.forEach(NotificationCenter.default.removeObserver)
         observers.removeAll()
         accessPolling?.cancel()
+        cameraWatch?.cancel()
         stopScreenCapture()
         sessionQueue.async { [session] in
             if session.isRunning { session.stopRunning() }
@@ -457,6 +467,7 @@ final class CaptureController: ObservableObject {
         }
 
         configureSession(camera: camera, microphone: microphone)
+        watchCamera(camera != nil)
         banner = nil
 
         switch mode {
@@ -480,6 +491,35 @@ final class CaptureController: ObservableObject {
 
         if state == .unavailable || state == .needsAccess { state = .ready }
         configureRouter()
+    }
+
+    /// Continuity Camera can be listed as connected and still never deliver a
+    /// frame. Rather than a black window, say so and offer another camera.
+    private func watchCamera(_ isConfigured: Bool) {
+        cameraWatch?.cancel()
+        cameraIsSilent = false
+        alternativeCamera = nil
+        guard isConfigured else { return }
+        let watchStarted = CACurrentMediaTime()
+        cameraWatch = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(1))
+                guard let self, !Task.isCancelled else { return }
+                let lastFrame = max(self.router.lastCameraFrameTime, watchStarted)
+                let silent = self.state == .ready
+                    && CACurrentMediaTime() - lastFrame > Self.cameraSilenceSeconds
+                guard silent != self.cameraIsSilent else { continue }
+                self.cameraIsSilent = silent
+                self.alternativeCamera = silent
+                    ? self.cameras.first { $0.isAvailable && $0.id != self.selectedCameraID }
+                    : nil
+            }
+        }
+    }
+
+    func useAlternativeCamera() {
+        guard let alternativeCamera else { return }
+        selectedCameraID = alternativeCamera.id
     }
 
     private func configureSession(camera: AVCaptureDevice?, microphone: AVCaptureDevice?) {

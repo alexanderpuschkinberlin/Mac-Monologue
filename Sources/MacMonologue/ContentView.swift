@@ -162,7 +162,9 @@ struct ContentView: View {
                 screenAccessOverlay
             }
 
-            if let banner = capture.banner {
+            if capture.cameraIsSilent {
+                silentCameraHint
+            } else if let banner = capture.banner {
                 Text(banner)
                     .font(.callout)
                     .padding(.horizontal, 12)
@@ -232,6 +234,21 @@ struct ContentView: View {
         case .finishing: .orange
         case .needsAccess, .unavailable: .gray
         }
+    }
+
+    private var silentCameraHint: some View {
+        HStack(spacing: 12) {
+            Text("The camera isn't sending a picture. If it's your iPhone, wake it and keep it nearby.")
+                .font(.callout)
+            if let alternative = capture.alternativeCamera {
+                Button("Use \(alternative.name)") { capture.useAlternativeCamera() }
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .padding(12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
     }
 
     private var accessOverlay: some View {

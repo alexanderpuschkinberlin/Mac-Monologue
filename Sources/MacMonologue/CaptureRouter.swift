@@ -3,6 +3,7 @@ import CoreImage
 import Foundation
 import os
 import ScreenCaptureKit
+import Vision
 
 /// The one place sample buffers arrive, and the one place that decides where they
 /// go: to the recorder, the level meter, the compositor and the live preview.
@@ -22,6 +23,8 @@ final class CaptureRouter: NSObject, @unchecked Sendable {
         var bubble = BubbleLayout()
         var canvasWidth = 0
         var canvasHeight = 0
+        /// Follow the face in software, for a camera without Center Stage.
+        var followsFace = false
 
         var isScreenMode: Bool { mode.recordsScreen && canvasWidth > 0 && canvasHeight > 0 }
     }
@@ -38,6 +41,10 @@ final class CaptureRouter: NSObject, @unchecked Sendable {
     private var configuration = Configuration()
     private var latestScreen: CVPixelBuffer?
     private var lastCameraFrame: CFTimeInterval = 0
+    private var framing = FaceFraming()
+    private var framesSinceFaceSearch = 0
+    /// Where the camera's picture is cropped to while following a face; nil otherwise.
+    private var cameraCrop: CGRect?
     private let cameraFrameStamp = OSAllocatedUnfairLock<CFTimeInterval>(initialState: 0)
     private var previewSink: PreviewSink?
     private var fallbackTimer: DispatchSourceTimer?
@@ -69,6 +76,11 @@ final class CaptureRouter: NSObject, @unchecked Sendable {
     /// Takes effect from the next frame. Safe to call from any thread.
     func configure(_ configuration: Configuration) {
         queue.async { [self] in
+            if !configuration.followsFace || !self.configuration.followsFace {
+                // Switched on: start from the whole picture, not where it was left.
+                framing = FaceFraming()
+                cameraCrop = nil
+            }
             self.configuration = configuration
             if !configuration.isScreenMode { latestScreen = nil }
         }
@@ -101,6 +113,10 @@ final class CaptureRouter: NSObject, @unchecked Sendable {
         lastCameraFrame = CACurrentMediaTime()
         cameraFrameStamp.withLock { [now = lastCameraFrame] in $0 = now }
 
+        if configuration.followsFace, let camera = CMSampleBufferGetImageBuffer(sampleBuffer) {
+            followFace(in: camera)
+        }
+
         if configuration.isScreenMode {
             // The camera sets the pace in screen mode: ScreenCaptureKit only sends
             // a frame when the screen changes, and a still slide would otherwise
@@ -109,6 +125,21 @@ final class CaptureRouter: NSObject, @unchecked Sendable {
             composeScreen(camera: camera,
                           presentationTime: CMSampleBufferGetPresentationTimeStamp(sampleBuffer),
                           duration: CMSampleBufferGetDuration(sampleBuffer))
+            return
+        }
+
+        if let cameraCrop, let camera = CMSampleBufferGetImageBuffer(sampleBuffer) {
+            // Following a face, the preview layer would show the uncropped camera:
+            // the preview is fed the cropped frames instead, mirrored like a mirror.
+            if let previewSink, let preview = compositor.renderCamera(camera, mirrored: true, crop: cameraCrop) {
+                previewSink.show(preview)
+            }
+            guard recorder.isWriting,
+                  let rendered = compositor.renderCamera(camera, mirrored: configuration.mirrorsRecording,
+                                                         crop: cameraCrop),
+                  let composited = ImageSampleBuffer.make(imageBuffer: rendered, timingFrom: sampleBuffer)
+            else { return }
+            recorder.append(composited, to: .video)
             return
         }
 
@@ -127,6 +158,24 @@ final class CaptureRouter: NSObject, @unchecked Sendable {
         else { return }
         recorder.append(composited, to: .video)
     }
+
+    /// Looks for a face every few frames and moves the window every frame.
+    private func followFace(in camera: CVPixelBuffer) {
+        framesSinceFaceSearch += 1
+        if framesSinceFaceSearch >= Self.framesPerFaceSearch {
+            framesSinceFaceSearch = 0
+            let request = VNDetectFaceRectanglesRequest()
+            try? VNImageRequestHandler(cvPixelBuffer: camera, options: [:]).perform([request])
+            // The biggest face is the one talking to the camera.
+            let face = request.results?.max { $0.boundingBox.width < $1.boundingBox.width }?.boundingBox
+            // Vision is bottom-left; the framing is top-left.
+            framing.observe(face: face.map { CGRect(x: $0.minX, y: 1 - $0.maxY, width: $0.width, height: $0.height) })
+        }
+        cameraCrop = framing.step()
+    }
+
+    /// About eight searches a second at 30 fps: enough to follow, cheap enough to ignore.
+    static let framesPerFaceSearch = 4
 
     private func handleMicrophone(_ sampleBuffer: CMSampleBuffer) {
         onMicrophoneBuffer?(sampleBuffer)
@@ -219,7 +268,8 @@ final class CaptureRouter: NSObject, @unchecked Sendable {
         guard let rendered = compositor.renderScreen(
             screen: latestScreen, camera: camera,
             canvasWidth: configuration.canvasWidth, canvasHeight: configuration.canvasHeight,
-            bubble: bubble, mirrorsCamera: configuration.mirrorsRecording
+            bubble: bubble, mirrorsCamera: configuration.mirrorsRecording,
+            cameraCrop: configuration.followsFace ? cameraCrop : nil
         ) else { return }
 
         previewSink?.show(rendered)

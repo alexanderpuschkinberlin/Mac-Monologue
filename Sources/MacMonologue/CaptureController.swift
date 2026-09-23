@@ -104,6 +104,37 @@ final class CaptureController: ObservableObject {
         }
     }
 
+    // MARK: Keeping you in frame
+
+    /// How the selected camera can follow a face, if at all.
+    enum Framing: Equatable {
+        case unavailable
+        /// The camera does it itself — an iPhone, a Studio Display.
+        case centerStage
+        /// Done here, by zooming in and moving the window.
+        case software
+    }
+
+    @Published private(set) var framing: Framing = .unavailable
+
+    /// The user's choice for this camera; off until they turn it on.
+    @Published var keepsMeInFrame = false {
+        didSet {
+            guard keepsMeInFrame != oldValue, !isLoadingFramingChoice else { return }
+            if persistsPreferences, let id = selectedCameraID {
+                DevicePreferences.setKeepsInFrame(keepsMeInFrame, cameraID: id)
+            }
+            applyFraming()
+        }
+    }
+    private var isLoadingFramingChoice = false
+    private var centerStageObserver: CenterStageObserver?
+
+    /// Whether frames are cropped here — and the preview must show the crop.
+    var followsFaceInSoftware: Bool {
+        framing == .software && keepsMeInFrame && mode.usesCamera
+    }
+
     // MARK: Screen mode
 
     @Published var mode: CaptureMode = .camera {
@@ -490,6 +521,7 @@ final class CaptureController: ObservableObject {
                 : (Int(d.width), Int(d.height))
         }
 
+        loadFraming(for: camera)
         configureSession(camera: camera, microphone: microphone, rotationAngle: cameraRotationAngle)
         watchCamera(camera != nil)
         banner = nil
@@ -518,6 +550,41 @@ final class CaptureController: ObservableObject {
         }
 
         if state == .unavailable || state == .needsAccess { state = .ready }
+        configureRouter()
+    }
+
+    /// What the camera can do to keep a face in frame, and what the user chose for it.
+    private func loadFraming(for camera: AVCaptureDevice?) {
+        if let camera {
+            framing = camera.formats.contains(where: \.isCenterStageSupported) ? .centerStage : .software
+        } else {
+            framing = .unavailable
+        }
+        isLoadingFramingChoice = true
+        keepsMeInFrame = camera.map { DevicePreferences.keepsInFrame(cameraID: $0.uniqueID) } ?? false
+        isLoadingFramingChoice = false
+        applyFraming()
+    }
+
+    private func applyFraming() {
+        if framing == .centerStage {
+            // Cooperative: the app sets it, and the user can still change it in
+            // Control Center — which flows back into the switch.
+            if AVCaptureDevice.centerStageControlMode != .cooperative {
+                AVCaptureDevice.centerStageControlMode = .cooperative
+            }
+            if AVCaptureDevice.isCenterStageEnabled != keepsMeInFrame {
+                AVCaptureDevice.isCenterStageEnabled = keepsMeInFrame
+            }
+            if centerStageObserver == nil {
+                centerStageObserver = CenterStageObserver { [weak self] enabled in
+                    Task { @MainActor in
+                        guard let self, self.framing == .centerStage, self.keepsMeInFrame != enabled else { return }
+                        self.keepsMeInFrame = enabled
+                    }
+                }
+            }
+        }
         configureRouter()
     }
 
@@ -842,7 +909,8 @@ final class CaptureController: ObservableObject {
             mirrorsRecording: mirrorsRecording,
             bubble: BubbleLayout(corner: bubbleCorner, size: bubbleSize),
             canvasWidth: mode.recordsScreen ? Int(canvasSize.width) : 0,
-            canvasHeight: mode.recordsScreen ? Int(canvasSize.height) : 0
+            canvasHeight: mode.recordsScreen ? Int(canvasSize.height) : 0,
+            followsFace: followsFaceInSoftware
         ))
     }
 
@@ -1150,5 +1218,27 @@ final class CaptureController: ObservableObject {
         } else {
             NSWorkspace.shared.open(directory)
         }
+    }
+}
+
+/// Center Stage's on/off is a class property; only Objective-C style KVO on the
+/// class object sees it change, which is what happens when the user flips it in
+/// Control Center.
+private final class CenterStageObserver: NSObject {
+    private let onChange: @Sendable (Bool) -> Void
+
+    init(onChange: @escaping @Sendable (Bool) -> Void) {
+        self.onChange = onChange
+        super.init()
+        AVCaptureDevice.self.addObserver(self, forKeyPath: "centerStageEnabled", options: [.new], context: nil)
+    }
+
+    deinit {
+        AVCaptureDevice.self.removeObserver(self, forKeyPath: "centerStageEnabled")
+    }
+
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?,
+                               change: [NSKeyValueChangeKey: Any]?, context: UnsafeMutableRawPointer?) {
+        onChange(AVCaptureDevice.isCenterStageEnabled)
     }
 }

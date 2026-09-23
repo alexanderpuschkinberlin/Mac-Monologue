@@ -32,13 +32,30 @@ final class FrameCompositor {
 
     var exhaustedCount: Int { pool?.exhaustedCount ?? 0 }
 
-    /// Camera mode: the camera fills the frame, mirrored or not.
-    func renderCamera(_ camera: CVPixelBuffer, mirrored: Bool) -> CVPixelBuffer? {
+    /// Camera mode: the camera fills the frame, mirrored or not, and zoomed to
+    /// `crop` — a normalised, top-left window — when following a face.
+    func renderCamera(_ camera: CVPixelBuffer, mirrored: Bool, crop: CGRect? = nil) -> CVPixelBuffer? {
         let width = CVPixelBufferGetWidth(camera)
         let height = CVPixelBufferGetHeight(camera)
-        var image = CIImage(cvPixelBuffer: camera)
+        var image = Self.framed(CIImage(cvPixelBuffer: camera), to: crop)
         if mirrored { image = Self.mirrored(image) }
         return render(image, width: width, height: height)
+    }
+
+    /// The part of `image` inside `crop`, scaled up to fill the image's own extent.
+    static func framed(_ image: CIImage, to crop: CGRect?) -> CIImage {
+        guard let crop, crop.width > 0, crop.height > 0 else { return image }
+        let extent = image.extent
+        // Normalised top-left → Core Image pixels, bottom-left.
+        let window = CGRect(x: extent.minX + crop.minX * extent.width,
+                            y: extent.minY + (1 - crop.maxY) * extent.height,
+                            width: crop.width * extent.width,
+                            height: crop.height * extent.height)
+        return image.cropped(to: window)
+            .transformed(by: CGAffineTransform(translationX: -window.minX, y: -window.minY))
+            .transformed(by: CGAffineTransform(scaleX: extent.width / window.width,
+                                               y: extent.height / window.height))
+            .transformed(by: CGAffineTransform(translationX: extent.minX, y: extent.minY))
     }
 
     /// Screen mode: the screen fills the canvas, the camera sits on top as a
@@ -50,7 +67,8 @@ final class FrameCompositor {
         canvasWidth: Int,
         canvasHeight: Int,
         bubble: CGRect,
-        mirrorsCamera: Bool
+        mirrorsCamera: Bool,
+        cameraCrop: CGRect? = nil
     ) -> CVPixelBuffer? {
         let canvas = CGRect(x: 0, y: 0, width: canvasWidth, height: canvasHeight)
 
@@ -67,7 +85,7 @@ final class FrameCompositor {
 
         var result = background
         if let camera, bubble.width >= 2 {
-            result = Self.bubble(camera: CIImage(cvPixelBuffer: camera), in: bubble,
+            result = Self.bubble(camera: Self.framed(CIImage(cvPixelBuffer: camera), to: cameraCrop), in: bubble,
                                  canvasHeight: canvas.height, mirrored: mirrorsCamera)
                 .applyingFilter("CIBlendWithAlphaMask", parameters: [
                     kCIInputBackgroundImageKey: background,

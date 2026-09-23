@@ -103,6 +103,21 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
+            if capture.framing != .unavailable {
+                Section("Camera") {
+                    Toggle("Keep me in frame", isOn: $capture.keepsMeInFrame)
+                    Text(capture.framing == .centerStage
+                         ? "This camera has Center Stage: it follows you as you move, at full sharpness."
+                         : "This camera has no Center Stage. Mac-Monologue follows your face by zooming in "
+                           + "a little, so the picture gets slightly softer.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("Remembered for each camera. Off until you turn it on.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
             Section("Screen and Screen + Camera") {
                 Toggle("Minimise the window while recording", isOn: $capture.autoMinimizes)
                 Text("Keeps it off the slides you are presenting. It is never in the recording either way.")

@@ -25,6 +25,7 @@ enum DevicePreferences {
     private static let skippedUpdateKey = "skippedUpdateVersion"
     private static let lastUpdateCheckKey = "lastUpdateCheck"
     private static let videoQualityKey = "videoQuality"
+    private static let keepsInFrameKey = "keepsInFrame"
 
     static var cameraID: String? {
         get { UserDefaults.standard.string(forKey: cameraKey) }
@@ -65,6 +66,19 @@ enum DevicePreferences {
     static var videoQuality: VideoQuality {
         get { UserDefaults.standard.string(forKey: videoQualityKey).flatMap(VideoQuality.init) ?? .standard }
         set { UserDefaults.standard.set(newValue.rawValue, forKey: videoQualityKey) }
+    }
+
+    /// Per camera: following your face is a choice made for one lens, and off
+    /// until made — an iPhone with Center Stage and a FaceTime camera zooming in
+    /// software are not the same trade.
+    static func keepsInFrame(cameraID: String) -> Bool {
+        (UserDefaults.standard.dictionary(forKey: keepsInFrameKey) as? [String: Bool])?[cameraID] ?? false
+    }
+
+    static func setKeepsInFrame(_ keeps: Bool, cameraID: String) {
+        var all = (UserDefaults.standard.dictionary(forKey: keepsInFrameKey) as? [String: Bool]) ?? [:]
+        all[cameraID] = keeps
+        UserDefaults.standard.set(all, forKey: keepsInFrameKey)
     }
 
     static var bubbleCorner: BubbleCorner {

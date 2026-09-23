@@ -51,6 +51,17 @@ struct ContentView: View {
 
                 Spacer()
 
+                if capture.mode.usesCamera, capture.framing != .unavailable {
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Toggle("Keep me in frame", isOn: $capture.keepsMeInFrame)
+                            .toggleStyle(.checkbox)
+                            .help(framingHelp)
+                        Text(capture.framing == .centerStage ? "Center Stage" : "Zooms in slightly")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
                 if capture.mode.usesCamera {
                     VStack(alignment: .trailing, spacing: 2) {
                         Toggle("Mirror the recording", isOn: $capture.mirrorsRecording)
@@ -134,6 +145,17 @@ struct ContentView: View {
         }
     }
 
+    private var framingHelp: String {
+        switch capture.framing {
+        case .centerStage:
+            "Uses this camera's Center Stage: it follows you as you move, at full sharpness. "
+                + "You can also switch it in Control Center."
+        case .software, .unavailable:
+            "Follows your face by zooming in a little and moving with you. "
+                + "The picture gets slightly softer, since part of it is cropped away."
+        }
+    }
+
     private var mirrorHelp: String {
         switch capture.mode {
         case .camera:
@@ -167,6 +189,10 @@ struct ContentView: View {
             } else if capture.mode.recordsScreen {
                 LivePreviewView(onAttach: capture.attachPreview)
                     .overlay { cornerHints }
+            } else if capture.followsFaceInSoftware {
+                // The crop happens in the compositor; the preview layer would
+                // show the whole, uncropped camera.
+                LivePreviewView(onAttach: capture.attachPreview)
             } else {
                 CameraPreviewView(session: capture.session, generation: capture.sessionGeneration,
                                   rotationAngle: capture.cameraRotationAngle)

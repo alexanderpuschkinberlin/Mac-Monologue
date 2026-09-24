@@ -64,3 +64,9 @@ struct QualityCards: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
+
+#Preview {
+    QualityCards(selection: .constant(.medium))
+        .padding(20)
+        .frame(width: 540)
+}

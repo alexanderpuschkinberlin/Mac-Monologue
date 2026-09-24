@@ -117,8 +117,10 @@ several decisions below that would be wrong for a product with real users.
 
 - **Four quality steps, fixed bitrates.** Economical (720p, 0.35 Mbit/s),
   Medium (1080p, 0.7), High (1080p, 1.18) and Very high (2560-px screen or the
-  camera's own size, 4). Fixed rates rather than quality-based control, so the
-  size a step promises holds: High stays under 100 MB for ten minutes. Medium is
+  camera's own size, 4), keyframes every 4 s. The sizes shown — about 35, 75,
+  100 and 300 MB per ten minutes — are measured, not computed: the HEVC encoder
+  does not go below roughly 850 kbit/s at 1080p, so Medium lands above its
+  nominal rate. High stays under 100 MB for ten minutes. Medium is
   the default, also for everyone updating: 0.3 wrote about 750–900 MB per ten
   minutes. The writer scales camera frames down (`AVVideoScalingModeKey`); the
   screen canvas is sized by the step.

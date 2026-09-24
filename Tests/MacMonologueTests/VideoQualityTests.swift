@@ -4,6 +4,8 @@ import XCTest
 final class VideoQualityTests: XCTestCase {
     func testHighStaysUnderOneHundredMegabytesForTenMinutes() {
         XCTAssertLessThanOrEqual(VideoQuality.high.estimatedMegabytes(minutes: 10), 100)
+        XCTAssertLessThanOrEqual(VideoQuality.high.nominalMegabytesPerTenMinutes, 100,
+                                 "High's bitrates alone must fit, too")
     }
 
     func testStepsGrowInSize() {
@@ -13,10 +15,10 @@ final class VideoQualityTests: XCTestCase {
     }
 
     func testEstimatesMatchWhatTheLabelsPromise() {
-        XCTAssertEqual(VideoQuality.economical.sizeLabel, "≈ 30 MB per 10 min")
-        XCTAssertEqual(VideoQuality.medium.sizeLabel, "≈ 60 MB per 10 min")
+        XCTAssertEqual(VideoQuality.economical.sizeLabel, "≈ 35 MB per 10 min")
+        XCTAssertEqual(VideoQuality.medium.sizeLabel, "≈ 75 MB per 10 min")
         XCTAssertEqual(VideoQuality.high.sizeLabel, "≈ 100 MB per 10 min")
-        XCTAssertEqual(VideoQuality.veryHigh.sizeLabel, "≈ 310 MB per 10 min")
+        XCTAssertEqual(VideoQuality.veryHigh.sizeLabel, "≈ 300 MB per 10 min")
     }
 
     func testMediumIsTheStandard() {

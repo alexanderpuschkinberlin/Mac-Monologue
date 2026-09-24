@@ -251,6 +251,9 @@ final class TakeRecorder: @unchecked Sendable {
             AVVideoCompressionPropertiesKey: [
                 AVVideoAverageBitRateKey: configuration.averageBitRate,
                 AVVideoExpectedSourceFrameRateKey: Int(configuration.frameRate),
+                // A keyframe every few seconds rather than every second or so:
+                // at the low steps' rates, keyframes were most of the bitrate.
+                AVVideoMaxKeyFrameIntervalDurationKey: 4,
             ],
         ]
     }

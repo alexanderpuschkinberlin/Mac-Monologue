@@ -170,8 +170,8 @@ enum SelfTest {
             let perTenMinutes = duration > 0 ? Double(size) / duration * 600 / 1_000_000 : 0
             log(String(format: "quality %@ · %.0f MB per 10 min (promised %@)",
                        quality.title, perTenMinutes, quality.sizeLabel))
-            if perTenMinutes > quality.estimatedMegabytes(minutes: 10) * 2 {
-                failures.append(String(format: "%.0f MB per 10 min, more than twice the promise", perTenMinutes))
+            if perTenMinutes > quality.estimatedMegabytes(minutes: 10) * 1.3 {
+                failures.append(String(format: "%.0f MB per 10 min, well over the promise", perTenMinutes))
             }
             if !screenMode {
                 let expected = quality.cameraSize(width: Int(naturalSize.width), height: Int(naturalSize.height))

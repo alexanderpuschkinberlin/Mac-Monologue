@@ -72,17 +72,29 @@ enum VideoQuality: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    /// Picture and sound together, in megabytes (10⁶ bytes, as Finder counts).
-    func estimatedMegabytes(minutes: Double) -> Double {
-        Double(videoBitRate + audioBitRate) * minutes * 60 / 8 / 1_000_000
+    /// Ten minutes of picture and sound, in megabytes (10⁶ bytes, as Finder
+    /// counts), as measured with a MacBook camera — not computed from the
+    /// bitrates: at the lower rates the HEVC encoder does not go below roughly
+    /// 850 kbit/s at 1080p, whatever it is asked for.
+    var megabytesPerTenMinutes: Double {
+        switch self {
+        case .economical: 35
+        case .medium: 75
+        case .high: 100
+        case .veryHigh: 300
+        }
     }
 
-    /// "≈ 60 MB per 10 min", rounded to what the estimate can honestly claim.
-    var sizeLabel: String {
-        let megabytes = estimatedMegabytes(minutes: 10)
-        let rounded = megabytes < 100 ? (megabytes / 5).rounded() * 5 : (megabytes / 10).rounded() * 10
-        return "≈ \(Int(rounded)) MB per 10 min"
+    func estimatedMegabytes(minutes: Double) -> Double {
+        megabytesPerTenMinutes * minutes / 10
     }
+
+    /// The most the bitrates can add up to, for checking the encoder keeps to it.
+    var nominalMegabytesPerTenMinutes: Double {
+        Double(videoBitRate + audioBitRate) * 600 / 8 / 1_000_000
+    }
+
+    var sizeLabel: String { "≈ \(Int(megabytesPerTenMinutes)) MB per 10 min" }
 
     /// The size a camera frame of `width` × `height` is written at.
     func cameraSize(width: Int, height: Int) -> (width: Int, height: Int) {

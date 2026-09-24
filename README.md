@@ -270,10 +270,10 @@ You choose, in the main window or in Settings. For ten minutes, picture and soun
 
 | Quality | Size | Good for |
 |---|---|---|
-| Economical | about 30 MB | email, slow connections |
-| Medium *(standard)* | about 60 MB | most things |
+| Economical | about 35 MB | email, slow connections |
+| Medium *(standard)* | about 75 MB | most things |
 | High | about 100 MB | crisp text, sharing as a link |
-| Very high | about 310 MB | editing, big screens |
+| Very high | about 300 MB | editing, big screens |
 
 A still slide takes less, a lot of movement a little more.
 </details>

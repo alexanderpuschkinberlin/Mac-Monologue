@@ -7,7 +7,7 @@ offers an update.
 ## 0.4.0
 
 - **Choose the quality**, by what the file will weigh: Economical, Medium, High
-  or Very high, from about 30 MB to about 310 MB for ten minutes. Medium is the
+  or Very high, from about 35 MB to about 300 MB for ten minutes. Medium is the
   new standard, also after this update - your videos get much smaller than
   before. Change it in the main window or in Settings.
 - **Record just the screen**, without yourself in the corner: the new Screen mode.

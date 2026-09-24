@@ -4,7 +4,7 @@ Every version of Mac-Monologue, newest first. `bin/publish` takes the section of
 the version it publishes as that release's notes, and the app shows them when it
 offers an update.
 
-## 0.4.0
+## 0.4.0 — 2026-09-24
 
 - **Choose the quality**, by what the file will weigh: Economical, Medium, High
   or Very high, from about 35 MB to about 300 MB for ten minutes. Medium is the

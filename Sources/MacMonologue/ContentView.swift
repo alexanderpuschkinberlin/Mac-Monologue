@@ -13,9 +13,10 @@ struct ContentView: View {
             SubtitleProgressView(subtitles: capture.subtitles)
             controls
         }
-        // The one place translation packs are fetched from: macOS only offers
-        // it through a view, and the main window is always there.
-        .modifier(TranslationPreparation(subtitles: capture.subtitles))
+        // Translation packs are fetched from here — macOS only offers that
+        // through a view, and the main window is always there — except while the
+        // welcome steps cover it: then they do it, so macOS's prompt is seen.
+        .modifier(TranslationPreparation(subtitles: capture.subtitles, isActive: !capture.isShowingOnboarding))
         .background(Color(nsColor: .windowBackgroundColor))
         .background(WindowAccessor { capture.setMainWindow($0) })
         .onAppear {
@@ -430,16 +431,21 @@ struct ContentView: View {
     }
 }
 
-/// Hands the translation pack the subtitle settings asked for to macOS.
-private struct TranslationPreparation: ViewModifier {
+/// Hands the translation pack the subtitle settings asked for to macOS. Only one
+/// view at a time may be active, or macOS would be asked twice.
+struct TranslationPreparation: ViewModifier {
     @ObservedObject var subtitles: SubtitleCenter
+    var isActive = true
 
     func body(content: Content) -> some View {
-        content.translationTask(subtitles.translationToPrepare) { session in
+        content.translationTask(isActive ? subtitles.translationToPrepare : nil) { session in
             do {
                 try await Self.prepare(SessionHandle(session: session))
                 subtitles.translationPrepared(nil)
             } catch {
+                // The view went away mid-download — the welcome steps closing —
+                // and the other view picks the same pack up again.
+                guard !Task.isCancelled, !(error is CancellationError) else { return }
                 subtitles.translationPrepared(error)
             }
         }

@@ -37,6 +37,7 @@ struct OnboardingView: View {
             .padding(16)
         }
         .frame(width: 600, height: 560)
+        .modifier(TranslationPreparation(subtitles: capture.subtitles))
     }
 
     // MARK: - Steps
@@ -217,19 +218,7 @@ struct OnboardingView: View {
             }
             .keyboardShortcut(.defaultAction)
         } else if step == .subtitles {
-            HStack {
-                Button("Not Now") {
-                    capture.subtitles.isEnabled = false
-                    move(1)
-                }
-                Button("Continue") {
-                    capture.subtitles.isEnabled = true
-                    if capture.subtitles.needsDownload { capture.subtitles.downloadMissing() }
-                    move(1)
-                }
-                .keyboardShortcut(.defaultAction)
-                .disabled(capture.subtitles.languages.isEmpty)
-            }
+            SubtitleStepButtons(subtitles: capture.subtitles) { move(1) }
         } else if let permission = currentPermission, permission.status == .notAsked {
             HStack {
                 Button("Not Now") { move(1) }
@@ -272,5 +261,76 @@ struct OnboardingView: View {
             next = skipped
         }
         step = next
+    }
+}
+
+/// The subtitles step's buttons, in a view of their own so they follow
+/// `SubtitleCenter`: the welcome steps observe only the capture controller, and
+/// a Continue button reading the subtitle choice through it stayed greyed out
+/// after languages were picked.
+///
+/// When the chosen languages still need tools from Apple, Continue fetches them
+/// and waits, showing the progress in the picker above — or moves on and lets
+/// them finish in the background.
+private struct SubtitleStepButtons: View {
+    @ObservedObject var subtitles: SubtitleCenter
+    let onContinue: () -> Void
+
+    @State private var isWaitingForDownload = false
+
+    var body: some View {
+        HStack {
+            if isWaitingForDownload, subtitles.downloadError != nil {
+                Button("Continue Without") {
+                    subtitles.isEnabled = false
+                    isWaitingForDownload = false
+                    onContinue()
+                }
+                Button("Try Again") { subtitles.downloadMissing() }
+                    .keyboardShortcut(.defaultAction)
+            } else if isWaitingForDownload {
+                Button("Continue in Background") {
+                    isWaitingForDownload = false
+                    onContinue()
+                }
+                Button {
+                } label: {
+                    HStack(spacing: 6) {
+                        ProgressView().controlSize(.small)
+                        Text("Downloading…")
+                    }
+                }
+                .disabled(true)
+            } else {
+                Button("Not Now") {
+                    subtitles.isEnabled = false
+                    onContinue()
+                }
+                Button("Continue") {
+                    subtitles.isEnabled = true
+                    if subtitles.needsDownload {
+                        isWaitingForDownload = true
+                        subtitles.downloadMissing()
+                    } else {
+                        onContinue()
+                    }
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(subtitles.languages.isEmpty)
+            }
+        }
+        .onChange(of: subtitles.readiness) { continueIfReady() }
+        .onChange(of: subtitles.isDownloading) { continueIfReady() }
+    }
+
+    /// Everything chosen is there — or cannot be had on this Mac, which waiting
+    /// would not change.
+    private func continueIfReady() {
+        guard isWaitingForDownload, !subtitles.isDownloading, subtitles.downloadError == nil,
+              !subtitles.needsDownload,
+              !subtitles.orderedLanguages.contains(where: { subtitles.readiness[$0] == .checking })
+        else { return }
+        isWaitingForDownload = false
+        onContinue()
     }
 }

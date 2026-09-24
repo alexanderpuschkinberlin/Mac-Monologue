@@ -6,7 +6,7 @@ import SwiftUI
 struct OnboardingView: View {
     @ObservedObject var capture: CaptureController
 
-    private enum Step: Int, CaseIterable {
+    fileprivate enum Step: Int, CaseIterable {
         case welcome, camera, microphone, screen, quality, subtitles, shortcuts, done
     }
 
@@ -14,6 +14,16 @@ struct OnboardingView: View {
     /// Screen recording granted during these steps needs a restart to take effect.
     @State private var screenGrantedAtStart = CGPreflightScreenCaptureAccess()
     @State private var isRequesting = false
+
+    init(capture: CaptureController) {
+        self.capture = capture
+    }
+
+    /// For previews: opens on `step`.
+    fileprivate init(capture: CaptureController, step: Step) {
+        self.capture = capture
+        _step = State(initialValue: step)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -350,3 +360,33 @@ private struct SubtitleStepButtons: View {
         onContinue()
     }
 }
+
+#if DEBUG
+#Preview("Welcome") { OnboardingView(capture: .preview(), step: .welcome) }
+#Preview("Camera") { OnboardingView(capture: .preview(), step: .camera) }
+#Preview("Microphone") { OnboardingView(capture: .preview(), step: .microphone) }
+#Preview("Screen") { OnboardingView(capture: .preview(), step: .screen) }
+#Preview("Quality") { OnboardingView(capture: .preview(), step: .quality) }
+#Preview("Subtitles · nothing chosen") {
+    let capture = CaptureController.preview()
+    capture.subtitles.configureForPreview(languages: [])
+    return OnboardingView(capture: capture, step: .subtitles)
+}
+#Preview("Subtitles · needs download") {
+    let capture = CaptureController.preview()
+    capture.subtitles.configureForPreview(languages: [.german, .french])
+    return OnboardingView(capture: capture, step: .subtitles)
+}
+#Preview("Subtitles · downloading") {
+    let capture = CaptureController.preview()
+    capture.subtitles.configureForPreview(languages: [.german, .french], speechDownloadProgress: 0.35)
+    return OnboardingView(capture: capture, step: .subtitles)
+}
+#Preview("Shortcuts") { OnboardingView(capture: .preview(), step: .shortcuts) }
+#Preview("Done") { OnboardingView(capture: .preview(), step: .done) }
+#Preview("Revisited · close button") {
+    let capture = CaptureController.preview()
+    capture.showOnboarding()
+    return OnboardingView(capture: capture, step: .welcome)
+}
+#endif

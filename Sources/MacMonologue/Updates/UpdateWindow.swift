@@ -201,3 +201,22 @@ struct UpdateView: View {
         }
     }
 }
+
+#if DEBUG
+private func updateWindow(_ checker: UpdateChecker) -> some View {
+    UpdateView(checker: checker).frame(width: 540, height: 480)
+}
+
+#Preview("Available") { updateWindow(.preview(state: .available(UpdateChecker.previewReleases))) }
+#Preview("Available · cannot install here") {
+    updateWindow(.preview(state: .available(UpdateChecker.previewReleases), problem: .translocated))
+}
+#Preview("Downloading") { updateWindow(.preview(state: .working(.downloading(0.42)))) }
+#Preview("Verifying") { updateWindow(.preview(state: .working(.verifying))) }
+#Preview("Installing") { updateWindow(.preview(state: .working(.installing))) }
+#Preview("Failed") {
+    updateWindow(.preview(state: .failed("The download is not signed by the same developer. It was not installed.")))
+}
+#Preview("Up to date") { updateWindow(.preview(state: .upToDate)) }
+#Preview("Checking") { updateWindow(.preview(state: .checking)) }
+#endif

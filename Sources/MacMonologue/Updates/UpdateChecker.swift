@@ -34,10 +34,15 @@ final class UpdateChecker: ObservableObject {
         return offered
     }
 
-    let installedVersion = AppVersion.current ?? AppVersion("0")!
+    private(set) var installedVersion = AppVersion.current ?? AppVersion("0")!
 
     /// Why this copy cannot install updates where it is, if it cannot.
-    var installationProblem: UpdateInstaller.InstallError? { UpdateInstaller.installationProblem() }
+    var installationProblem: UpdateInstaller.InstallError? {
+        if let overridden = installationProblemForPreviews { return overridden }
+        return UpdateInstaller.installationProblem()
+    }
+    /// Set by a preview, which runs from wherever Xcode puts it.
+    private var installationProblemForPreviews: UpdateInstaller.InstallError??
 
     private weak var capture: CaptureController?
     private var offered: [Release] = []
@@ -51,7 +56,7 @@ final class UpdateChecker: ObservableObject {
     private var automaticChecksAllowed: Bool {
         !SelfTest.isEnabled && installationProblem != .developmentBuild
     }
-    private var persistsPreferences: Bool { !SelfTest.isEnabled }
+    private var persistsPreferences: Bool { !SelfTest.isEnabled && !PreviewHost.isActive }
 
     /// For bin/test-update: install whatever is found, without asking.
     private let installsWithoutAsking = UserDefaults.standard.bool(forKey: "UpdateInstallWithoutAsking")
@@ -202,3 +207,33 @@ final class UpdateChecker: ObservableObject {
         state == .recording || state == .paused || state == .finishing
     }
 }
+
+#if DEBUG
+extension UpdateChecker {
+    static func preview(state: State, installed: String = "0.4.1",
+                        problem: UpdateInstaller.InstallError? = nil,
+                        lastCheck: Date? = Date(timeIntervalSinceNow: -3600)) -> UpdateChecker {
+        let checker = UpdateChecker()
+        checker.installedVersion = AppVersion(installed)!
+        checker.installationProblemForPreviews = .some(problem)
+        checker.lastCheck = lastCheck
+        checker.state = state
+        if case .available(let releases) = state { checker.offered = releases }
+        return checker
+    }
+
+    static let previewReleases: [Release] = [
+        Release(tagName: "v0.5.0", name: "0.5.0", body: """
+            - **Choose the quality**, by what the file will weigh: Economical, Medium, High \
+              or Very high. Medium is the new standard.
+            - **Record just the screen**, without yourself in the corner.
+            - "Mirror the recording" now warns, while it is on, that text reads backwards.
+            """, isDraft: false, isPrerelease: false, publishedAt: Date(timeIntervalSinceNow: -86400),
+                pageURL: ReleaseFeed.pageURL, assets: []),
+        Release(tagName: "v0.4.2", name: "0.4.2", body: """
+            - Fixed: the welcome steps, opened again from the Help menu, could not be closed.
+            """, isDraft: false, isPrerelease: false, publishedAt: Date(timeIntervalSinceNow: -3 * 86400),
+                pageURL: ReleaseFeed.pageURL, assets: []),
+    ]
+}
+#endif

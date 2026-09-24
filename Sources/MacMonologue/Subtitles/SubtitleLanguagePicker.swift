@@ -122,3 +122,29 @@ struct SubtitleLanguagePicker: View {
         .background(RoundedRectangle(cornerRadius: 10).fill(Color.secondary.opacity(0.06)))
     }
 }
+
+#if DEBUG
+#Preview("Ready") { SubtitleLanguagePicker(subtitles: .preview()).padding(20).frame(width: 560) }
+#Preview("Needs download") {
+    SubtitleLanguagePicker(subtitles: .preview(languages: [.german, .french])).padding(20).frame(width: 560)
+}
+#Preview("Downloading speech") {
+    SubtitleLanguagePicker(subtitles: .preview(languages: [.german, .french], speechDownloadProgress: 0.35))
+        .padding(20).frame(width: 560)
+}
+#Preview("Checking") {
+    SubtitleLanguagePicker(subtitles: .preview(readiness: [:])).padding(20).frame(width: 560)
+}
+#Preview("Unsupported and error") {
+    SubtitleLanguagePicker(subtitles: .preview(
+        languages: [.german, .spanish],
+        readiness: [.german: .ready, .english: .ready, .french: .ready, .spanish: .unsupported],
+        downloadError: "German speech recognition could not be downloaded: The Internet connection appears to be offline."))
+        .padding(20).frame(width: 560)
+}
+#Preview("All four") {
+    SubtitleLanguagePicker(subtitles: .preview(languages: [.german, .english, .french, .spanish],
+                                               readiness: [.german: .ready, .english: .ready, .french: .ready, .spanish: .ready]))
+        .padding(20).frame(width: 560)
+}
+#endif

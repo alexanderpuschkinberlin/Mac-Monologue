@@ -60,7 +60,7 @@ enum MoveToApplications {
     static func shouldOffer(bundleURL: URL) -> Bool {
         let path = bundleURL.standardizedFileURL.path
         // Development builds and the update test's copies live under build/.
-        if SelfTest.isEnabled || path.contains("/build/") { return false }
+        if SelfTest.isEnabled || PreviewHost.isActive || path.contains("/build/") { return false }
         if path.hasPrefix("/Applications/") { return false }
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         if path.hasPrefix(home + "/Applications/") { return false }

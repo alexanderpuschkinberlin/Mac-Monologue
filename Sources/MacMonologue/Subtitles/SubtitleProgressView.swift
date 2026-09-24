@@ -132,3 +132,32 @@ struct SubtitleProgressView: View {
         }
     }
 }
+
+#if DEBUG
+#Preview("Listening") {
+    SubtitleProgressView(subtitles: .preview(job: SubtitleCenter.previewJob(step: .listening, fraction: 0.3)))
+        .frame(width: 900).padding(.bottom, 12)
+}
+#Preview("Translating") {
+    SubtitleProgressView(subtitles: .preview(job: SubtitleCenter.previewJob(step: .translating(.english, index: 0, count: 1), fraction: 0.5)))
+        .frame(width: 900).padding(.bottom, 12)
+}
+#Preview("Adding to the video") {
+    SubtitleProgressView(subtitles: .preview(job: SubtitleCenter.previewJob(step: .addingToVideo, fraction: 0.7, startedSecondsAgo: 95)))
+        .frame(width: 900).padding(.bottom, 12)
+}
+#Preview("Finished") {
+    SubtitleProgressView(subtitles: .preview(job: SubtitleCenter.previewJob(step: .done, fraction: 1, state: .finished([.german, .english]))))
+        .frame(width: 900).padding(.bottom, 12)
+}
+#Preview("Cancelled") {
+    SubtitleProgressView(subtitles: .preview(job: SubtitleCenter.previewJob(step: .translating(.english, index: 0, count: 1), fraction: 0.2,
+                                                              state: .cancelled(kept: [.german]))))
+        .frame(width: 900).padding(.bottom, 12)
+}
+#Preview("Failed") {
+    SubtitleProgressView(subtitles: .preview(job: SubtitleCenter.previewJob(step: .listening, fraction: 0.1,
+                                                              state: .failed("No speech was recognised in this take."))))
+        .frame(width: 900).padding(.bottom, 12)
+}
+#endif

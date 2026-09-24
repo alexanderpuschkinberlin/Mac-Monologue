@@ -23,18 +23,38 @@ struct SettingsView: View {
     @ObservedObject var capture: CaptureController
     @ObservedObject var updates: UpdateChecker
 
+    fileprivate enum Tab: Hashable { case shortcuts, recording, permissions, subtitles, updates }
+    @State private var tab: Tab = .shortcuts
+
+    init(capture: CaptureController, updates: UpdateChecker) {
+        self.capture = capture
+        self.updates = updates
+    }
+
+    /// For previews: opens on `tab`.
+    fileprivate init(capture: CaptureController, updates: UpdateChecker, tab: Tab) {
+        self.capture = capture
+        self.updates = updates
+        _tab = State(initialValue: tab)
+    }
+
     var body: some View {
-        TabView {
+        TabView(selection: $tab) {
             shortcuts
                 .tabItem { Label("Shortcuts", systemImage: "keyboard") }
+                .tag(Tab.shortcuts)
             recording
                 .tabItem { Label("Recording", systemImage: "record.circle") }
+                .tag(Tab.recording)
             permissions
                 .tabItem { Label("Permissions", systemImage: "lock.shield") }
+                .tag(Tab.permissions)
             SubtitleSettingsTab(subtitles: capture.subtitles)
                 .tabItem { Label("Subtitles", systemImage: "captions.bubble") }
+                .tag(Tab.subtitles)
             updatesTab
                 .tabItem { Label("Updates", systemImage: "arrow.down.circle") }
+                .tag(Tab.updates)
         }
         .frame(width: 520)
         .padding(.vertical, 8)
@@ -256,3 +276,26 @@ private struct SubtitleSettingsTab: View {
         .padding(20)
     }
 }
+
+#if DEBUG
+#Preview("Shortcuts") { SettingsView(capture: .preview(), updates: .preview(state: .idle), tab: .shortcuts) }
+#Preview("Recording") { SettingsView(capture: .preview(), updates: .preview(state: .idle), tab: .recording) }
+#Preview("Recording · Center Stage") {
+    SettingsView(capture: .preview(framing: .centerStage), updates: .preview(state: .idle), tab: .recording)
+}
+#Preview("Permissions") { SettingsView(capture: .preview(), updates: .preview(state: .idle), tab: .permissions) }
+#Preview("Subtitles") {
+    let capture = CaptureController.preview()
+    capture.subtitles.configureForPreview()
+    return SettingsView(capture: capture, updates: .preview(state: .idle), tab: .subtitles)
+}
+#Preview("Subtitles · off") {
+    let capture = CaptureController.preview()
+    capture.subtitles.configureForPreview(enabled: false)
+    return SettingsView(capture: capture, updates: .preview(state: .idle), tab: .subtitles)
+}
+#Preview("Updates") { SettingsView(capture: .preview(), updates: .preview(state: .idle), tab: .updates) }
+#Preview("Updates · cannot install here") {
+    SettingsView(capture: .preview(), updates: .preview(state: .idle, problem: .translocated), tab: .updates)
+}
+#endif

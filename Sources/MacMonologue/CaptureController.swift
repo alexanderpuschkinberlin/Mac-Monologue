@@ -247,7 +247,7 @@ final class CaptureController: ObservableObject {
     private var minimizedForTake = false
 
     /// The hardware self-test must not overwrite the user's own settings.
-    private var persistsPreferences: Bool { !SelfTest.isEnabled }
+    private var persistsPreferences: Bool { !SelfTest.isEnabled && !PreviewHost.isActive }
 
     var devicePickersLocked: Bool {
         state == .recording || state == .paused || state == .finishing
@@ -316,6 +316,8 @@ final class CaptureController: ObservableObject {
     // MARK: - Lifecycle
 
     func start() {
+        // A preview shows states set by hand; it never touches a device.
+        guard !PreviewHost.isActive else { return }
         subtitles.onFinished = { [weak self] video in
             // The file was replaced; show the one with subtitles.
             guard let self, self.state == .preview, self.lastRecordingURL == video else { return }
@@ -1262,3 +1264,59 @@ private final class CenterStageObserver: NSObject {
         onChange(AVCaptureDevice.isCenterStageEnabled)
     }
 }
+
+#if DEBUG
+extension CaptureController {
+    /// A controller for Xcode previews: no devices, no session, every state set
+    /// by hand. Nothing it holds is persisted, because `PreviewHost.isActive`.
+    static func preview(
+        mode: CaptureMode = .camera,
+        state: RecorderState = .ready,
+        elapsed: Double = 0,
+        framing: Framing = .software,
+        keepsMeInFrame: Bool = false,
+        mirrorsRecording: Bool = false,
+        screenAccess: ScreenAccessState = .granted,
+        banner: String? = nil,
+        cameraIsSilent: Bool = false,
+        hasAudio: Bool = true,
+        audioLevel: Float = -18,
+        isClipping: Bool = false,
+        lastRecordingURL: URL? = nil,
+        subtitleJob: SubtitleCenter.Job? = nil
+    ) -> CaptureController {
+        let controller = CaptureController()
+        controller.cameras = [DeviceOption(id: "facetime", name: "FaceTime HD Camera"),
+                              DeviceOption(id: "iphone", name: "iPhone Camera")]
+        controller.microphones = [.noAudio, DeviceOption(id: "mic", name: "MacBook Pro Microphone")]
+        controller.displays = [DisplayOption(id: 1, name: "Built-in Retina Display", pixelWidth: 3024, pixelHeight: 1964),
+                               DisplayOption(id: 2, name: "LG HDR 4K", pixelWidth: 3840, pixelHeight: 2160)]
+        controller.selectedCameraID = "facetime"
+        controller.selectedMicrophoneID = hasAudio ? "mic" : DeviceOption.noAudioID
+        controller.selectedDisplayID = 1
+        controller.mode = mode
+        controller.framing = framing
+        controller.keepsMeInFrame = keepsMeInFrame
+        controller.mirrorsRecording = mirrorsRecording
+        controller.state = state
+        controller.elapsed = elapsed
+        controller.screenAccess = screenAccess
+        controller.isScreenCaptureRunning = screenAccess == .granted
+        controller.canvasSize = mode.recordsScreen ? CGSize(width: 1920, height: 1246) : .zero
+        controller.formatSummary = mode.recordsScreen
+            ? "1920 × 1246 · 30 fps · \(controller.videoQuality.sizeLabel)"
+            : "1920 × 1080 · up to 30 fps · \(controller.videoQuality.sizeLabel)"
+        controller.banner = banner
+        controller.cameraIsSilent = cameraIsSilent
+        controller.alternativeCamera = cameraIsSilent ? controller.cameras[0] : nil
+        controller.hasAudio = hasAudio
+        controller.audioLevel = audioLevel
+        controller.audioPeak = audioLevel + 6
+        controller.isClipping = isClipping
+        controller.lastRecordingURL = lastRecordingURL
+        if state == .preview { controller.player = AVPlayer() }
+        if let subtitleJob { controller.subtitles.configureForPreview(job: subtitleJob) }
+        return controller
+    }
+}
+#endif

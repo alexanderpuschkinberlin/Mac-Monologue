@@ -463,3 +463,31 @@ struct TranslationPreparation: ViewModifier {
         try await handle.session.prepareTranslation()
     }
 }
+
+#if DEBUG
+private func window(_ capture: CaptureController) -> some View {
+    ContentView(capture: capture).frame(width: 900, height: 640)
+}
+
+#Preview("Camera · ready") { window(.preview()) }
+#Preview("Screen · ready") { window(.preview(mode: .screen)) }
+#Preview("Screen + Camera · ready") { window(.preview(mode: .screenAndCamera)) }
+#Preview("Recording") { window(.preview(state: .recording, elapsed: 83, audioLevel: -9)) }
+#Preview("Paused") { window(.preview(state: .paused, elapsed: 83)) }
+#Preview("Finishing") { window(.preview(state: .finishing, elapsed: 83)) }
+#Preview("Take saved · subtitles running") {
+    window(.preview(state: .preview,
+                    lastRecordingURL: URL(fileURLWithPath: "/Users/me/Movies/Monologue/Monologue-2026-09-24-171512.mp4"),
+                    subtitleJob: SubtitleCenter.previewJob(step: .translating(.english, index: 0, count: 1), fraction: 0.4)))
+}
+#Preview("Keep me in frame · mirror on") { window(.preview(keepsMeInFrame: true, mirrorsRecording: true)) }
+#Preview("Center Stage camera") { window(.preview(framing: .centerStage, keepsMeInFrame: true)) }
+#Preview("Camera access needed") { window(.preview(state: .needsAccess)) }
+#Preview("Screen access needed") { window(.preview(mode: .screenAndCamera, screenAccess: .denied)) }
+#Preview("Screen access · restart") { window(.preview(mode: .screenAndCamera, screenAccess: .needsRelaunch)) }
+#Preview("Camera silent") { window(.preview(cameraIsSilent: true)) }
+#Preview("Banner") { window(.preview(mode: .screenAndCamera, banner: "The screen you chose last time is not connected. Pick another one.")) }
+#Preview("No microphone · clipping") { window(.preview(hasAudio: false)) }
+#Preview("Clipping") { window(.preview(state: .recording, elapsed: 12, audioLevel: -1, isClipping: true)) }
+#Preview("Small window") { ContentView(capture: .preview(mode: .screenAndCamera)).frame(width: 820, height: 600) }
+#endif

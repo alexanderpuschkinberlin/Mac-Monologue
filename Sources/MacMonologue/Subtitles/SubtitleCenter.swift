@@ -39,7 +39,7 @@ final class SubtitleCenter: ObservableObject {
     /// Subtitle languages in a fixed order, for tracks and lists.
     var orderedLanguages: [SubtitleLanguage] { SubtitleLanguage.allCases.filter(languages.contains) }
 
-    private var persists: Bool { !SelfTest.isEnabled }
+    private var persists: Bool { !SelfTest.isEnabled && !PreviewHost.isActive }
 
     // MARK: Language tools
 
@@ -92,7 +92,7 @@ final class SubtitleCenter: ObservableObject {
     // MARK: - Readiness and downloads
 
     func refreshReadiness() {
-        guard #available(macOS 26.0, *) else { return }
+        guard #available(macOS 26.0, *), !PreviewHost.isActive else { return }
         let spoken = spokenLanguage
         for language in SubtitleLanguage.allCases where readiness[language] == nil {
             readiness[language] = .checking
@@ -266,3 +266,53 @@ final class SubtitleCenter: ObservableObject {
         self.job = job
     }
 }
+
+#if DEBUG
+extension SubtitleCenter {
+    /// Sets what a preview should show, without asking macOS for anything.
+    func configureForPreview(
+        enabled: Bool = true,
+        spoken: SubtitleLanguage = .german,
+        languages: Set<SubtitleLanguage> = [.german, .english],
+        readiness: [SubtitleLanguage: LanguageReadiness] = [.german: .ready, .english: .ready,
+                                                            .french: .needsDownload, .spanish: .ready],
+        speechDownloadProgress: Double? = nil,
+        downloadError: String? = nil,
+        job: Job? = nil
+    ) {
+        isEnabled = enabled
+        spokenLanguage = spoken
+        self.languages = languages
+        self.readiness = readiness
+        self.speechDownloadProgress = speechDownloadProgress
+        self.downloadError = downloadError
+        self.job = job
+    }
+
+    static func preview(
+        enabled: Bool = true,
+        spoken: SubtitleLanguage = .german,
+        languages: Set<SubtitleLanguage> = [.german, .english],
+        readiness: [SubtitleLanguage: LanguageReadiness] = [.german: .ready, .english: .ready,
+                                                            .french: .needsDownload, .spanish: .ready],
+        speechDownloadProgress: Double? = nil,
+        downloadError: String? = nil,
+        job: Job? = nil
+    ) -> SubtitleCenter {
+        let center = SubtitleCenter()
+        center.configureForPreview(enabled: enabled, spoken: spoken, languages: languages, readiness: readiness,
+                                   speechDownloadProgress: speechDownloadProgress, downloadError: downloadError,
+                                   job: job)
+        return center
+    }
+
+    /// A take being subtitled, `fraction` of the way through `step`.
+    static func previewJob(step: SubtitleProgress.Step, fraction: Double, state: JobState = .running,
+                           startedSecondsAgo: Double = 40) -> Job {
+        var progress = SubtitleProgress(translationCount: 1)
+        progress.advance(to: step, fraction: fraction)
+        return Job(video: URL(fileURLWithPath: "/Users/me/Movies/Monologue/Monologue-2026-09-24-171512.mp4"),
+                   progress: progress, started: Date(timeIntervalSinceNow: -startedSecondsAgo), state: state)
+    }
+}
+#endif

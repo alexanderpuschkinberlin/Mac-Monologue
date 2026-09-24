@@ -60,3 +60,7 @@ struct HelpSheet: View {
         .frame(width: 440)
     }
 }
+
+#if DEBUG
+#Preview { HelpSheet() }
+#endif

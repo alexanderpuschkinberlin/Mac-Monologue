@@ -355,7 +355,16 @@ final class CaptureController: ObservableObject {
 
     func showOnboarding() {
         showMainWindow()
+        // Opened again from the Help menu, it can be closed at any step; the
+        // first time, it is how the app gets its permissions.
+        isRevisitingOnboarding = DevicePreferences.hasCompletedOnboarding
         isShowingOnboarding = true
+    }
+
+    @Published private(set) var isRevisitingOnboarding = false
+
+    func closeOnboarding() {
+        isShowingOnboarding = false
     }
 
     func completeOnboarding(relaunch: Bool) {

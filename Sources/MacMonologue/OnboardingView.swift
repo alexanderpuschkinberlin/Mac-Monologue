@@ -37,6 +37,22 @@ struct OnboardingView: View {
             .padding(16)
         }
         .frame(width: 600, height: 560)
+        .overlay(alignment: .topTrailing) {
+            if capture.isRevisitingOnboarding {
+                Button {
+                    capture.closeOnboarding()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .keyboardShortcut(.cancelAction)
+                .help("Close")
+                .accessibilityLabel("Close")
+                .padding(12)
+            }
+        }
         .modifier(TranslationPreparation(subtitles: capture.subtitles))
     }
 

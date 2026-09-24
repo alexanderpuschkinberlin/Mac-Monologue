@@ -196,7 +196,7 @@
         <source media="(prefers-color-scheme: dark)" srcset="docs/images/install-2-dark.png">
         <img src="docs/images/install-2-light.png" width="180" alt="">
       </picture>
-      <br><b>2.</b> Drag Mac-Monologue into your <b>Applications</b> folder.
+      <br><b>2.</b> Drag Mac-Monologue into your <b>Applications</b> folder. Opened from Downloads, it offers to move itself.
     </td>
     <td width="25%" align="center">
       <picture>

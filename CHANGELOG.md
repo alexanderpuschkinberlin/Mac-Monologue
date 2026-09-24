@@ -4,6 +4,16 @@ Every version of Mac-Monologue, newest first. `bin/publish` takes the section of
 the version it publishes as that release's notes, and the app shows them when it
 offers an update.
 
+## 0.4.1
+
+- Fixed: in the welcome steps, Continue on the subtitles page stayed greyed out
+  after choosing languages.
+- When the chosen languages need tools from Apple, that page now shows the
+  download and moves on by itself once it is done - or straight away with
+  "Continue in Background".
+- Opened straight from Downloads, Mac-Monologue now offers to move itself into
+  Applications, where updates can be installed.
+
 ## 0.4.0 — 2026-09-24
 
 - **Choose the quality**, by what the file will weigh: Economical, Medium, High

@@ -20,6 +20,8 @@ struct ContentView: View {
         .background(Color(nsColor: .windowBackgroundColor))
         .background(WindowAccessor { capture.setMainWindow($0) })
         .onAppear {
+            // Before anything else: moving relaunches the app.
+            if MoveToApplications.offerIfNeeded() { return }
             capture.start()
             if SelfTest.isEnabled { SelfTest.run(capture: capture) }
         }

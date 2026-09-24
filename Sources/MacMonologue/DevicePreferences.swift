@@ -29,6 +29,7 @@ enum DevicePreferences {
     private static let subtitlesEnabledKey = "subtitlesEnabled"
     private static let spokenLanguageKey = "subtitleSpokenLanguage"
     private static let subtitleLanguagesKey = "subtitleLanguages"
+    private static let declinedMoveKey = "declinedMoveToApplicationsVersion"
 
     static var cameraID: String? {
         get { UserDefaults.standard.string(forKey: cameraKey) }
@@ -99,6 +100,13 @@ enum DevicePreferences {
     static var subtitleLanguages: Set<SubtitleLanguage> {
         get { Set((UserDefaults.standard.stringArray(forKey: subtitleLanguagesKey) ?? []).compactMap(SubtitleLanguage.init)) }
         set { UserDefaults.standard.set(newValue.map(\.rawValue).sorted(), forKey: subtitleLanguagesKey) }
+    }
+
+    /// "Not Now" to moving into Applications, for this version: asked again
+    /// only once a new version is opened from outside Applications.
+    static var declinedMoveVersion: String? {
+        get { UserDefaults.standard.string(forKey: declinedMoveKey) }
+        set { UserDefaults.standard.set(newValue, forKey: declinedMoveKey) }
     }
 
     static var bubbleCorner: BubbleCorner {

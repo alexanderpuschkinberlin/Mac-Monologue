@@ -4,7 +4,7 @@ Every version of Mac-Monologue, newest first. `bin/publish` takes the section of
 the version it publishes as that release's notes, and the app shows them when it
 offers an update.
 
-## 0.4.1
+## 0.4.1 — 2026-09-24
 
 - Fixed: in the welcome steps, Continue on the subtitles page stayed greyed out
   after choosing languages.

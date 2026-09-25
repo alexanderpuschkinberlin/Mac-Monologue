@@ -4,7 +4,7 @@ Every version of Mac-Monologue, newest first. `bin/publish` takes the section of
 the version it publishes as that release's notes, and the app shows them when it
 offers an update.
 
-## 0.4.2
+## 0.4.2 — 2026-09-25
 
 - Fixed: the welcome steps, opened again from the Help menu, could not be closed.
   They now have a close button, and Escape closes them too.

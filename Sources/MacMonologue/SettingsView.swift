@@ -6,6 +6,7 @@ enum LaunchMode: String, CaseIterable, Identifiable, Sendable {
     case camera
     case screen
     case screenAndCamera
+    case screenAndCameraTouchCut
 
     var id: String { rawValue }
 
@@ -15,6 +16,7 @@ enum LaunchMode: String, CaseIterable, Identifiable, Sendable {
         case .camera: "Camera"
         case .screen: "Screen"
         case .screenAndCamera: "Screen + Camera"
+        case .screenAndCameraTouchCut: "Screen & Head Touch Cut"
         }
     }
 }

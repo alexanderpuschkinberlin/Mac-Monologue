@@ -113,6 +113,27 @@ several decisions below that would be wrong for a product with real users.
   otherwise record a live preview of itself.
 - Mirroring in screen mode applies to the bubble only. Screen content is never mirrored.
 
+### Screen & Head Touch Cut (v0.5)
+
+- A fourth mode, not a setting on Screen + Camera: the two record different
+  videos, and the mode picker is where that choice already lives. Everything of
+  Screen + Camera — corner, size, the camera-stall fallback — applies unchanged.
+- **Finger on the trackpad: screen with bubble. No finger: the head, full frame.**
+  The cut is hard, like a switch between two cameras, and is made live in
+  `CaptureRouter.composeScreen`, so the preview shows it and the file needs no
+  editing. `FrameCompositor.renderCameraFilling` scales the camera to fill the
+  screen canvas — the file keeps one size throughout.
+- **Back to the head only after 0.7 s** (`AutoCut`): a finger shifted or lifted
+  between swipes must not cut back and forth. A touch cuts to the screen at once.
+  A take that starts with no finger down starts on the head.
+- **The touch comes from MultitouchSupport, a private framework.** No public API
+  can tell a finger resting still, or lifted, from no finger: `NSTouch` only
+  reaches a view in the key window, and a global `NSEvent` monitor hears only
+  movement, clicks and scrolling. `TrackpadTouch` opens the framework with
+  `dlopen`, never links it, and reads only the finger count its callback is
+  handed — not the undocumented per-finger records. Missing, the mode says so
+  and records like Screen + Camera. It runs only while the mode is chosen.
+
 ### Quality, framing, subtitles (v0.4)
 
 - **Four quality steps, fixed bitrates.** Economical (720p, 0.35 Mbit/s),
@@ -284,6 +305,7 @@ Sources/MacMonologue/
   TakeRecorder.swift           AVAssetWriter, HEVC, pause via TakeClock
   ScreenCaptureSource.swift    SCStream lifecycle, excludes itself
   FrameCompositor.swift        camera mirroring, screen + round bubble (Core Image)
+  TrackpadTouch.swift          finger on the trackpad, via private MultitouchSupport
   AudioMixer.swift             format conversion around AudioMixerCore
   GlobalHotkeys.swift          Carbon hot keys, Shortcut
   MenuBarContent.swift         menu bar item and its menu
@@ -291,7 +313,7 @@ Sources/MacMonologue/
   SettingsView.swift           Settings
   KeyCapView.swift             keys with the translucent hand
   pure, tested without hardware:
-    TakeClock  BubbleLayout  ScreenCanvas  TimedRingBuffer
+    TakeClock  BubbleLayout  ScreenCanvas  TimedRingBuffer  AutoCut
     AudioMixerCore  SourceTimeline  ClockProbe  PCMSampleBuffer
 Tests/MacMonologueTests/       all of the above, plus compositing on synthetic frames
 ```
@@ -354,6 +376,10 @@ Tests/MacMonologueTests/       all of the above, plus compositing on synthetic f
 - **Not notarized**, so every first install needs *Open Anyway*. An Apple
   Developer ID would remove that, but switching later changes the signature: every
   user would reinstall once.
+- **Touch Cut rests on a private framework.** A macOS update could change or
+  remove MultitouchSupport; the mode then records like Screen + Camera. With a
+  mouse it never cuts. The head shot is the camera — at most 1080p — scaled up
+  to the screen canvas, so it is softer than the screen next to it.
 - **Every new version asks for camera and microphone again.** Seen with 0.3.0 over
   0.2.0 (installed by hand) and 0.3.1 over 0.3.0 (the in-app update): macOS asked
   again for both, although the designated requirement was unchanged. Screen

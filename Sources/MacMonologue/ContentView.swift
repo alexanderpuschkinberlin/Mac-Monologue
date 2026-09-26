@@ -50,7 +50,10 @@ struct ContentView: View {
             HStack(alignment: .center) {
                 Picker("Mode", selection: $capture.mode) {
                     ForEach(CaptureMode.allCases) { mode in
-                        Text(mode.label).tag(mode)
+                        Text(mode.shortLabel).tag(mode)
+                            .help(mode.cutsOnTouch
+                                  ? "\(mode.label): the screen while a finger rests on the trackpad, you in full frame once you let go."
+                                  : mode.label)
                     }
                 }
                 .pickerStyle(.segmented)
@@ -127,7 +130,7 @@ struct ContentView: View {
                 }
             }
 
-            if capture.mode == .screenAndCamera {
+            if capture.mode.showsBubble {
                 labelled("Camera bubble") {
                     HStack(spacing: 12) {
                         CornerPickerView(corner: $capture.bubbleCorner)
@@ -171,6 +174,8 @@ struct ContentView: View {
                 + "saved file mirrored too — text you hold up to the camera will then read backwards."
         case .screenAndCamera:
             "Mirrors the camera bubble in the saved file. The screen itself is never mirrored."
+        case .screenAndCameraTouchCut:
+            "Mirrors the camera — bubble and full picture — in the saved file. The screen itself is never mirrored."
         case .screen:
             "The screen is never mirrored."
         }
@@ -243,7 +248,7 @@ struct ContentView: View {
     /// once recording starts: the corner is fixed for the whole take.
     @ViewBuilder
     private var cornerHints: some View {
-        if capture.mode == .screenAndCamera, capture.state == .ready, capture.canvasSize.width > 0 {
+        if capture.mode.showsBubble, capture.state == .ready, capture.canvasSize.width > 0 {
             GeometryReader { geometry in
                 let video = AVMakeRect(aspectRatio: capture.canvasSize,
                                        insideRect: CGRect(origin: .zero, size: geometry.size))
@@ -472,6 +477,7 @@ private func window(_ capture: CaptureController) -> some View {
 #Preview("Camera · ready") { window(.preview()) }
 #Preview("Screen · ready") { window(.preview(mode: .screen)) }
 #Preview("Screen + Camera · ready") { window(.preview(mode: .screenAndCamera)) }
+#Preview("Screen & Head Touch Cut · ready") { window(.preview(mode: .screenAndCameraTouchCut)) }
 #Preview("Recording") { window(.preview(state: .recording, elapsed: 83, audioLevel: -9)) }
 #Preview("Paused") { window(.preview(state: .paused, elapsed: 83)) }
 #Preview("Finishing") { window(.preview(state: .finishing, elapsed: 83)) }

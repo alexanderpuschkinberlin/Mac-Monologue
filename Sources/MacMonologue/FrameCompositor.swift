@@ -42,6 +42,24 @@ final class FrameCompositor {
         return render(image, width: width, height: height)
     }
 
+    /// Touch Cut mode, head shot: the camera alone, filling a screen-sized canvas —
+    /// scaled up and cut at the sides or top to fit, never letterboxed, so a cut
+    /// between screen and head keeps the file's one size.
+    func renderCameraFilling(_ camera: CVPixelBuffer, canvasWidth: Int, canvasHeight: Int,
+                             mirrored: Bool, crop: CGRect? = nil) -> CVPixelBuffer? {
+        var image = Self.framed(CIImage(cvPixelBuffer: camera), to: crop)
+        if mirrored { image = Self.mirrored(image) }
+        let extent = image.extent
+        guard extent.width > 0, extent.height > 0 else { return nil }
+        let canvas = CGRect(x: 0, y: 0, width: canvasWidth, height: canvasHeight)
+        let scale = max(canvas.width / extent.width, canvas.height / extent.height)
+        image = image
+            .transformed(by: CGAffineTransform(translationX: -extent.midX, y: -extent.midY))
+            .transformed(by: CGAffineTransform(scaleX: scale, y: scale))
+            .transformed(by: CGAffineTransform(translationX: canvas.midX, y: canvas.midY))
+        return render(image.cropped(to: canvas), width: canvasWidth, height: canvasHeight)
+    }
+
     /// The part of `image` inside `crop`, scaled up to fill the image's own extent.
     static func framed(_ image: CIImage, to crop: CGRect?) -> CIImage {
         guard let crop, crop.width > 0, crop.height > 0 else { return image }

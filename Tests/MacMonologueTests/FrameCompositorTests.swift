@@ -68,6 +68,29 @@ final class FrameCompositorTests: XCTestCase {
         XCTAssertEqual(CVPixelBufferGetHeight(output), 54)
     }
 
+    /// Touch Cut's head shot: a wide camera on a square canvas is scaled to fill
+    /// it and cut at the sides, the middle staying where it was.
+    func testFillingCoversTheCanvasAndKeepsTheMiddle() throws {
+        let compositor = FrameCompositor()
+        let output = try XCTUnwrap(compositor.renderCameraFilling(
+            try makeSplitBuffer(width: 64, height: 32), canvasWidth: 60, canvasHeight: 60, mirrored: false))
+
+        XCTAssertEqual(CVPixelBufferGetWidth(output), 60)
+        XCTAssertEqual(CVPixelBufferGetHeight(output), 60)
+        XCTAssertGreaterThan(try brightness(output, x: 20, y: 2), 200, "left of the middle should be white, top to bottom")
+        XCTAssertGreaterThan(try brightness(output, x: 20, y: 57), 200, "no letterbox at the bottom")
+        XCTAssertLessThan(try brightness(output, x: 40, y: 30), 55, "right of the middle should be black")
+    }
+
+    func testFillingMirrors() throws {
+        let compositor = FrameCompositor()
+        let output = try XCTUnwrap(compositor.renderCameraFilling(
+            try makeSplitBuffer(width: 64, height: 32), canvasWidth: 60, canvasHeight: 60, mirrored: true))
+
+        XCTAssertLessThan(try brightness(output, x: 20, y: 30), 55, "left should now be black")
+        XCTAssertGreaterThan(try brightness(output, x: 40, y: 30), 200, "right should now be white")
+    }
+
     func testMirroringKeepsTheImageInPlace() {
         let image = CIImage(color: .white).cropped(to: CGRect(x: 10, y: 20, width: 100, height: 50))
         XCTAssertEqual(FrameCompositor.mirrored(image).extent, image.extent)

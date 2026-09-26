@@ -47,6 +47,8 @@ final class CaptureRouter: NSObject, @unchecked Sendable {
     private var cameraCrop: CGRect?
     private let cameraFrameStamp = OSAllocatedUnfairLock<CFTimeInterval>(initialState: 0)
     private var previewSink: PreviewSink?
+    private let trackpad: TrackpadTouch
+    private var autoCut = AutoCut()
     private var fallbackTimer: DispatchSourceTimer?
 
     /// Present only during a screen-mode take: the microphone and system audio are
@@ -65,9 +67,10 @@ final class CaptureRouter: NSObject, @unchecked Sendable {
     /// Called on `queue`; the buffer must not escape it.
     var onMicrophoneBuffer: ((CMSampleBuffer) -> Void)?
 
-    init(queue: DispatchQueue, recorder: TakeRecorder) {
+    init(queue: DispatchQueue, recorder: TakeRecorder, trackpad: TrackpadTouch) {
         self.queue = queue
         self.recorder = recorder
+        self.trackpad = trackpad
         super.init()
         startFallbackTimer()
         recorder.onWillFinish = { [weak self] in self?.flushMixer() }
@@ -263,6 +266,19 @@ final class CaptureRouter: NSObject, @unchecked Sendable {
         let writing = recorder.isWriting
         guard writing || previewSink != nil else { return }
 
+        // Touch Cut: with no finger on the trackpad, the head fills the picture.
+        // Without a camera frame — the camera stalled — the screen always shows.
+        if configuration.mode.cutsOnTouch, let camera,
+           !autoCut.showsScreen(touching: trackpad.isTouching, now: CACurrentMediaTime()) {
+            guard let rendered = compositor.renderCameraFilling(
+                camera, canvasWidth: configuration.canvasWidth, canvasHeight: configuration.canvasHeight,
+                mirrored: configuration.mirrorsRecording,
+                crop: configuration.followsFace ? cameraCrop : nil
+            ) else { return }
+            deliver(rendered, writing: writing, presentationTime: presentationTime, duration: duration)
+            return
+        }
+
         let bubble = camera == nil ? .zero : configuration.bubble.frame(
             canvasWidth: configuration.canvasWidth, canvasHeight: configuration.canvasHeight)
         guard let rendered = compositor.renderScreen(
@@ -271,7 +287,10 @@ final class CaptureRouter: NSObject, @unchecked Sendable {
             bubble: bubble, mirrorsCamera: configuration.mirrorsRecording,
             cameraCrop: configuration.followsFace ? cameraCrop : nil
         ) else { return }
+        deliver(rendered, writing: writing, presentationTime: presentationTime, duration: duration)
+    }
 
+    private func deliver(_ rendered: CVPixelBuffer, writing: Bool, presentationTime: CMTime, duration: CMTime) {
         previewSink?.show(rendered)
 
         if writing, let frame = ImageSampleBuffer.make(imageBuffer: rendered,

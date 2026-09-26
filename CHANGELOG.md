@@ -4,6 +4,14 @@ Every version of Mac-Monologue, newest first. `bin/publish` takes the section of
 the version it publishes as that release's notes, and the app shows them when it
 offers an update.
 
+## 0.5.0 — unreleased
+
+- **Screen & Head Touch Cut**, a fourth mode. With a finger on the trackpad the
+  screen fills the picture, with you in the bubble. Lift it, and after a moment
+  the video cuts to you, full frame. The cut happens while you record, so the
+  file needs no editing afterwards. It needs a trackpad; with a mouse it
+  records like Screen + Camera.
+
 ## 0.4.2 — 2026-09-25
 
 - Fixed: the welcome steps, opened again from the Help menu, could not be closed.

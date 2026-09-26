@@ -258,7 +258,7 @@ final class CaptureController: ObservableObject {
         switch mode {
         case .camera:
             return state != .needsAccess && state != .unavailable
-        case .screen, .screenAndCamera:
+        case .screen, .screenAndCamera, .screenAndCameraTouchCut:
             return screenAccess == .granted && isScreenCaptureRunning
         }
     }
@@ -277,6 +277,8 @@ final class CaptureController: ObservableObject {
     nonisolated(unsafe) private let audioOutput = AVCaptureAudioDataOutput()
     private let recorder: TakeRecorder
     private let router: CaptureRouter
+    /// Read by the router in Touch Cut mode; running only while that mode is chosen.
+    private let trackpad = TrackpadTouch()
     private let screenSource = ScreenCaptureSource()
 
     /// Confined to `outputQueue`: only the meter's readings cross to the main actor.
@@ -310,7 +312,7 @@ final class CaptureController: ObservableObject {
         let recorder = TakeRecorder(queue: outputQueue)
         self.outputQueue = outputQueue
         self.recorder = recorder
-        self.router = CaptureRouter(queue: outputQueue, recorder: recorder)
+        self.router = CaptureRouter(queue: outputQueue, recorder: recorder, trackpad: trackpad)
     }
 
     // MARK: - Lifecycle
@@ -342,6 +344,7 @@ final class CaptureController: ObservableObject {
         case .camera: mode = .camera
         case .screen: mode = .screen
         case .screenAndCamera: mode = .screenAndCamera
+        case .screenAndCameraTouchCut: mode = .screenAndCameraTouchCut
         }
         configureRouter()
         selectedCameraID = DevicePreferences.cameraID
@@ -505,7 +508,7 @@ final class CaptureController: ObservableObject {
             // Nothing left to record: finish, and keep what there is.
             banner = "The camera disconnected. The take has been stopped and kept."
             finishTake()
-        case .screenAndCamera:
+        case .screenAndCamera, .screenAndCameraTouchCut:
             // The presentation matters more than the bubble: keep recording.
             banner = "The camera disconnected. The screen keeps recording without the bubble."
         case .screen:
@@ -559,9 +562,11 @@ final class CaptureController: ObservableObject {
             formatSummary = "\(activeDimensions.width) × \(activeDimensions.height) · up to \(Int(Self.targetFPS)) fps"
                 + " · \(videoQuality.sizeLabel)"
 
-        case .screenAndCamera:
+        case .screenAndCamera, .screenAndCameraTouchCut:
             if camera == nil, !cameraAccessDenied {
                 banner = "No camera available — the screen will be recorded without the bubble."
+            } else if mode.cutsOnTouch, !trackpad.isAvailable {
+                banner = "Trackpad touch isn't available on this Mac — records like Screen + Camera."
             }
             refreshScreenCapture()
 
@@ -569,6 +574,7 @@ final class CaptureController: ObservableObject {
             refreshScreenCapture()
         }
 
+        if mode.cutsOnTouch { trackpad.start() } else { trackpad.stop() }
         if state == .unavailable || state == .needsAccess { state = .ready }
         configureRouter()
     }

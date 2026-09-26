@@ -11,6 +11,10 @@ offers an update.
   the video cuts to you, full frame. The cut happens while you record, so the
   file needs no editing afterwards. It needs a trackpad; with a mouse it
   records like Screen + Camera.
+- **A countdown before every take**: 3, 2, 1, big in the middle of the screen
+  and never in the recording. In Screen & Head Touch Cut it is where you choose
+  the first frame: finger on the trackpad, and the take opens on the screen.
+  Press Record again to cancel. Off, 3, 5 or 10 seconds in Settings.
 
 ## 0.4.2 — 2026-09-25
 

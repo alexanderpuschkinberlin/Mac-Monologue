@@ -133,6 +133,19 @@ several decisions below that would be wrong for a product with real users.
   `dlopen`, never links it, and reads only the finger count its callback is
   handed — not the undocumented per-finger records. Missing, the mode says so
   and records like Screen + Camera. It runs only while the mode is chosen.
+- **A countdown before every take** (3 s by default; off, 5 or 10 in Settings).
+  It is a property of the controller, not a `RecorderState`: nothing is being
+  recorded, and every `switch` over the state would otherwise grow a case that
+  means "ready". Pressing Record or the shortcut again cancels it; so does
+  Finish. The self-test skips it — it drives takes by the clock.
+- The 3-2-1 is a floating panel in the middle of the recorded display, above
+  every app and never focused, because a take is often started by shortcut from
+  inside the presentation. It stays out of the video for the same reason the
+  window does: the capture leaves out this whole process.
+- **The first frame shows the trackpad as it is when the countdown ends.** The
+  take starts from a fresh `AutoCut`, so a finger lifted a moment before does
+  not carry its 0.7 s over into the take. In Touch Cut the panel says live which
+  way the take will open.
 
 ### Quality, framing, subtitles (v0.4)
 

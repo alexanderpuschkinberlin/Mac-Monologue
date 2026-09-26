@@ -275,7 +275,7 @@ struct ContentView: View {
             Circle()
                 .fill(dotColor)
                 .frame(width: 7, height: 7)
-            Text(capture.state.label)
+            Text(capture.countdown.map { "Starting in \($0)" } ?? capture.state.label)
                 .font(.system(.caption, design: .monospaced))
         }
         .padding(.horizontal, 10)
@@ -366,6 +366,7 @@ struct ContentView: View {
                 Label(recordButtonTitle, systemImage: recordButtonIcon)
                     .frame(minWidth: 84)
             }
+            .keyboardShortcut(capture.countdown != nil ? .cancelAction : nil)
             .disabled(capture.state == .finishing
                       || (capture.state == .ready && !capture.canRecord)
                       || capture.state == .needsAccess
@@ -409,7 +410,8 @@ struct ContentView: View {
     }
 
     private var recordButtonTitle: String {
-        switch capture.state {
+        if capture.countdown != nil { return "Cancel" }
+        return switch capture.state {
         case .recording: "Pause"
         case .paused: "Resume"
         case .preview: capture.isPlaying ? "Pause" : "Play"
@@ -418,7 +420,8 @@ struct ContentView: View {
     }
 
     private var recordButtonIcon: String {
-        switch capture.state {
+        if capture.countdown != nil { return "xmark.circle" }
+        return switch capture.state {
         case .recording: "pause.circle"
         case .paused: "record.circle"
         case .preview: capture.isPlaying ? "pause.circle" : "play.circle"
@@ -478,6 +481,7 @@ private func window(_ capture: CaptureController) -> some View {
 #Preview("Screen · ready") { window(.preview(mode: .screen)) }
 #Preview("Screen + Camera · ready") { window(.preview(mode: .screenAndCamera)) }
 #Preview("Screen & Head Touch Cut · ready") { window(.preview(mode: .screenAndCameraTouchCut)) }
+#Preview("Countdown") { window(.preview(mode: .screenAndCameraTouchCut, countdown: 2)) }
 #Preview("Recording") { window(.preview(state: .recording, elapsed: 83, audioLevel: -9)) }
 #Preview("Paused") { window(.preview(state: .paused, elapsed: 83)) }
 #Preview("Finishing") { window(.preview(state: .finishing, elapsed: 83)) }

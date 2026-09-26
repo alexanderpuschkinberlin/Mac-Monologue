@@ -116,6 +116,17 @@ struct SettingsView: View {
             }
 
             Section {
+                Picker("Countdown before recording", selection: $capture.countdownSeconds) {
+                    Text("Off").tag(0)
+                    ForEach([3, 5, 10], id: \.self) { Text("\($0) seconds").tag($0) }
+                }
+                Text("Time to get ready. In Screen & Head Touch Cut, a finger on the trackpad "
+                     + "when it ends starts the take on the screen.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
                 QualityCards(selection: $capture.videoQuality)
                     .disabled(capture.devicePickersLocked)
             } header: {

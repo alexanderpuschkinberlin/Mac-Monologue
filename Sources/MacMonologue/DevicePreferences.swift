@@ -19,6 +19,7 @@ enum DevicePreferences {
     private static let finishShortcutKey = "finishShortcut"
     private static let autoMinimizesKey = "autoMinimizes"
     private static let showsMouseClicksKey = "showsMouseClicks"
+    private static let countdownSecondsKey = "countdownSeconds"
     private static let completedOnboardingKey = "hasCompletedOnboarding"
     private static let launchModeKey = "launchMode"
     private static let checksForUpdatesKey = "checksForUpdatesAutomatically"
@@ -140,6 +141,12 @@ enum DevicePreferences {
     static var showsMouseClicks: Bool {
         get { UserDefaults.standard.object(forKey: showsMouseClicksKey) as? Bool ?? true }
         set { UserDefaults.standard.set(newValue, forKey: showsMouseClicksKey) }
+    }
+
+    /// Absent means three seconds; 0 means none.
+    static var countdownSeconds: Int {
+        get { UserDefaults.standard.object(forKey: countdownSecondsKey) as? Int ?? 3 }
+        set { UserDefaults.standard.set(newValue, forKey: countdownSecondsKey) }
     }
 
     static var launchMode: LaunchMode {

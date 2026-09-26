@@ -7,6 +7,15 @@ final class AutoCutTests: XCTestCase {
         XCTAssertFalse(cut.showsScreen(touching: false, now: 10))
     }
 
+    /// After the countdown the take starts from a fresh cut: a finger down then
+    /// opens on the screen, with no finger on the head — whatever came before.
+    func testAFreshCutFollowsTheFingerFromTheFirstFrame() {
+        var touching = AutoCut()
+        XCTAssertTrue(touching.showsScreen(touching: true, now: 10))
+        var lifted = AutoCut()
+        XCTAssertFalse(lifted.showsScreen(touching: false, now: 10))
+    }
+
     func testTouchShowsTheScreenAtOnce() {
         var cut = AutoCut()
         XCTAssertFalse(cut.showsScreen(touching: false, now: 10))

@@ -102,6 +102,9 @@ final class CaptureRouter: NSObject, @unchecked Sendable {
     func prepareTake(microphonePresent: Bool) {
         queue.async { [self] in
             mixer = configuration.isScreenMode ? AudioMixer(microphoneIsMaster: microphonePresent) : nil
+            // The first frame shows what the trackpad says now, without the
+            // hold-over from the preview: the countdown is where that is chosen.
+            autoCut = AutoCut()
             hasProbedClocks = false
         }
     }

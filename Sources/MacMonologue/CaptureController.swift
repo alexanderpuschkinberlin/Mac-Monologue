@@ -231,6 +231,17 @@ final class CaptureController: ObservableObject {
         }
     }
 
+    /// Seconds between pressing Record and the take starting; 0 starts at once.
+    @Published var countdownSeconds = 3 {
+        didSet { if persistsPreferences { DevicePreferences.countdownSeconds = countdownSeconds } }
+    }
+
+    /// The seconds left before a take starts, while counting down; the state
+    /// stays `.ready` meanwhile.
+    @Published private(set) var countdown: Int?
+    private var countdownTask: Task<Void, Never>?
+    private let countdownOverlay = CountdownOverlay()
+
     @Published var launchMode: LaunchMode = .lastUsed {
         didSet { if persistsPreferences { DevicePreferences.launchMode = launchMode } }
     }
@@ -250,7 +261,7 @@ final class CaptureController: ObservableObject {
     private var persistsPreferences: Bool { !SelfTest.isEnabled && !PreviewHost.isActive }
 
     var devicePickersLocked: Bool {
-        state == .recording || state == .paused || state == .finishing
+        state == .recording || state == .paused || state == .finishing || countdown != nil
     }
 
     /// Whether a take can be started right now.
@@ -332,6 +343,7 @@ final class CaptureController: ObservableObject {
         finishShortcut = DevicePreferences.finishShortcut
         autoMinimizes = DevicePreferences.autoMinimizes
         showsMouseClicks = DevicePreferences.showsMouseClicks
+        countdownSeconds = DevicePreferences.countdownSeconds
         registerHotkeys()
         mirrorsRecording = DevicePreferences.mirrorsRecording
         videoQuality = DevicePreferences.videoQuality
@@ -1060,7 +1072,15 @@ final class CaptureController: ObservableObject {
     /// Space: record, then pause, then resume.
     func toggleRecording() {
         switch state {
-        case .ready: startTake()
+        case .ready:
+            if countdown != nil {
+                cancelCountdown()
+            } else if countdownSeconds > 0, !SelfTest.isEnabled {
+                // The self-test drives takes by the clock; it starts at once.
+                beginCountdown()
+            } else {
+                startTake()
+            }
         // Space is overloaded in preview: it plays the clip rather than starting
         // a take you did not ask for.
         case .preview: togglePlayback()
@@ -1068,6 +1088,41 @@ final class CaptureController: ObservableObject {
         case .paused: recorder.resume()
         case .needsAccess, .unavailable, .finishing: break
         }
+    }
+
+    /// Time to get ready — and, in Touch Cut, to choose the first frame: a finger
+    /// on the trackpad when it ends starts the take on the screen.
+    private func beginCountdown() {
+        guard canRecord else { return }
+        countdown = countdownSeconds
+        showCountdown()
+        countdownTask = Task { [weak self] in
+            while let self, let left = self.countdown, left > 0 {
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled else { return }
+                self.countdown = left - 1
+                self.showCountdown()
+            }
+            guard let self, !Task.isCancelled else { return }
+            self.countdown = nil
+            self.countdownOverlay.hide()
+            self.startTake()
+        }
+    }
+
+    func cancelCountdown() {
+        countdownTask?.cancel()
+        countdownTask = nil
+        countdown = nil
+        countdownOverlay.hide()
+    }
+
+    private func showCountdown() {
+        guard let countdown, countdown > 0 else { return countdownOverlay.hide() }
+        let display = mode.recordsScreen ? selectedDisplayID : nil
+        let trackpad = self.trackpad
+        countdownOverlay.show(seconds: countdown, on: display,
+                              startsOnScreen: mode.cutsOnTouch ? { trackpad.isTouching } : nil)
     }
 
     private func startTake() {
@@ -1137,6 +1192,7 @@ final class CaptureController: ObservableObject {
     }
 
     func finishTake() {
+        if countdown != nil { return cancelCountdown() }
         guard state == .recording || state == .paused else { return }
         recorder.finish { [weak self] result in
             Task { @MainActor in
@@ -1289,7 +1345,8 @@ extension CaptureController {
         audioLevel: Float = -18,
         isClipping: Bool = false,
         lastRecordingURL: URL? = nil,
-        subtitleJob: SubtitleCenter.Job? = nil
+        subtitleJob: SubtitleCenter.Job? = nil,
+        countdown: Int? = nil
     ) -> CaptureController {
         let controller = CaptureController()
         controller.cameras = [DeviceOption(id: "facetime", name: "FaceTime HD Camera"),
@@ -1313,6 +1370,7 @@ extension CaptureController {
             ? "1920 × 1246 · 30 fps · \(controller.videoQuality.sizeLabel)"
             : "1920 × 1080 · up to 30 fps · \(controller.videoQuality.sizeLabel)"
         controller.banner = banner
+        controller.countdown = countdown
         controller.cameraIsSilent = cameraIsSilent
         controller.alternativeCamera = cameraIsSilent ? controller.cameras[0] : nil
         controller.hasAudio = hasAudio

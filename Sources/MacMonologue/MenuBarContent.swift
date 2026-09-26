@@ -96,7 +96,7 @@ struct MenuBarMenu: View {
         case .paused: "Paused · \(ContentView.timecode(capture.elapsed))"
         case .finishing: "Finishing…"
         case .preview: "Take saved"
-        case .ready: "Ready · \(capture.mode.label)"
+        case .ready: capture.countdown.map { "Starting in \($0)…" } ?? "Ready · \(capture.mode.label)"
         case .needsAccess: "Camera access needed"
         case .unavailable: "No camera"
         }
@@ -106,7 +106,7 @@ struct MenuBarMenu: View {
         let title = switch capture.state {
         case .recording: "Pause"
         case .paused: "Resume"
-        default: "Record"
+        default: capture.countdown != nil ? "Cancel Countdown" : "Record"
         }
         return title + hint(capture.toggleShortcut)
     }

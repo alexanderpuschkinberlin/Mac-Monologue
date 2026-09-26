@@ -77,7 +77,7 @@
     </td>
     <td width="50%">
       <h3>You, in the corner</h3>
-      <p>Record a presentation or a demo with yourself in a round bubble - the look of the tutorials you know, without putting it together afterwards. Pick one of four corners and one of three sizes; the preview shows exactly what gets recorded. Or record just the screen, without the bubble. Or let the trackpad cut for you: in <b>Screen &amp; Head Touch Cut</b>, the screen is big while a finger rests on the trackpad, and you fill the picture once you let go.</p>
+      <p>Record a presentation or a demo with yourself in a round bubble - the look of the tutorials you know, without putting it together afterwards. Pick one of four corners and one of three sizes; the preview shows exactly what gets recorded. Or record just the screen, without the bubble. Or let the trackpad cut for you: in <b>Screen &amp; Head Touch Cut</b>, the screen is big while a finger rests on the trackpad, and you fill the picture once you let go. A short countdown before each take gives you time to choose how it opens.</p>
     </td>
   </tr>
   <tr>

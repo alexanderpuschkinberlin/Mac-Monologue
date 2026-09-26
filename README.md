@@ -160,7 +160,7 @@
     <td width="50%">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/images/audio-dark.png">
-        <img src="docs/images/audio-light.png" alt="A microphone and the Mac's own sound, flowing into one track">
+        <img src="docs/images/audio-light.png" alt="A microphone and the Mac's own sound, through one fader, into one track">
       </picture>
     </td>
   </tr>
@@ -321,6 +321,15 @@ An iPhone used as a camera needs to be nearby and unlocked.
 <summary><b>Can I change the shortcuts?</b></summary>
 <br>
 Yes, in <i>Settings › Shortcuts</i> - the drawing there shows where your fingers go.
+</details>
+
+<details>
+<summary><b>The video I play drowns out my voice.</b></summary>
+<br>
+Slide the fader under the preview towards <b>Voice</b> - the Mac gets quieter, your
+voice stays as it is. It works while you record, too. Or switch on <i>Lower Mac sound
+while I talk</i>, next to the fader or in <i>Settings › Recording</i>, and the Mac gets
+quieter whenever you speak.
 </details>
 
 <details>

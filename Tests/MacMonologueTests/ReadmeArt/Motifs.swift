@@ -369,21 +369,44 @@ enum ReadmeArt {
 
     static let audio = Motif(name: "audio", size: CGSize(width: 440, height: 280), seed: 43) { s, _ in
         // A microphone
-        let head = CGRect(x: 62, y: 34, width: 34, height: 52)
+        let head = CGRect(x: 42, y: 34, width: 34, height: 52)
         s.rect(head, radius: 17, width: 2.2)
-        s.stroke([CGPoint(x: 54, y: 70), CGPoint(x: 56, y: 92), CGPoint(x: 79, y: 102),
-                  CGPoint(x: 102, y: 92), CGPoint(x: 104, y: 70)], width: 1.8)
-        s.line(CGPoint(x: 79, y: 102), CGPoint(x: 79, y: 120), width: 1.8)
-        s.text("your voice", at: CGPoint(x: 79, y: 140), font: Hand.bold(18))
+        s.stroke([CGPoint(x: 34, y: 70), CGPoint(x: 36, y: 92), CGPoint(x: 59, y: 102),
+                  CGPoint(x: 82, y: 92), CGPoint(x: 84, y: 70)], width: 1.8)
+        s.line(CGPoint(x: 59, y: 102), CGPoint(x: 59, y: 120), width: 1.8)
+        s.text("your voice", at: CGPoint(x: 59, y: 140), font: Hand.bold(18))
 
         // Music, or a video playing on screen
-        s.text("♫", at: CGPoint(x: 80, y: 206), font: .system(size: 44), color: s.ink.line)
-        s.text("your Mac", at: CGPoint(x: 79, y: 250), font: Hand.bold(18))
+        s.text("♫", at: CGPoint(x: 60, y: 206), font: .system(size: 44), color: s.ink.line)
+        s.text("your Mac", at: CGPoint(x: 59, y: 250), font: Hand.bold(18))
 
-        // Both into one track
-        s.arrow(from: CGPoint(x: 130, y: 80), to: CGPoint(x: 236, y: 138), bend: -0.2)
-        s.arrow(from: CGPoint(x: 130, y: 212), to: CGPoint(x: 236, y: 156), bend: 0.2)
-        let track = CGRect(x: 246, y: 116, width: 170, height: 58)
+        // Both through one fader: a rail, a cap, the centre marked.
+        let rail = CGRect(x: 140, y: 143, width: 120, height: 6)
+        let cap = CGRect(x: rail.midX - 36, y: rail.midY - 18, width: 16, height: 36)
+        // The rail stops at the cap, which sits on top of it.
+        s.rect(CGRect(x: rail.minX, y: rail.minY, width: cap.minX - 3 - rail.minX, height: rail.height),
+               radius: 3, width: 1.8)
+        s.rect(CGRect(x: cap.maxX + 3, y: rail.minY, width: rail.maxX - cap.maxX - 3, height: rail.height),
+               radius: 3, width: 1.8)
+        for index in 0..<7 {
+            let x = rail.minX + rail.width * CGFloat(index) / 6
+            let centre = index == 3
+            s.line(CGPoint(x: x, y: cap.maxY + 6), CGPoint(x: x, y: cap.maxY + (centre ? 22 : 12)),
+                   width: centre ? 2.4 : 1.2)
+        }
+        s.context.fill(Path(roundedRect: cap, cornerRadius: 4), with: .color(s.ink.line.opacity(0.06)))
+        s.rect(cap, radius: 4, width: 2.2)
+        for dy in [-7.0, 0.0, 7.0] {
+            s.line(CGPoint(x: cap.minX + 4, y: cap.midY + dy), CGPoint(x: cap.maxX - 4, y: cap.midY + dy), width: 1.2)
+        }
+        s.text("the balance", at: CGPoint(x: rail.midX, y: rail.minY - 40), font: Hand.bold(19),
+               color: s.ink.accent, angle: .degrees(-3))
+        s.arrow(from: CGPoint(x: 100, y: 80), to: CGPoint(x: rail.minX - 4, y: rail.midY - 8), bend: -0.2)
+        s.arrow(from: CGPoint(x: 100, y: 212), to: CGPoint(x: rail.minX - 4, y: rail.midY + 8), bend: 0.2)
+
+        // Into one track
+        s.arrow(from: CGPoint(x: rail.maxX + 6, y: rail.midY), to: CGPoint(x: 290, y: rail.midY), bend: 0)
+        let track = CGRect(x: 298, y: 117, width: 126, height: 58)
         s.rect(track, radius: 8, width: 2.4)
         var shape = SeededRandom(99)
         var points: [CGPoint] = []

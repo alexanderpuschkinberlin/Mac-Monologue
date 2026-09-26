@@ -8,11 +8,8 @@ struct AudioCrossfaderView: View {
     @Binding var balance: Float
     @Binding var ducksSystemAudio: Bool
     let hasMicrophone: Bool
-    let voiceLevel: Float
-    let voicePeak: Float
-    let voiceClipping: Bool
-    let systemLevel: Float
-    let systemPeak: Float
+    /// Observed here, not by the window: only the meters redraw as levels move.
+    @ObservedObject var levels: AudioLevels
 
     var body: some View {
         let gains = AudioMix.gains(balance: balance)
@@ -31,13 +28,14 @@ struct AudioCrossfaderView: View {
                 .foregroundStyle(.secondary)
 
                 HStack(spacing: 8) {
-                    meter(level: voiceLevel, peak: voicePeak, clipping: voiceClipping, gain: gains.voice,
+                    meter(level: levels.voice.level, peak: levels.voice.peak, clipping: levels.voice.isClipping,
+                          gain: gains.voice,
                           help: "Your voice as it goes into the recording")
                         .opacity(hasMicrophone ? 1 : 0.35)
                     DJFader(value: $balance)
                         .help("Towards Voice, the Mac gets quieter; towards Mac sound, your voice does. "
                               + "Double-click for both full.")
-                    meter(level: systemLevel, peak: systemPeak, clipping: false, gain: gains.system,
+                    meter(level: levels.system.level, peak: levels.system.peak, clipping: false, gain: gains.system,
                           help: "The Mac's sound as it goes into the recording")
                 }
             }
@@ -198,9 +196,10 @@ private struct TrailingIconLabelStyle: LabelStyle {
 #Preview("Crossfader") {
     @Previewable @State var balance: Float = -0.35
     @Previewable @State var ducks = true
-    AudioCrossfaderView(balance: $balance, ducksSystemAudio: $ducks, hasMicrophone: true,
-                        voiceLevel: -16, voicePeak: -9, voiceClipping: false,
-                        systemLevel: -12, systemPeak: -6)
+    let levels = AudioLevels()
+    levels.setVoice(AudioLevels.Reading(level: -16, peak: -9))
+    levels.setSystem(AudioLevels.Reading(level: -12, peak: -6))
+    return AudioCrossfaderView(balance: $balance, ducksSystemAudio: $ducks, hasMicrophone: true, levels: levels)
         .padding()
 }
 

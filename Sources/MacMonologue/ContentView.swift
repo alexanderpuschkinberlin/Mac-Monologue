@@ -389,18 +389,12 @@ struct ContentView: View {
                     balance: $capture.audioBalance,
                     ducksSystemAudio: $capture.ducksSystemAudio,
                     hasMicrophone: capture.hasAudio,
-                    voiceLevel: capture.audioLevel, voicePeak: capture.audioPeak,
-                    voiceClipping: capture.isClipping,
-                    systemLevel: capture.systemAudioLevel, systemPeak: capture.systemAudioPeak
+                    levels: capture.levels
                 )
             } else if capture.hasAudio {
                 // The microphone only: that is what a person can do something about.
-                LevelMeterView(
-                    level: capture.audioLevel,
-                    peak: capture.audioPeak,
-                    isClipping: capture.isClipping
-                )
-                .frame(width: 180)
+                VoiceMeterView(levels: capture.levels)
+                    .frame(width: 180)
             }
 
             if capture.state == .preview, let url = capture.lastRecordingURL {

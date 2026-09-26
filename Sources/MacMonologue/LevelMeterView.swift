@@ -1,5 +1,15 @@
 import SwiftUI
 
+/// The microphone meter, observing the levels itself - so the window around it
+/// does not redraw twenty times a second.
+struct VoiceMeterView: View {
+    @ObservedObject var levels: AudioLevels
+
+    var body: some View {
+        LevelMeterView(level: levels.voice.level, peak: levels.voice.peak, isClipping: levels.voice.isClipping)
+    }
+}
+
 /// −60…0 dB meter with peak-hold and a clipping indicator.
 struct LevelMeterView: View {
     let level: Float

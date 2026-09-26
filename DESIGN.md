@@ -383,6 +383,28 @@ Tests/MacMonologueTests/       all of the above, plus compositing on synthetic f
 5. Global shortcuts, menu bar item, auto-minimise.
 6. Welcome steps, Settings, the key drawing.
 
+## Idle cost
+
+The app runs its preview all the time, so what it costs while nobody records
+matters. Measured with `ps` on a Release build, window open, no take (0.5.2):
+
+| Mode | 0.5.0 | 0.5.1 | 0.5.2 |
+|---|---|---|---|
+| Camera | ~55 % | ~56 % | ~12 % |
+| Screen | ~55 % | ~93 % | ~17 % |
+| Screen + Camera | ~70 % | ~104 % | ~27 % |
+| Touch Cut | ~67 % | ~102 % | ~25 % |
+
+- **Nothing that changes many times a second is `@Published` on
+  `CaptureController`.** The whole app observes it - the window, Settings,
+  the commands and the menu bar item, which macOS redraws for every display.
+  The two meters, 20 readings a second each, lived there; 0.5.1's second meter
+  doubled the cost. They now live in `AudioLevels`, observed by the meters
+  alone, and a reading is published only when it moves by 0.5 dB or more.
+- **The recording clock** is published once a second, not once per video frame.
+- What remains is the preview: compositing the camera (and screen) thirty
+  times a second on Core Image.
+
 ## Accepted trade-offs
 
 - **HEVC** is the one choice with a cost outside the two target Macs: a Windows

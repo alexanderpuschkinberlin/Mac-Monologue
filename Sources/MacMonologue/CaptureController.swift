@@ -56,12 +56,8 @@ final class CaptureController: ObservableObject {
     /// Another camera to offer while the selected one is silent.
     @Published private(set) var alternativeCamera: DeviceOption?
     @Published private(set) var elapsed: Double = 0
-    @Published private(set) var audioLevel: Float = AudioLevelMeter.floorDB
-    @Published private(set) var audioPeak: Float = AudioLevelMeter.floorDB
-    @Published private(set) var isClipping = false
-    /// The Mac's own sound, as it comes in — before the crossfader.
-    @Published private(set) var systemAudioLevel: Float = AudioLevelMeter.floorDB
-    @Published private(set) var systemAudioPeak: Float = AudioLevelMeter.floorDB
+    /// The live meters. Not `@Published` here: see `AudioLevels`.
+    let levels = AudioLevels()
     @Published private(set) var lastRecordingURL: URL?
     @Published private(set) var player: AVPlayer?
     @Published private(set) var isPlaying = false
@@ -318,6 +314,8 @@ final class CaptureController: ObservableObject {
     nonisolated(unsafe) private let meter = AudioLevelMeter()
     nonisolated(unsafe) private let systemMeter = AudioLevelMeter()
     nonisolated(unsafe) private var lastSystemMeterPublish: CFTimeInterval = 0
+    /// The whole second last published as `elapsed`; confined to `outputQueue`.
+    nonisolated(unsafe) private var lastPublishedSecond = -1
     nonisolated(unsafe) private var lastMeterPublish: CFTimeInterval = 0
 
     /// Dimensions handed to the encoder: the camera's format, or the screen canvas.
@@ -568,9 +566,7 @@ final class CaptureController: ObservableObject {
             .flatMap { $0 == DeviceOption.noAudioID ? nil : Self.device(id: $0) }
         hasAudio = microphone != nil
         if microphone == nil {
-            audioLevel = AudioLevelMeter.floorDB
-            audioPeak = AudioLevelMeter.floorDB
-            isClipping = false
+            levels.setVoice(.silent)
         }
 
         followRotation(of: camera)
@@ -869,8 +865,7 @@ final class CaptureController: ObservableObject {
     private func stopScreenCapture() {
         isScreenCaptureRunning = false
         // No more buffers will come to bring the Mac-sound meter down.
-        systemAudioLevel = AudioLevelMeter.floorDB
-        systemAudioPeak = AudioLevelMeter.floorDB
+        levels.setSystem(.silent)
         screenSource.apply(nil, output: router, outputQueue: outputQueue) { _ in }
     }
 
@@ -1062,7 +1057,14 @@ final class CaptureController: ObservableObject {
             }
         }
         recorder.onDurationChange = { [weak self] seconds in
-            Task { @MainActor in self?.elapsed = seconds }
+            // Called for every video frame; the clock shows whole seconds. Each
+            // publish redraws the window and the menu bar item, so only when
+            // the second changes - or goes back, when a new take starts.
+            guard let self else { return }
+            let second = Int(seconds.rounded(.down))
+            guard second != self.lastPublishedSecond else { return }
+            self.lastPublishedSecond = second
+            Task { @MainActor in self.elapsed = seconds }
         }
         router.onMicrophoneBuffer = { [weak self] buffer in
             guard let self else { return }
@@ -1073,14 +1075,9 @@ final class CaptureController: ObservableObject {
             guard now - self.lastMeterPublish >= 0.05 else { return }
             self.lastMeterPublish = now
 
-            let level = self.meter.level
-            let peak = self.meter.peak
-            let clipping = self.meter.isClipping
-            Task { @MainActor in
-                self.audioLevel = level
-                self.audioPeak = peak
-                self.isClipping = clipping
-            }
+            let reading = AudioLevels.Reading(level: self.meter.level, peak: self.meter.peak,
+                                              isClipping: self.meter.isClipping)
+            Task { @MainActor in self.levels.setVoice(reading) }
         }
         router.onSystemAudioBuffer = { [weak self] buffer in
             guard let self else { return }
@@ -1089,12 +1086,8 @@ final class CaptureController: ObservableObject {
             guard now - self.lastSystemMeterPublish >= 0.05 else { return }
             self.lastSystemMeterPublish = now
 
-            let level = self.systemMeter.level
-            let peak = self.systemMeter.peak
-            Task { @MainActor in
-                self.systemAudioLevel = level
-                self.systemAudioPeak = peak
-            }
+            let reading = AudioLevels.Reading(level: self.systemMeter.level, peak: self.systemMeter.peak)
+            Task { @MainActor in self.levels.setSystem(reading) }
         }
         router.onClockReading = { [weak self] reading in
             Task { @MainActor in
@@ -1417,15 +1410,14 @@ extension CaptureController {
             : "1920 × 1080 · up to 30 fps · \(controller.videoQuality.sizeLabel)"
         controller.banner = banner
         controller.countdown = countdown
-        controller.systemAudioLevel = systemAudioLevel
-        controller.systemAudioPeak = systemAudioLevel > AudioLevelMeter.floorDB ? systemAudioLevel + 5 : systemAudioLevel
+        controller.levels.setSystem(AudioLevels.Reading(
+            level: systemAudioLevel,
+            peak: systemAudioLevel > AudioLevelMeter.floorDB ? systemAudioLevel + 5 : systemAudioLevel))
         controller.audioBalance = audioBalance
         controller.cameraIsSilent = cameraIsSilent
         controller.alternativeCamera = cameraIsSilent ? controller.cameras[0] : nil
         controller.hasAudio = hasAudio
-        controller.audioLevel = audioLevel
-        controller.audioPeak = audioLevel + 6
-        controller.isClipping = isClipping
+        controller.levels.setVoice(AudioLevels.Reading(level: audioLevel, peak: audioLevel + 6, isClipping: isClipping))
         controller.lastRecordingURL = lastRecordingURL
         if state == .preview { controller.player = AVPlayer() }
         if let subtitleJob { controller.subtitles.configureForPreview(job: subtitleJob) }

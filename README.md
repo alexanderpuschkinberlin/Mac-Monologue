@@ -26,7 +26,7 @@
 </p>
 
 <p align="center">
-  <sub>Free · Apple Silicon · macOS 15 or later · <a href="#install">How to install</a></sub><br>
+  <sub>Free · Apple Silicon · macOS 15 or later · <a href="#install">How to install</a> · <a href="https://mac-monologue.puschkin.co">mac-monologue.puschkin.co</a></sub><br>
   <sub>A fork of <a href="https://github.com/omacom/monologue">omacom/monologue</a> by David Heinemeier Hansson, rebuilt for the Mac.</sub>
 </p>
 

@@ -42,7 +42,7 @@
         <img src="docs/images/step-mode-light.png" width="240" alt="">
       </picture>
       <h3>1 · Choose</h3>
-      <p>Just the camera, just your screen, or your screen with you in a corner.</p>
+      <p>Just the camera, just your screen, or your screen with you in a corner - or let the trackpad cut between them.</p>
     </td>
     <td width="33%" align="center">
       <picture>
@@ -77,7 +77,31 @@
     </td>
     <td width="50%">
       <h3>You, in the corner</h3>
-      <p>Record a presentation or a demo with yourself in a round bubble - the look of the tutorials you know, without putting it together afterwards. Pick one of four corners and one of three sizes; the preview shows exactly what gets recorded. Or record just the screen, without the bubble. Or let the trackpad cut for you: in <b>Screen &amp; Head Touch Cut</b>, the screen is big while a finger rests on the trackpad, and you fill the picture once you let go. A short countdown before each take gives you time to choose how it opens.</p>
+      <p>Record a presentation or a demo with yourself in a round bubble - the look of the tutorials you know, without putting it together afterwards. Pick one of four corners and one of three sizes; the preview shows exactly what gets recorded. Or record just the screen, without the bubble.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <h3>Cut to yourself with one finger</h3>
+      <p>Choose <b>Screen &amp; Head Touch Cut</b>. While a finger rests on the trackpad, your screen fills the picture, with you in the corner. Let go, and a moment later the video cuts to you, full frame - the look of an edited video, straight out of the recording. Works with the trackpad; with a mouse it records like Screen + Camera.</p>
+    </td>
+    <td width="50%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/touch-cut-dark.png">
+        <img src="docs/images/touch-cut-light.png" alt="A finger on the trackpad shows the slide with you in the corner; with the finger lifted, you fill the picture">
+      </picture>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/countdown-dark.png">
+        <img src="docs/images/countdown-light.png" alt="A big 3 counting down in the middle of the screen, and a finger on the trackpad">
+      </picture>
+    </td>
+    <td width="50%">
+      <h3>A moment to get ready</h3>
+      <p>Press record, and 3 - 2 - 1 counts down in the middle of your screen - never in the video. In Touch Cut it is where you choose how the take opens: finger on the trackpad, and it starts on your screen. Press again to cancel. Three seconds, five, ten, or off - in Settings.</p>
     </td>
   </tr>
   <tr>
@@ -231,8 +255,8 @@ You only do this once. Apple explains the same steps in
 
 #### Camera, microphone and screen
 
-The welcome steps ask for each permission in turn. Screen recording is only needed for
-**Screen + Camera**, and the app restarts once after you allow it.
+The welcome steps ask for each permission in turn. Screen recording is only needed when
+you record your screen, and the app restarts once after you allow it.
 
 After an update, or when you install a new version by hand, macOS asks once more for
 the camera and the microphone - click **Allow**. Screen recording stays allowed.
@@ -281,7 +305,7 @@ A still slide takes less, a lot of movement a little more.
 <details>
 <summary><b>Why does it want to record my screen?</b></summary>
 <br>
-Only for <b>Screen + Camera</b>, and only while you are recording. If you only ever
+Only when you record your screen - <b>Screen</b>, <b>Screen + Camera</b> or <b>Screen &amp; Head Touch Cut</b> - and only while you are recording. If you only ever
 record yourself, you can skip that step. Mac-Monologue never records its own window.
 </details>
 
@@ -297,6 +321,12 @@ An iPhone used as a camera needs to be nearby and unlocked.
 <summary><b>Can I change the shortcuts?</b></summary>
 <br>
 Yes, in <i>Settings › Shortcuts</i> - the drawing there shows where your fingers go.
+</details>
+
+<details>
+<summary><b>Can I turn off the countdown?</b></summary>
+<br>
+Yes, in <i>Settings › Recording</i>: off, three, five or ten seconds.
 </details>
 
 <details>

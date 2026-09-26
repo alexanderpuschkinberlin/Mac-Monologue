@@ -28,7 +28,7 @@ enum ReadmeArt {
     static let all: [Motif] = [
         hero, downloadButton,
         stepMode, stepPress, stepShare,
-        corners, screens, iphoneCamera, pause, keys, subtitles, audio, mirror, privacy,
+        corners, touchCut, countdown, screens, iphoneCamera, pause, keys, subtitles, audio, mirror, privacy,
         installDownload, installDrag, installOpenAnyway, installWelcome,
     ]
 
@@ -238,6 +238,81 @@ enum ReadmeArt {
                color: s.ink.soft)
         s.arrow(from: CGPoint(x: screen.midX + 70, y: screen.midY + 40), to: CGPoint(x: chosen.minX - 6, y: chosen.midY),
                 bend: 0.25, color: s.ink.accent)
+    }
+
+    /// Finger on the trackpad: the screen, you in the corner. Let go: you, full frame.
+    static let touchCut = Motif(name: "touch-cut", size: CGSize(width: 440, height: 300), seed: 49) { s, _ in
+        func trackpad(below screen: CGRect, touched: Bool) -> CGRect {
+            let pad = CGRect(x: screen.midX - 46, y: screen.maxY + 26, width: 92, height: 60)
+            s.rect(pad, radius: 9, width: 2)
+            if touched {
+                let finger = CGRect(x: pad.midX - 9, y: pad.midY - 9, width: 18, height: 18)
+                s.context.fill(Path(ellipseIn: finger), with: .color(s.ink.accent))
+                s.dashedEllipse(finger.insetBy(dx: -8, dy: -8), color: s.ink.accent)
+            }
+            return pad
+        }
+
+        // Finger down: the slide, with you in the bubble.
+        let slide = CGRect(x: 20, y: 36, width: 170, height: 112)
+        s.rect(slide, radius: 10, width: 2.4)
+        for (index, width) in [74.0, 96.0, 52.0].enumerated() {
+            let y = slide.minY + 26 + CGFloat(index) * 20
+            s.line(CGPoint(x: slide.minX + 16, y: y), CGPoint(x: slide.minX + 16 + width, y: y), width: 1.6)
+        }
+        let bubble = CGRect(x: slide.maxX - 50, y: slide.maxY - 50, width: 40, height: 40)
+        s.context.fill(Path(ellipseIn: bubble), with: .color(s.ink.line.opacity(0.06)))
+        s.ellipse(bubble, width: 2)
+        s.person(in: bubble, width: 1.4)
+        let down = trackpad(below: slide, touched: true)
+        s.text("finger down", at: CGPoint(x: down.midX, y: down.maxY + 20), font: Hand.bold(20))
+
+        // Let go: you, filling the picture.
+        let head = CGRect(x: 250, y: 36, width: 170, height: 112)
+        s.context.fill(Path(roundedRect: head, cornerRadius: 10), with: .color(s.ink.line.opacity(0.06)))
+        let outside = s.context
+        s.context.clip(to: Path(roundedRect: head.insetBy(dx: 3, dy: 3), cornerRadius: 8))
+        s.ellipse(CGRect(x: head.midX - 20, y: head.minY + 18, width: 40, height: 46), width: 2)
+        s.stroke([CGPoint(x: head.midX - 76, y: head.maxY + 8), CGPoint(x: head.midX - 44, y: head.minY + 82),
+                  CGPoint(x: head.midX, y: head.minY + 74), CGPoint(x: head.midX + 44, y: head.minY + 82),
+                  CGPoint(x: head.midX + 76, y: head.maxY + 8)], width: 2)
+        s.context = outside
+        s.rect(head, radius: 10, width: 2.4)
+        let up = trackpad(below: head, touched: false)
+        s.text("let go", at: CGPoint(x: up.midX, y: up.maxY + 20), font: Hand.bold(20))
+
+        // The cut between them.
+        s.arrow(from: CGPoint(x: slide.maxX + 8, y: slide.midY + 6), to: CGPoint(x: head.minX - 8, y: head.midY + 6),
+                bend: -0.3, color: s.ink.accent)
+        s.text("✂", at: CGPoint(x: (slide.maxX + head.minX) / 2, y: slide.midY - 24), font: .system(size: 20),
+               color: s.ink.accent)
+    }
+
+    /// 3 - 2 - 1 on the screen, out of the video; the finger chooses the opening.
+    static let countdown = Motif(name: "countdown", size: CGSize(width: 440, height: 300), seed: 50) { s, _ in
+        let screen = CGRect(x: 30, y: 20, width: 290, height: 186)
+        s.rect(screen, radius: 12, width: 2.4)
+        let circle = CGRect(x: screen.midX - 58, y: screen.minY + 22, width: 116, height: 116)
+        s.context.fill(Path(ellipseIn: circle), with: .color(s.ink.line.opacity(0.06)))
+        s.ellipse(circle, width: 2.4)
+        s.text("3", at: CGPoint(x: circle.midX, y: circle.midY + 2), font: Hand.bold(72))
+        s.text("2 · 1", at: CGPoint(x: screen.midX, y: circle.maxY + 24), font: Hand.light(20), color: s.ink.soft)
+
+        s.text("never in", at: CGPoint(x: 336, y: 52), font: Hand.bold(20), color: s.ink.accent, anchor: .leading,
+               angle: .degrees(3))
+        s.text("the video", at: CGPoint(x: 336, y: 76), font: Hand.bold(20), color: s.ink.accent, anchor: .leading,
+               angle: .degrees(3))
+        s.arrow(from: CGPoint(x: 340, y: 94), to: CGPoint(x: circle.maxX + 8, y: circle.midY - 6), bend: 0.3,
+                color: s.ink.accent)
+
+        let pad = CGRect(x: screen.midX - 50, y: screen.maxY + 24, width: 100, height: 58)
+        s.rect(pad, radius: 9, width: 2)
+        let finger = CGRect(x: pad.midX - 9, y: pad.midY - 9, width: 18, height: 18)
+        s.context.fill(Path(ellipseIn: finger), with: .color(s.ink.accent))
+        s.dashedEllipse(finger.insetBy(dx: -8, dy: -8), color: s.ink.accent)
+        s.text("finger down:", at: CGPoint(x: pad.maxX + 20, y: pad.midY - 12), font: Hand.bold(18), anchor: .leading)
+        s.text("starts on the screen", at: CGPoint(x: pad.maxX + 20, y: pad.midY + 12), font: Hand.light(18),
+               anchor: .leading)
     }
 
     static let keys = Motif(name: "keys", size: CGSize(width: 440, height: 250), seed: 42) { s, _ in

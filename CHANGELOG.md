@@ -4,7 +4,7 @@ Every version of Mac-Monologue, newest first. `bin/publish` takes the section of
 the version it publishes as that release's notes, and the app shows them when it
 offers an update.
 
-## 0.5.0
+## 0.5.0 — 2026-09-26
 
 - **Screen & Head Touch Cut**, a fourth mode. With a finger on the trackpad the
   screen fills the picture, with you in the bubble. Lift it, and after a moment

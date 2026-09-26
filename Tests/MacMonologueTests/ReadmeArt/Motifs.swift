@@ -28,7 +28,7 @@ enum ReadmeArt {
     static let all: [Motif] = [
         hero, downloadButton,
         stepMode, stepPress, stepShare,
-        corners, touchCut, countdown, screens, iphoneCamera, pause, keys, subtitles, audio, mirror, privacy,
+        corners, touchCut, countdown, greenScreen, screens, iphoneCamera, pause, keys, subtitles, audio, mirror, privacy,
         installDownload, installDrag, installOpenAnyway, installWelcome,
     ]
 
@@ -313,6 +313,52 @@ enum ReadmeArt {
         s.text("finger down:", at: CGPoint(x: pad.maxX + 20, y: pad.midY - 12), font: Hand.bold(18), anchor: .leading)
         s.text("starts on the screen", at: CGPoint(x: pad.maxX + 20, y: pad.midY + 12), font: Hand.light(18),
                anchor: .leading)
+    }
+
+    /// You, cut out, in front of the slide - no bubble - with the dashed frame
+    /// you drag in the preview.
+    static let greenScreen = Motif(name: "green-screen", size: CGSize(width: 440, height: 300), seed: 52) { s, _ in
+        let screen = CGRect(x: 30, y: 18, width: 380, height: 232)
+        s.rect(screen, radius: 12, width: 2.4)
+
+        // The slide, on the left.
+        s.text("Q3 plan", at: CGPoint(x: 56, y: 52), font: Hand.bold(24), anchor: .leading)
+        for (index, width) in [118.0, 150.0, 96.0].enumerated() {
+            let y = 92 + CGFloat(index) * 26
+            s.context.fill(Path(ellipseIn: CGRect(x: 58, y: y - 3, width: 6, height: 6)), with: .color(s.ink.line))
+            s.line(CGPoint(x: 72, y: y), CGPoint(x: 72 + width, y: y), width: 1.8)
+        }
+        for (index, height) in [30.0, 48.0, 66.0].enumerated() {
+            let bar = CGRect(x: 60 + CGFloat(index) * 20, y: 232 - height, width: 14, height: height)
+            s.rect(bar, radius: 2, width: 1.4)
+            if index == 2 { s.hatch(Path(bar), bounds: bar, spacing: 5) }
+        }
+
+        // You, standing in front: no bubble, cut off by the bottom of the screen.
+        let outside = s.context
+        s.context.clip(to: Path(roundedRect: screen.insetBy(dx: 2, dy: 2), cornerRadius: 10))
+        let center = CGPoint(x: 322, y: 146)
+        s.ellipse(CGRect(x: center.x - 25, y: center.y - 44, width: 50, height: 58), width: 2.4)
+        s.stroke([CGPoint(x: center.x - 88, y: screen.maxY + 20), CGPoint(x: center.x - 58, y: center.y + 44),
+                  CGPoint(x: center.x - 20, y: center.y + 28), CGPoint(x: center.x, y: center.y + 30),
+                  CGPoint(x: center.x + 20, y: center.y + 28), CGPoint(x: center.x + 58, y: center.y + 44),
+                  CGPoint(x: center.x + 88, y: screen.maxY + 20)], width: 2.4)
+        s.context = outside
+
+        // The frame you drag, with a four-way handle.
+        let frame = CGRect(x: 236, y: 82, width: 170, height: 166)
+        s.rect(frame, radius: 6, color: s.ink.accent, width: 1.6)
+        let handle = CGPoint(x: frame.midX, y: frame.minY)
+        for (dx, dy) in [(0.0, -1.0), (0.0, 1.0), (-1.0, 0.0), (1.0, 0.0)] {
+            let tip = CGPoint(x: handle.x + dx * 13, y: handle.y + dy * 13)
+            s.line(handle, tip, color: s.ink.accent, width: 2)
+            let side = CGPoint(x: -dy, y: dx)
+            s.stroke([CGPoint(x: tip.x - dx * 5 + side.x * 4, y: tip.y - dy * 5 + side.y * 4), tip,
+                      CGPoint(x: tip.x - dx * 5 - side.x * 4, y: tip.y - dy * 5 - side.y * 4)],
+                     color: s.ink.accent, width: 2)
+        }
+
+        s.text("drag yourself anywhere", at: CGPoint(x: 200, y: 280), font: Hand.bold(20), color: s.ink.accent)
     }
 
     static let keys = Motif(name: "keys", size: CGSize(width: 440, height: 250), seed: 42) { s, _ in

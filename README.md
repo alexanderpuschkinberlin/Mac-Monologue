@@ -42,7 +42,7 @@
         <img src="docs/images/step-mode-light.png" width="240" alt="">
       </picture>
       <h3>1 · Choose</h3>
-      <p>Just the camera, just your screen, or your screen with you in a corner - or let the trackpad cut between them.</p>
+      <p>Just the camera, just your screen, your screen with you in a corner, or you cut out in front of it - or let the trackpad cut between them.</p>
     </td>
     <td width="33%" align="center">
       <picture>
@@ -106,98 +106,110 @@
   </tr>
   <tr>
     <td width="50%">
-      <h3>Pick the screen you record</h3>
-      <p>More than one screen on your Mac? Choose which one gets recorded - your slides on the big display, while your notes stay on the laptop, out of the video.</p>
+      <h3>Stand in front of your screen</h3>
+      <p>Choose <b>Screen + Green Screen</b>, and you appear cut out, in front of your slides - like a weather presenter, no bubble. Drag yourself anywhere in the preview and set your size. With a green screen behind you the edges are crisp; without one, your Mac finds you on its own. <i>Automatic</i> picks the right way.</p>
     </td>
+    <td width="50%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/green-screen-dark.png">
+        <img src="docs/images/green-screen-light.png" alt="A slide, and you cut out in front of it without a bubble, in a frame you can drag anywhere">
+      </picture>
+    </td>
+  </tr>
+  <tr>
     <td width="50%">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/images/screens-dark.png">
         <img src="docs/images/screens-light.png" alt="A laptop and a second screen; only the second screen, with you in the corner, is recorded">
       </picture>
     </td>
+    <td width="50%">
+      <h3>Pick the screen you record</h3>
+      <p>More than one screen on your Mac? Choose which one gets recorded - your slides on the big display, while your notes stay on the laptop, out of the video.</p>
+    </td>
   </tr>
   <tr>
+    <td width="50%">
+      <h3>Your iPhone as a camera</h3>
+      <p>Clip your iPhone to the top of your Mac and pick it as the camera: a far sharper picture, no cable, nothing to install on the phone. Hold it upright or sideways, and the video is always the right way up. Turn on <b>Keep me in frame</b>, and Center Stage follows you as you move.</p>
+    </td>
     <td width="50%">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/images/iphone-camera-dark.png">
         <img src="docs/images/iphone-camera-light.png" alt="An iPhone clipped to the top of a Mac, used as its camera">
       </picture>
     </td>
-    <td width="50%">
-      <h3>Your iPhone as a camera</h3>
-      <p>Clip your iPhone to the top of your Mac and pick it as the camera: a far sharper picture, no cable, nothing to install on the phone. Hold it upright or sideways, and the video is always the right way up. Turn on <b>Keep me in frame</b>, and Center Stage follows you as you move.</p>
-    </td>
   </tr>
   <tr>
-    <td width="50%">
-      <h3>Pause without dead air</h3>
-      <p>Lost your thread? Pause, think, carry on. The pause is cut out, and one continuous video comes out - no stitching, no silent gaps.</p>
-    </td>
     <td width="50%">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/images/pause-dark.png">
         <img src="docs/images/pause-light.png" alt="A recording with a pause in the middle, and the file with the pause cut out">
       </picture>
     </td>
+    <td width="50%">
+      <h3>Pause without dead air</h3>
+      <p>Lost your thread? Pause, think, carry on. The pause is cut out, and one continuous video comes out - no stitching, no silent gaps.</p>
+    </td>
   </tr>
   <tr>
+    <td width="50%">
+      <h3>Control it from anywhere</h3>
+      <p>While you present, your slides are in front. <kbd>⌃</kbd><kbd>⌥</kbd><kbd>⌘</kbd><kbd>R</kbd> still starts and pauses, <kbd>⌃</kbd><kbd>⌥</kbd><kbd>⌘</kbd><kbd>↩</kbd> finishes - and a red dot in the menu bar shows the time running. The window gets out of your way.</p>
+    </td>
     <td width="50%">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/images/keys-dark.png">
         <img src="docs/images/keys-light.png" alt="A hand holding Control, Option and Command and pressing R">
       </picture>
     </td>
-    <td width="50%">
-      <h3>Control it from anywhere</h3>
-      <p>While you present, your slides are in front. <kbd>⌃</kbd><kbd>⌥</kbd><kbd>⌘</kbd><kbd>R</kbd> still starts and pauses, <kbd>⌃</kbd><kbd>⌥</kbd><kbd>⌘</kbd><kbd>↩</kbd> finishes - and a red dot in the menu bar shows the time running. The window gets out of your way.</p>
-    </td>
   </tr>
   <tr>
-    <td width="50%">
-      <h3>Your voice and your Mac, together</h3>
-      <p>Play a video or music during your presentation, and it is in the recording along with what you say - in one track, in sync. One fader sets the balance, like a DJ's between two decks: slide towards your voice and the video gets quieter, towards the Mac and your voice does - even while you record. Or let it duck: the Mac gets quieter whenever you speak.</p>
-    </td>
     <td width="50%">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/images/audio-dark.png">
         <img src="docs/images/audio-light.png" alt="A microphone and the Mac's own sound, through one fader, into one track">
       </picture>
     </td>
+    <td width="50%">
+      <h3>Your voice and your Mac, together</h3>
+      <p>Play a video or music during your presentation, and it is in the recording along with what you say - in one track, in sync. One fader sets the balance, like a DJ's between two decks: slide towards your voice and the video gets quieter, towards the Mac and your voice does - even while you record. Or let it duck: the Mac gets quieter whenever you speak.</p>
+    </td>
   </tr>
   <tr>
+    <td width="50%">
+      <h3>Subtitles in four languages</h3>
+      <p>After each take, your Mac writes down what you said and adds it as subtitles: in the language you speak, and translated into German, English, French or Spanish, whichever you choose. Viewers switch them on in their player, and each language is also saved as a file for YouTube or Vimeo. All of it happens on your Mac, with its own tools. Needs macOS 26 or later.</p>
+    </td>
     <td width="50%">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/images/subtitles-dark.png">
         <img src="docs/images/subtitles-light.png" alt="A video with a subtitle, and the languages German, English, French and Spanish to choose from">
       </picture>
     </td>
-    <td width="50%">
-      <h3>Subtitles in four languages</h3>
-      <p>After each take, your Mac writes down what you said and adds it as subtitles: in the language you speak, and translated into German, English, French or Spanish, whichever you choose. Viewers switch them on in their player, and each language is also saved as a file for YouTube or Vimeo. All of it happens on your Mac, with its own tools. Needs macOS 26 or later.</p>
-    </td>
   </tr>
   <tr>
-    <td width="50%">
-      <h3>Looks like a mirror, reads the right way</h3>
-      <p>The preview behaves like a mirror, so moving around feels natural. The video shows you the way others see you - so a sign you hold up reads correctly. Prefer it mirrored? One checkbox.</p>
-    </td>
     <td width="50%">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/images/mirror-dark.png">
         <img src="docs/images/mirror-light.png" alt="The preview shows a sign mirrored, the saved file shows it the right way round">
       </picture>
     </td>
+    <td width="50%">
+      <h3>Looks like a mirror, reads the right way</h3>
+      <p>The preview behaves like a mirror, so moving around feels natural. The video shows you the way others see you - so a sign you hold up reads correctly. Prefer it mirrored? One checkbox.</p>
+    </td>
   </tr>
   <tr>
+    <td width="50%">
+      <h3>Nothing leaves your Mac</h3>
+      <p>No account, no cloud, no upload. Recordings are plain video files in your Movies folder, and they are yours.</p>
+    </td>
     <td width="50%">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/images/privacy-dark.png">
         <img src="docs/images/privacy-light.png" alt="A Mac with a padlock, and a crossed-out cloud">
       </picture>
-    </td>
-    <td width="50%">
-      <h3>Nothing leaves your Mac</h3>
-      <p>No account, no cloud, no upload. Recordings are plain video files in your Movies folder, and they are yours.</p>
     </td>
   </tr>
 </table>
@@ -305,7 +317,7 @@ A still slide takes less, a lot of movement a little more.
 <details>
 <summary><b>Why does it want to record my screen?</b></summary>
 <br>
-Only when you record your screen - <b>Screen</b>, <b>Screen + Camera</b> or <b>Screen &amp; Head Touch Cut</b> - and only while you are recording. If you only ever
+Only when you record your screen - <b>Screen</b>, <b>Screen + Camera</b>, <b>Screen &amp; Head Touch Cut</b> or <b>Screen + Green Screen</b> - and only while you are recording. If you only ever
 record yourself, you can skip that step. Mac-Monologue never records its own window.
 </details>
 

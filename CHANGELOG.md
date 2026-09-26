@@ -4,7 +4,7 @@ Every version of Mac-Monologue, newest first. `bin/publish` takes the section of
 the version it publishes as that release's notes, and the app shows them when it
 offers an update.
 
-## 0.5.2
+## 0.5.2 — 2026-09-26
 
 - Fixed: Mac-Monologue kept the processor busy even when not recording - up
   to a full core in the screen modes since 0.5.1. It now uses about a quarter

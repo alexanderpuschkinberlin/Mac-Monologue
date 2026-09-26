@@ -4,7 +4,7 @@ Every version of Mac-Monologue, newest first. `bin/publish` takes the section of
 the version it publishes as that release's notes, and the app shows them when it
 offers an update.
 
-## 0.5.1
+## 0.5.1 — 2026-09-26
 
 - **Set how loud your Mac is next to your voice.** In the screen modes, one
   fader sits between Voice and Mac sound, like a DJ's between two decks: in the

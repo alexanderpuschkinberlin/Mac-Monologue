@@ -4,7 +4,7 @@ Every version of Mac-Monologue, newest first. `bin/publish` takes the section of
 the version it publishes as that release's notes, and the app shows them when it
 offers an update.
 
-## 0.6.0
+## 0.6.0 — 2026-09-26
 
 - **Screen + Green Screen**, a fifth mode: you, cut out, standing in front of
   your screen like a weather presenter - no bubble. Drag yourself anywhere in

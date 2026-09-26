@@ -64,10 +64,14 @@ struct ContentView: View {
 
                 if capture.mode.usesCamera, capture.framing != .unavailable {
                     VStack(alignment: .trailing, spacing: 2) {
+                        // The software zoom would crop the person being cut out.
+                        let zoomBlocked = capture.mode.keysPerson && capture.framing == .software
                         Toggle("Keep me in frame", isOn: $capture.keepsMeInFrame)
                             .toggleStyle(.checkbox)
                             .help(framingHelp)
-                        Text(capture.framing == .centerStage ? "Center Stage" : "Zooms in slightly")
+                            .disabled(zoomBlocked)
+                        Text(zoomBlocked ? "Off with Green Screen"
+                             : capture.framing == .centerStage ? "Center Stage" : "Zooms in slightly")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -130,6 +134,38 @@ struct ContentView: View {
                 }
             }
 
+            if capture.mode.keysPerson {
+                labelled("You, cut out") {
+                    HStack(spacing: 12) {
+                        Picker("Cut out", selection: $capture.keyingChoice) {
+                            ForEach(KeyingChoice.allCases, id: \.self) { choice in
+                                Text(choice.label).tag(choice)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .labelsHidden()
+                        .fixedSize()
+                        .help("Automatic uses a green screen when it sees one behind you, "
+                              + "and Apple's person detection otherwise.")
+                        HStack(spacing: 6) {
+                            Image(systemName: "person.fill").font(.caption).foregroundStyle(.secondary)
+                            Slider(value: Binding(
+                                get: { capture.personLayout.height },
+                                set: { capture.personLayout.height = $0 }
+                            ), in: PersonLayout.heightRange)
+                            .frame(width: 120)
+                            Image(systemName: "person.fill").font(.body).foregroundStyle(.secondary)
+                        }
+                        .help("How tall you appear. Drag yourself in the preview to move.")
+                        if let inUse = capture.keyingInUse {
+                            Text(inUse == .greenScreen ? "Green screen found" : "Person detection")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+
             if capture.mode.showsBubble {
                 labelled("Camera bubble") {
                     HStack(spacing: 12) {
@@ -176,6 +212,8 @@ struct ContentView: View {
             "Mirrors the camera bubble in the saved file. The screen itself is never mirrored."
         case .screenAndCameraTouchCut:
             "Mirrors the camera — bubble and full picture — in the saved file. The screen itself is never mirrored."
+        case .screenAndGreenScreen:
+            "Mirrors you in the saved file. The screen behind you is never mirrored."
         case .screen:
             "The screen is never mirrored."
         }
@@ -202,6 +240,7 @@ struct ContentView: View {
             } else if capture.mode.recordsScreen {
                 LivePreviewView(onAttach: capture.attachPreview)
                     .overlay { cornerHints }
+                    .overlay { personHandle }
             } else if capture.followsFaceInSoftware {
                 // The crop happens in the compositor; the preview layer would
                 // show the whole, uncropped camera.
@@ -266,6 +305,52 @@ struct ContentView: View {
                                   y: video.minY + frame.midY * video.height)
                         .onTapGesture { capture.bubbleCorner = corner }
                 }
+            }
+        }
+    }
+
+    @State private var dragStart: PersonLayout?
+
+    /// Green-screen mode, before a take: a dashed frame around where you stand,
+    /// to drag yourself anywhere on the screen. Fixed during a take, like the corner.
+    @ViewBuilder
+    private var personHandle: some View {
+        if capture.mode.keysPerson, capture.state == .ready, capture.canvasSize.width > 0 {
+            GeometryReader { geometry in
+                let video = AVMakeRect(aspectRatio: capture.canvasSize,
+                                       insideRect: CGRect(origin: .zero, size: geometry.size))
+                let canvas = (width: Int(capture.canvasSize.width), height: Int(capture.canvasSize.height))
+                let frame = capture.personLayout.normalizedFrame(canvasWidth: canvas.width, canvasHeight: canvas.height,
+                                                                 cameraAspect: capture.cameraAspect)
+                let rect = CGRect(x: video.minX + frame.minX * video.width, y: video.minY + frame.minY * video.height,
+                                  width: frame.width * video.width, height: frame.height * video.height)
+                    .intersection(video)
+                RoundedRectangle(cornerRadius: 6)
+                    .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
+                    .foregroundStyle(Color.white.opacity(0.7))
+                    .contentShape(Rectangle())
+                    .frame(width: max(0, rect.width), height: max(0, rect.height))
+                    .position(x: rect.midX, y: rect.midY)
+                    .overlay(alignment: .topLeading) {
+                        Label("Drag to move", systemImage: "hand.draw")
+                            .font(.caption)
+                            .padding(.horizontal, 8).padding(.vertical, 4)
+                            .background(.ultraThinMaterial, in: Capsule())
+                            .position(x: rect.midX, y: max(video.minY + 14, rect.minY + 16))
+                            .allowsHitTesting(false)
+                    }
+                    .gesture(DragGesture()
+                        .onChanged { drag in
+                            let start = dragStart ?? capture.personLayout
+                            if dragStart == nil { dragStart = start }
+                            var moved = start
+                            moved.center = CGPoint(x: start.center.x + drag.translation.width / video.width,
+                                                   y: start.center.y + drag.translation.height / video.height)
+                            capture.personLayout = moved.clamped(canvasWidth: canvas.width, canvasHeight: canvas.height,
+                                                                 cameraAspect: capture.cameraAspect)
+                        }
+                        .onEnded { _ in dragStart = nil })
+                    .accessibilityLabel("Your position on the screen")
             }
         }
     }
@@ -489,6 +574,7 @@ private func window(_ capture: CaptureController) -> some View {
     window(.preview(mode: .screenAndCamera, state: .recording, elapsed: 42, audioLevel: -14,
                     systemAudioLevel: -10, audioBalance: -0.4))
 }
+#Preview("Green Screen · ready") { window(.preview(mode: .screenAndGreenScreen)) }
 #Preview("Countdown") { window(.preview(mode: .screenAndCameraTouchCut, countdown: 2)) }
 #Preview("Recording") { window(.preview(state: .recording, elapsed: 83, audioLevel: -9)) }
 #Preview("Paused") { window(.preview(state: .paused, elapsed: 83)) }

@@ -8,6 +8,7 @@ enum CaptureMode: String, CaseIterable, Identifiable, Sendable {
     case screen
     case screenAndCamera
     case screenAndCameraTouchCut
+    case screenAndGreenScreen
 
     var id: String { rawValue }
 
@@ -17,13 +18,18 @@ enum CaptureMode: String, CaseIterable, Identifiable, Sendable {
         case .screen: "Screen"
         case .screenAndCamera: "Screen + Camera"
         case .screenAndCameraTouchCut: "Screen & Head Touch Cut"
+        case .screenAndGreenScreen: "Screen + Green Screen"
         }
     }
 
     /// For the mode picker, whose segments are all as wide as the widest: the
     /// full name would squeeze everything beside it.
     var shortLabel: String {
-        self == .screenAndCameraTouchCut ? "Head Touch Cut" : label
+        switch self {
+        case .screenAndCameraTouchCut: "Head Touch Cut"
+        case .screenAndGreenScreen: "Green Screen"
+        default: label
+        }
     }
 
     /// Whether a screen is captured: the canvas, the display picker, system audio.
@@ -34,6 +40,9 @@ enum CaptureMode: String, CaseIterable, Identifiable, Sendable {
 
     /// Whether the camera sits over the screen as a bubble, with a corner and a size.
     var showsBubble: Bool { self == .screenAndCamera || self == .screenAndCameraTouchCut }
+
+    /// Whether the person is cut out and stands in front of the screen.
+    var keysPerson: Bool { self == .screenAndGreenScreen }
 
     /// Whether the picture cuts to the camera alone while the trackpad is untouched.
     var cutsOnTouch: Bool { self == .screenAndCameraTouchCut }

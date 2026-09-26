@@ -21,6 +21,10 @@ enum DevicePreferences {
     private static let showsMouseClicksKey = "showsMouseClicks"
     private static let countdownSecondsKey = "countdownSeconds"
     private static let audioBalanceKey = "audioBalance"
+    private static let personCenterXKey = "personCenterX"
+    private static let personCenterYKey = "personCenterY"
+    private static let personHeightKey = "personHeight"
+    private static let keyingChoiceKey = "keyingChoice"
     private static let ducksSystemAudioKey = "ducksSystemAudio"
     private static let completedOnboardingKey = "hasCompletedOnboarding"
     private static let launchModeKey = "launchMode"
@@ -149,6 +153,27 @@ enum DevicePreferences {
     static var countdownSeconds: Int {
         get { UserDefaults.standard.object(forKey: countdownSecondsKey) as? Int ?? 3 }
         set { UserDefaults.standard.set(newValue, forKey: countdownSecondsKey) }
+    }
+
+    /// Absent means the default: bottom right, cut off at the bottom.
+    static var personLayout: PersonLayout {
+        get {
+            let defaults = UserDefaults.standard
+            guard let x = defaults.object(forKey: personCenterXKey) as? Double,
+                  let y = defaults.object(forKey: personCenterYKey) as? Double,
+                  let height = defaults.object(forKey: personHeightKey) as? Double else { return PersonLayout() }
+            return PersonLayout(center: CGPoint(x: x, y: y), height: CGFloat(height))
+        }
+        set {
+            UserDefaults.standard.set(Double(newValue.center.x), forKey: personCenterXKey)
+            UserDefaults.standard.set(Double(newValue.center.y), forKey: personCenterYKey)
+            UserDefaults.standard.set(Double(newValue.height), forKey: personHeightKey)
+        }
+    }
+
+    static var keyingChoice: KeyingChoice {
+        get { UserDefaults.standard.string(forKey: keyingChoiceKey).flatMap(KeyingChoice.init) ?? .automatic }
+        set { UserDefaults.standard.set(newValue.rawValue, forKey: keyingChoiceKey) }
     }
 
     /// Absent means the middle: voice and Mac sound both full.

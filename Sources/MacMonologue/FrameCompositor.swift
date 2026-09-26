@@ -114,6 +114,49 @@ final class FrameCompositor {
         return render(result.cropped(to: canvas), width: canvasWidth, height: canvasHeight)
     }
 
+    /// Green-screen mode: the screen fills the canvas, and the camera picture,
+    /// cut out by `mask`, stands in front of it at `frame` - a pixel rect, origin
+    /// top-left, which may reach past the edges. Camera and mask are moved as
+    /// one, so the cut always fits the picture.
+    func renderScreenWithPerson(
+        screen: CVPixelBuffer?,
+        camera: CIImage,
+        mask: CIImage,
+        canvasWidth: Int,
+        canvasHeight: Int,
+        frame: CGRect,
+        mirrorsCamera: Bool
+    ) -> CVPixelBuffer? {
+        let canvas = CGRect(x: 0, y: 0, width: canvasWidth, height: canvasHeight)
+        var background = CIImage(color: .black).cropped(to: canvas)
+        if let screen {
+            var image = CIImage(cvPixelBuffer: screen)
+            let extent = image.extent
+            if extent.size != canvas.size, extent.width > 0, extent.height > 0 {
+                image = image.transformed(by: CGAffineTransform(
+                    scaleX: canvas.width / extent.width, y: canvas.height / extent.height))
+            }
+            background = image.composited(over: background)
+        }
+
+        let extent = camera.extent
+        guard extent.width > 0, extent.height > 0, frame.width >= 2, frame.height >= 2 else {
+            return render(background, width: canvasWidth, height: canvasHeight)
+        }
+        func place(_ image: CIImage) -> CIImage {
+            var moved = image.transformed(by: CGAffineTransform(translationX: -extent.minX, y: -extent.minY))
+            if mirrorsCamera { moved = Self.mirrored(moved) }
+            return moved
+                .transformed(by: CGAffineTransform(scaleX: frame.width / extent.width, y: frame.height / extent.height))
+                .transformed(by: Self.placement(of: frame, canvasHeight: canvas.height))
+        }
+        let result = place(camera).applyingFilter("CIBlendWithMask", parameters: [
+            kCIInputBackgroundImageKey: background,
+            kCIInputMaskImageKey: place(mask),
+        ])
+        return render(result.cropped(to: canvas), width: canvasWidth, height: canvasHeight)
+    }
+
     // MARK: - Bubble
 
     private var masks: [Int: CIImage] = [:]

@@ -27,6 +27,9 @@ final class CaptureRouter: NSObject, @unchecked Sendable {
         var followsFace = false
         /// Crossfader and ducking for the mixed track, applied from the next block.
         var audioMix = AudioMix()
+        /// Green-screen mode: where the person stands, and how they are cut out.
+        var personLayout = PersonLayout()
+        var keyingChoice: KeyingChoice = .automatic
 
         var isScreenMode: Bool { mode.recordsScreen && canvasWidth > 0 && canvasHeight > 0 }
     }
@@ -41,6 +44,8 @@ final class CaptureRouter: NSObject, @unchecked Sendable {
     private let recorder: TakeRecorder
     private let compositor = FrameCompositor()
     private var configuration = Configuration()
+    private let keyer = PersonKeyer()
+    private var lastKeying: PersonKeyer.Method?
     private var latestScreen: CVPixelBuffer?
     private var lastCameraFrame: CFTimeInterval = 0
     private var framing = FaceFraming()
@@ -72,6 +77,9 @@ final class CaptureRouter: NSObject, @unchecked Sendable {
     /// Every system-audio buffer, idle or not, for the Mac-sound meter.
     /// Called on `queue`; the buffer must not escape it.
     var onSystemAudioBuffer: ((CMSampleBuffer) -> Void)?
+
+    /// Which way the person is cut out, called only when that changes.
+    var onKeyingChange: (@Sendable (PersonKeyer.Method?) -> Void)?
 
     init(queue: DispatchQueue, recorder: TakeRecorder, trackpad: TrackpadTouch) {
         self.queue = queue
@@ -277,6 +285,25 @@ final class CaptureRouter: NSObject, @unchecked Sendable {
     private func composeScreen(camera: CVPixelBuffer?, presentationTime: CMTime, duration: CMTime) {
         let writing = recorder.isWriting
         guard writing || previewSink != nil else { return }
+
+        // Green screen: the person, cut out, in front of the screen.
+        if configuration.mode.keysPerson, let camera {
+            let key = keyer.key(camera, choice: configuration.keyingChoice)
+            if key.method != lastKeying {
+                lastKeying = key.method
+                onKeyingChange?(key.method)
+            }
+            let frame = configuration.personLayout.frame(
+                canvasWidth: configuration.canvasWidth, canvasHeight: configuration.canvasHeight,
+                cameraAspect: CGFloat(CVPixelBufferGetWidth(camera)) / CGFloat(max(1, CVPixelBufferGetHeight(camera))))
+            guard let rendered = compositor.renderScreenWithPerson(
+                screen: latestScreen, camera: key.camera, mask: key.mask,
+                canvasWidth: configuration.canvasWidth, canvasHeight: configuration.canvasHeight,
+                frame: frame, mirrorsCamera: configuration.mirrorsRecording
+            ) else { return }
+            deliver(rendered, writing: writing, presentationTime: presentationTime, duration: duration)
+            return
+        }
 
         // Touch Cut: with no finger on the trackpad, the head fills the picture.
         // Without a camera frame — the camera stalled — the screen always shows.

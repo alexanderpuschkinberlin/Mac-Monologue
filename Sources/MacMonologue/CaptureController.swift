@@ -131,7 +131,35 @@ final class CaptureController: ObservableObject {
 
     /// Whether frames are cropped here — and the preview must show the crop.
     var followsFaceInSoftware: Bool {
-        framing == .software && keepsMeInFrame && mode.usesCamera
+        framing == .software && keepsMeInFrame && mode.usesCamera && !mode.keysPerson
+    }
+
+    // MARK: Green screen
+
+    /// Where the cut-out person stands, dragged in the preview.
+    @Published var personLayout = PersonLayout() {
+        didSet {
+            guard personLayout != oldValue else { return }
+            if persistsPreferences { DevicePreferences.personLayout = personLayout }
+            configureRouter()
+        }
+    }
+
+    @Published var keyingChoice: KeyingChoice = .automatic {
+        didSet {
+            guard keyingChoice != oldValue else { return }
+            if persistsPreferences { DevicePreferences.keyingChoice = keyingChoice }
+            configureRouter()
+        }
+    }
+
+    /// Which way the person is being cut out right now - automatic mode decides
+    /// as it goes. Published only when it changes.
+    @Published private(set) var keyingInUse: PersonKeyer.Method?
+
+    /// The camera picture's width over its height, turned upright.
+    var cameraAspect: CGFloat {
+        CGFloat(cameraDimensions.width) / CGFloat(max(1, cameraDimensions.height))
     }
 
     // MARK: Screen mode
@@ -287,7 +315,7 @@ final class CaptureController: ObservableObject {
         switch mode {
         case .camera:
             return state != .needsAccess && state != .unavailable
-        case .screen, .screenAndCamera, .screenAndCameraTouchCut:
+        case .screen, .screenAndCamera, .screenAndCameraTouchCut, .screenAndGreenScreen:
             return screenAccess == .granted && isScreenCaptureRunning
         }
     }
@@ -367,6 +395,8 @@ final class CaptureController: ObservableObject {
         showsMouseClicks = DevicePreferences.showsMouseClicks
         countdownSeconds = DevicePreferences.countdownSeconds
         audioBalance = DevicePreferences.audioBalance
+        personLayout = DevicePreferences.personLayout
+        keyingChoice = DevicePreferences.keyingChoice
         ducksSystemAudio = DevicePreferences.ducksSystemAudio
         registerHotkeys()
         mirrorsRecording = DevicePreferences.mirrorsRecording
@@ -381,6 +411,7 @@ final class CaptureController: ObservableObject {
         case .screen: mode = .screen
         case .screenAndCamera: mode = .screenAndCamera
         case .screenAndCameraTouchCut: mode = .screenAndCameraTouchCut
+        case .screenAndGreenScreen: mode = .screenAndGreenScreen
         }
         configureRouter()
         selectedCameraID = DevicePreferences.cameraID
@@ -544,7 +575,7 @@ final class CaptureController: ObservableObject {
             // Nothing left to record: finish, and keep what there is.
             banner = "The camera disconnected. The take has been stopped and kept."
             finishTake()
-        case .screenAndCamera, .screenAndCameraTouchCut:
+        case .screenAndCamera, .screenAndCameraTouchCut, .screenAndGreenScreen:
             // The presentation matters more than the bubble: keep recording.
             banner = "The camera disconnected. The screen keeps recording without the bubble."
         case .screen:
@@ -596,7 +627,7 @@ final class CaptureController: ObservableObject {
             formatSummary = "\(activeDimensions.width) × \(activeDimensions.height) · up to \(Int(Self.targetFPS)) fps"
                 + " · \(videoQuality.sizeLabel)"
 
-        case .screenAndCamera, .screenAndCameraTouchCut:
+        case .screenAndCamera, .screenAndCameraTouchCut, .screenAndGreenScreen:
             if camera == nil, !cameraAccessDenied {
                 banner = "No camera available — the screen will be recorded without the bubble."
             } else if mode.cutsOnTouch, !trackpad.isAvailable {
@@ -973,7 +1004,9 @@ final class CaptureController: ObservableObject {
             canvasWidth: mode.recordsScreen ? Int(canvasSize.width) : 0,
             canvasHeight: mode.recordsScreen ? Int(canvasSize.height) : 0,
             followsFace: followsFaceInSoftware,
-            audioMix: AudioMix(balance: audioBalance, ducksSystem: ducksSystemAudio)
+            audioMix: AudioMix(balance: audioBalance, ducksSystem: ducksSystemAudio),
+            personLayout: personLayout,
+            keyingChoice: keyingChoice
         ))
     }
 
@@ -1088,6 +1121,9 @@ final class CaptureController: ObservableObject {
 
             let reading = AudioLevels.Reading(level: self.systemMeter.level, peak: self.systemMeter.peak)
             Task { @MainActor in self.levels.setSystem(reading) }
+        }
+        router.onKeyingChange = { [weak self] method in
+            Task { @MainActor in self?.keyingInUse = method }
         }
         router.onClockReading = { [weak self] reading in
             Task { @MainActor in

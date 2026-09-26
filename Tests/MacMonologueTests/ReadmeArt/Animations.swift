@@ -34,7 +34,110 @@ struct AnimatedFrameView: View {
 
 @MainActor
 enum ReadmeAnimations {
-    static let all: [AnimatedMotif] = [touchCut]
+    static let all: [AnimatedMotif] = [hero, touchCut]
+
+    /// The hero, as a take: recording starts, you pop into the corner and
+    /// talk, the slide builds up. It ends exactly as the still - the clock at
+    /// 02:14 - so the page rests on the familiar picture.
+    static let hero = AnimatedMotif(name: "hero-anim", size: CGSize(width: 880, height: 470),
+                                    seed: 70, duration: 6, fps: 24) { s, _, t in
+        func ease(_ x: Double) -> CGFloat { let c = min(1, max(0, x)); return CGFloat(c * c * (3 - 2 * c)) }
+        /// Past 1 and back, for things that pop in.
+        func pop(_ x: Double) -> CGFloat {
+            let c = min(1, max(0, x)) - 1
+            return CGFloat(1 + 2.7 * c * c * c + 1.7 * c * c)
+        }
+
+        // Laptop
+        let screen = CGRect(x: 70, y: 30, width: 560, height: 360)
+        s.rect(screen, radius: 18, width: 2.6)
+        s.rect(screen.insetBy(dx: 14, dy: 14), radius: 6, width: 1.4)
+        s.stroke([CGPoint(x: 40, y: 392), CGPoint(x: 660, y: 392),
+                  CGPoint(x: 700, y: 428), CGPoint(x: 0, y: 428)], closed: true, width: 2.6)
+        s.line(CGPoint(x: 300, y: 392), CGPoint(x: 400, y: 392), width: 3)
+
+        // Menu bar: recording starts, the dot breathes, the clock runs to 02:14.
+        let bar = screen.minY + 44
+        s.line(CGPoint(x: screen.minX + 16, y: bar), CGPoint(x: screen.maxX - 16, y: bar), width: 1.2)
+        let recording = 0.6
+        if t >= recording {
+            let breathe = t < 5.5 ? 0.6 + 0.4 * cos((t - recording) * 2 * .pi / 1.2) : 1
+            s.context.fill(Path(ellipseIn: CGRect(x: 512, y: bar - 26, width: 16, height: 16)),
+                           with: .color(s.ink.accent.opacity(breathe)))
+            let second = min(14, 8 + Int((t - recording) / 4.9 * 6))
+            s.text(String(format: "02:%02d", second), at: CGPoint(x: 536, y: bar - 18), font: Hand.bold(18),
+                   anchor: .leading)
+        }
+
+        // The slide builds up while you talk.
+        let slide = CGRect(x: 112, y: 100, width: 330, height: 240)
+        s.rect(slide, radius: 6, width: 1.8)
+        s.text("Q3 plan", at: CGPoint(x: 132, y: 132), font: Hand.bold(28), anchor: .leading)
+        for (index, width) in [150.0, 190.0, 120.0].enumerated() {
+            let grow = ease((t - 2.2 - Double(index) * 0.6) / 0.35)
+            guard grow > 0 else { continue }
+            let y = 178 + CGFloat(index) * 30
+            s.context.fill(Path(ellipseIn: CGRect(x: 136, y: y - 3, width: 6, height: 6)), with: .color(s.ink.line))
+            s.line(CGPoint(x: 152, y: y), CGPoint(x: 152 + width * grow, y: y), width: 1.8)
+        }
+        for (index, height) in [36.0, 58.0, 82.0].enumerated() {
+            let grow = ease((t - 3.9 - Double(index) * 0.25) / 0.45)
+            guard grow > 0 else { continue }
+            let x = 370 + CGFloat(index) * 20
+            let bar = CGRect(x: x, y: 318 - height * grow, width: 14, height: max(2, height * grow))
+            s.rect(bar, radius: 2, width: 1.4)
+            if index == 2 && grow >= 1 { s.hatch(Path(bar), bounds: bar, spacing: 5) }
+        }
+
+        // You pop into the corner.
+        let bubble = CGRect(x: 488, y: 236, width: 118, height: 118)
+        let scale = pop((t - 1.2) / 0.45)
+        if scale > 0.01 {
+            let outer = s.context
+            s.context.translateBy(x: bubble.midX, y: bubble.midY)
+            s.context.scaleBy(x: scale, y: scale)
+            s.context.translateBy(x: -bubble.midX, y: -bubble.midY)
+            s.context.fill(Path(ellipseIn: bubble), with: .color(s.ink.line.opacity(0.06)))
+            let beforeClip = s.context
+            s.context.clip(to: Path(ellipseIn: bubble.insetBy(dx: 3, dy: 3)))
+            s.ellipse(CGRect(x: bubble.midX - 18, y: bubble.minY + 24, width: 36, height: 40), width: 2)
+            s.stroke([CGPoint(x: bubble.midX - 58, y: bubble.maxY + 6),
+                      CGPoint(x: bubble.midX - 34, y: bubble.midY + 26),
+                      CGPoint(x: bubble.midX, y: bubble.midY + 20),
+                      CGPoint(x: bubble.midX + 34, y: bubble.midY + 26),
+                      CGPoint(x: bubble.midX + 58, y: bubble.maxY + 6)], width: 2)
+            s.context = beforeClip
+            s.ellipse(bubble, width: 2.6)
+            s.context = outer
+        }
+
+        // Talking: waves leave the bubble towards the slide.
+        if t >= 1.8 && t < 5.4 {
+            for index in 0..<3 {
+                let phase = ((t - 1.8) / 0.9 - Double(index) / 3).truncatingRemainder(dividingBy: 1)
+                guard phase >= 0 else { continue }
+                let radius = 64 + CGFloat(phase) * 26
+                let center = CGPoint(x: bubble.midX, y: bubble.midY - 6)
+                var wave = Path()
+                wave.addArc(center: center, radius: radius, startAngle: .degrees(160), endAngle: .degrees(200),
+                            clockwise: false)
+                s.context.stroke(wave, with: .color(s.ink.line.opacity(1 - phase)),
+                                 style: StrokeStyle(lineWidth: 2, lineCap: .round))
+            }
+        }
+
+        // Notes in the margin, each once its thing has happened.
+        if t >= 1.8 {
+            s.text("you, in the corner", at: CGPoint(x: 700, y: 318), font: Hand.bold(24), anchor: .leading,
+                   angle: .degrees(-4))
+            s.arrow(from: CGPoint(x: 712, y: 298), to: CGPoint(x: 616, y: 282), bend: 0.3)
+        }
+        if t >= 0.9 {
+            s.text("recording", at: CGPoint(x: 700, y: 96), font: Hand.bold(24), color: s.ink.accent,
+                   anchor: .leading, angle: .degrees(3))
+            s.arrow(from: CGPoint(x: 700, y: 88), to: CGPoint(x: 524, y: 72), bend: -0.18, color: s.ink.accent)
+        }
+    }
 
     /// Touch Cut from the user's side: a finger lands on the trackpad and the
     /// picture cuts to the screen; it lifts, the 0.7 s hold runs out as a ring,

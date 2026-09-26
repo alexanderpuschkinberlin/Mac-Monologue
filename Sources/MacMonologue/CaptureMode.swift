@@ -26,9 +26,21 @@ enum CaptureMode: String, CaseIterable, Identifiable, Sendable {
     /// full name would squeeze everything beside it.
     var shortLabel: String {
         switch self {
-        case .screenAndCameraTouchCut: "Head Touch Cut"
+        case .screenAndCameraTouchCut: "Touch Cut"
         case .screenAndGreenScreen: "Green Screen"
         default: label
+        }
+    }
+
+    /// One sentence on what the mode records, for the mode picker's tooltip.
+    var explanation: String {
+        switch self {
+        case .camera: String(localized: "Just you, through the camera.")
+        case .screen: String(localized: "Just your screen.")
+        case .screenAndCamera: String(localized: "Your screen, with you in a round bubble in a corner.")
+        case .screenAndCameraTouchCut:
+            String(localized: "Your screen while a finger rests on the trackpad, you in full frame once you let go.")
+        case .screenAndGreenScreen: String(localized: "You, cut out, standing in front of your screen.")
         }
     }
 

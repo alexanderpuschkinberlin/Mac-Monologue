@@ -3,21 +3,48 @@ import AVKit
 import SwiftUI
 import Translation
 
+/// The main window: the mode in the toolbar, the settings for that mode in the
+/// sidebar, the preview - which is the recording - filling the rest, and the one
+/// action of the moment in the bar below it.
 struct ContentView: View {
     @ObservedObject var capture: CaptureController
+    @State private var isShowingQuality = false
+    @State private var dragStart: PersonLayout?
 
     var body: some View {
-        VStack(spacing: 0) {
-            header
+        NavigationSplitView {
+            SidebarForm(capture: capture)
+                .frame(minWidth: 270, idealWidth: 290)
+                .navigationSplitViewColumnWidth(min: 270, ideal: 290, max: 360)
+                // The settings are the point of the sidebar; hiding them helps nobody.
+                .toolbar(removing: .sidebarToggle)
+        } detail: {
             preview
-            SubtitleProgressView(subtitles: capture.subtitles)
-            controls
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    VStack(spacing: 0) {
+                        SubtitleProgressView(subtitles: capture.subtitles)
+                        bottomBar
+                    }
+                }
         }
+        // The window is the app: its name in the title bar would only take the
+        // room the mode picker needs.
+        .toolbar(removing: .title)
+        .toolbar {
+            ToolbarItem(placement: .principal) { modePicker }
+            ToolbarItemGroup(placement: .primaryAction) {
+                statusPill
+                SettingsLink {
+                    Label("Settings", systemImage: "gearshape")
+                }
+                .help("More settings")
+            }
+        }
+        .navigationTitle("Mac-Monologue")
         // Translation packs are fetched from here — macOS only offers that
         // through a view, and the main window is always there — except while the
         // welcome steps cover it: then they do it, so macOS's prompt is seen.
         .modifier(TranslationPreparation(subtitles: capture.subtitles, isActive: !capture.isShowingOnboarding))
-        .background(Color(nsColor: .windowBackgroundColor))
         .background(WindowAccessor { capture.setMainWindow($0) })
         .onAppear {
             // Before anything else: moving relaunches the app.
@@ -26,8 +53,9 @@ struct ContentView: View {
             if SelfTest.isEnabled { SelfTest.run(capture: capture) }
         }
         .onDisappear { capture.stop() }
-        .sheet(isPresented: $capture.isShowingHelp) {
-            HelpSheet(toggleShortcut: capture.toggleShortcut, finishShortcut: capture.finishShortcut)
+        .sheet(isPresented: $capture.isShowingOnboarding) {
+            OnboardingView(capture: capture)
+                .interactiveDismissDisabled()
         }
         .confirmationDialog(
             "Discard this take?",
@@ -41,200 +69,67 @@ struct ContentView: View {
                  ? "The file moves to the Trash."
                  : "The take is not saved.")
         }
-    }
-
-    // MARK: - Header
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .center) {
-                Picker("Mode", selection: $capture.mode) {
-                    ForEach(CaptureMode.allCases) { mode in
-                        Text(mode.shortLabel).tag(mode)
-                            .help(mode.cutsOnTouch
-                                  ? "\(mode.label): the screen while a finger rests on the trackpad, you in full frame once you let go."
-                                  : mode.label)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .fixedSize()
-
-                Spacer()
-
-                if capture.mode.usesCamera, capture.framing != .unavailable {
-                    VStack(alignment: .trailing, spacing: 2) {
-                        // The software zoom would crop the person being cut out.
-                        let zoomBlocked = capture.mode.keysPerson && capture.framing == .software
-                        Toggle("Keep me in frame", isOn: $capture.keepsMeInFrame)
-                            .toggleStyle(.checkbox)
-                            .help(framingHelp)
-                            .disabled(zoomBlocked)
-                        Text(zoomBlocked ? "Off with Green Screen"
-                             : capture.framing == .centerStage ? "Center Stage" : "Zooms in slightly")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                if capture.mode.usesCamera {
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Toggle("Mirror the recording", isOn: $capture.mirrorsRecording)
-                            .toggleStyle(.checkbox)
-                            .help(mirrorHelp)
-                        // On is rarely what anyone wants, and easy to forget:
-                        // say what it does for as long as it is on.
-                        if capture.mirrorsRecording {
-                            Label("Text reads backwards in the saved file", systemImage: "exclamationmark.triangle.fill")
-                                .font(.caption)
-                                .foregroundStyle(.orange)
-                        }
-                    }
-                }
-            }
-
-            HStack(alignment: .bottom, spacing: 16) {
-                if capture.mode.recordsScreen {
-                    labelled("Screen") {
-                        Picker("Screen", selection: $capture.selectedDisplayID) {
-                            ForEach(capture.displays) { display in
-                                Text(display.displayName).tag(Optional(display.id))
-                            }
-                        }
-                        .labelsHidden()
-                    }
-                }
-                if capture.mode.usesCamera {
-                    labelled(capture.state == .preview ? "Recording" : "Camera") {
-                        Picker("Camera", selection: $capture.selectedCameraID) {
-                            ForEach(capture.cameras) { option in
-                                Text(option.displayName).tag(Optional(option.id))
-                            }
-                        }
-                        .labelsHidden()
-                    }
-                }
-                labelled("Microphone") {
-                    Picker("Microphone", selection: $capture.selectedMicrophoneID) {
-                        ForEach(capture.microphones) { option in
-                            Text(option.displayName).tag(Optional(option.id))
-                        }
-                    }
-                    .labelsHidden()
-                }
-                labelled("Quality") {
-                    Picker("Quality", selection: $capture.videoQuality) {
-                        ForEach(VideoQuality.allCases) { quality in
-                            Text("\(quality.title) · \(quality.sizeLabel)").tag(quality)
-                        }
-                    }
-                    .labelsHidden()
-                    .fixedSize()
-                    .help("How sharp the video is, and how big the file gets. More in Settings.")
-                }
-            }
-
-            if capture.mode.keysPerson {
-                labelled("You, cut out") {
-                    HStack(spacing: 12) {
-                        Picker("Cut out", selection: $capture.keyingChoice) {
-                            ForEach(KeyingChoice.allCases, id: \.self) { choice in
-                                Text(choice.label).tag(choice)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        .labelsHidden()
-                        .fixedSize()
-                        .help("Automatic uses a green screen when it sees one behind you, "
-                              + "and Apple's person detection otherwise.")
-                        HStack(spacing: 6) {
-                            Image(systemName: "person.fill").font(.caption).foregroundStyle(.secondary)
-                            Slider(value: Binding(
-                                get: { capture.personLayout.height },
-                                set: { capture.personLayout.height = $0 }
-                            ), in: PersonLayout.heightRange)
-                            .frame(width: 120)
-                            Image(systemName: "person.fill").font(.body).foregroundStyle(.secondary)
-                        }
-                        .help("How tall you appear. Drag yourself in the preview to move.")
-                        if let inUse = capture.keyingInUse {
-                            Text(inUse == .greenScreen ? "Green screen found" : "Person detection")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-            }
-
-            if capture.mode.showsBubble {
-                labelled("Camera bubble") {
-                    HStack(spacing: 12) {
-                        CornerPickerView(corner: $capture.bubbleCorner)
-                        Picker("Size", selection: $capture.bubbleSize) {
-                            ForEach(BubbleSize.allCases, id: \.self) { size in
-                                Text(size.label).tag(size)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        .labelsHidden()
-                        .fixedSize()
-                    }
-                }
+        .background {
+            // Its own view: two sheets on one view do not both present reliably.
+            Color.clear.sheet(isPresented: $capture.isShowingHelp) {
+                HelpSheet(toggleShortcut: capture.toggleShortcut, finishShortcut: capture.finishShortcut)
             }
         }
+    }
+
+    // MARK: - Toolbar
+
+    private var modePicker: some View {
+        Picker("Mode", selection: $capture.mode) {
+            ForEach(CaptureMode.allCases) { mode in
+                Text(mode.shortLabel).tag(mode)
+                    .help(mode.explanation)
+            }
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .fixedSize()
         .disabled(capture.devicePickersLocked)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        // On its own view: two sheets on one view do not both present reliably.
-        .sheet(isPresented: $capture.isShowingOnboarding) {
-            OnboardingView(capture: capture)
-                .interactiveDismissDisabled()
+    }
+
+    private var statusPill: some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(dotColor)
+                .frame(width: 7, height: 7)
+            Text(statusText)
+                .font(.callout)
+                .monospacedDigit()
+        }
+        .padding(.horizontal, 8)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var statusText: String {
+        if let countdown = capture.countdown { return String(localized: "Starting in \(countdown)") }
+        switch capture.state {
+        case .recording: return String(localized: "Recording · \(Self.timecode(capture.elapsed))")
+        case .paused: return String(localized: "Paused · \(Self.timecode(capture.elapsed))")
+        default: return capture.state.label
         }
     }
 
-    private var framingHelp: String {
-        switch capture.framing {
-        case .centerStage:
-            "Uses this camera's Center Stage: it follows you as you move, at full sharpness. "
-                + "You can also switch it in Control Center."
-        case .software, .unavailable:
-            "Follows your face by zooming in a little and moving with you. "
-                + "The picture gets slightly softer, since part of it is cropped away."
-        }
-    }
-
-    private var mirrorHelp: String {
-        switch capture.mode {
-        case .camera:
-            "The preview always looks like a mirror. Turn this on only if you want the "
-                + "saved file mirrored too — text you hold up to the camera will then read backwards."
-        case .screenAndCamera:
-            "Mirrors the camera bubble in the saved file. The screen itself is never mirrored."
-        case .screenAndCameraTouchCut:
-            "Mirrors the camera — bubble and full picture — in the saved file. The screen itself is never mirrored."
-        case .screenAndGreenScreen:
-            "Mirrors you in the saved file. The screen behind you is never mirrored."
-        case .screen:
-            "The screen is never mirrored."
-        }
-    }
-
-    private func labelled<Content: View>(
-        _ title: String,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            content()
+    private var dotColor: Color {
+        if capture.countdown != nil { return .orange }
+        switch capture.state {
+        case .ready, .preview: return .green
+        case .recording: return .red
+        case .paused: return .yellow
+        case .finishing: return .orange
+        case .needsAccess, .unavailable: return .gray
         }
     }
 
     // MARK: - Preview
 
     private var preview: some View {
-        ZStack(alignment: .topLeading) {
+        ZStack {
+            Color.black
             if capture.state == .preview, let player = capture.player {
                 VideoPlayer(player: player)
             } else if capture.mode.recordsScreen {
@@ -250,36 +145,110 @@ struct ContentView: View {
                                   rotationAngle: capture.cameraRotationAngle)
             }
 
-            statusPill
-                .padding(12)
-
-            if !capture.formatSummary.isEmpty {
-                formatPill
-                    .padding(12)
-                    .frame(maxWidth: .infinity, alignment: .topTrailing)
-            }
-
             if capture.state == .needsAccess {
                 accessOverlay
             } else if capture.mode.recordsScreen, capture.state != .preview,
                       capture.screenAccess == .denied || capture.screenAccess == .needsRelaunch {
                 screenAccessOverlay
             }
+        }
+        .overlay(alignment: .top) { notice }
+        .overlay(alignment: .bottom) { soundBar }
+        .overlay(alignment: .topLeading) { touchCutHints }
+    }
 
-            if capture.cameraIsSilent {
-                silentCameraHint
-            } else if let banner = capture.banner {
-                Text(banner)
-                    .font(.callout)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8))
-                    .padding(12)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+    /// The camera going quiet, or a banner - over the top of the preview, where
+    /// the sound bar is not.
+    @ViewBuilder
+    private var notice: some View {
+        if capture.cameraIsSilent {
+            HStack(spacing: 12) {
+                Text("The camera isn't sending a picture. If it's your iPhone, wake it and keep it nearby.")
+                if let alternative = capture.alternativeCamera {
+                    Button("Use \(alternative.name)") { capture.useAlternativeCamera() }
+                        .secondaryActionStyle()
+                }
+            }
+            .font(.callout)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .floatingSurface(Capsule())
+            .padding(12)
+        } else if let banner = capture.banner {
+            Text(banner)
+                .font(.callout)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .floatingSurface(Capsule())
+                .padding(12)
+        }
+    }
+
+    /// The meters and the fader float over the bottom of the preview; after a
+    /// take, the player's own controls are there instead.
+    @ViewBuilder
+    private var soundBar: some View {
+        if capture.state != .preview {
+            if capture.mode.recordsScreen {
+                AudioCrossfaderView(
+                    balance: $capture.audioBalance,
+                    ducksSystemAudio: $capture.ducksSystemAudio,
+                    hasMicrophone: capture.hasAudio,
+                    levels: capture.levels
+                )
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .floatingSurface(Capsule())
+                .padding(14)
+            } else if capture.hasAudio {
+                // The microphone only: that is what a person can do something about.
+                HStack(spacing: 10) {
+                    Label("Microphone", systemImage: "mic.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    VoiceMeterView(levels: capture.levels)
+                        .frame(width: 180)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .floatingSurface(Capsule())
+                .padding(14)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.black)
+    }
+
+    /// Touch Cut, before a take: what the trackpad does, shown only while the
+    /// pointer is over the preview, so the preview itself stays clear.
+    @State private var isHoveringPreview = false
+
+    @ViewBuilder
+    private var touchCutHints: some View {
+        Color.clear
+            .contentShape(Rectangle())
+            .allowsHitTesting(false)
+            .overlay(alignment: .topLeading) {
+                if capture.mode.cutsOnTouch, capture.state == .ready, isHoveringPreview {
+                    HStack(spacing: 8) {
+                        hint("Finger on the trackpad → your screen, you in the bubble", systemImage: "hand.point.up.left")
+                        hint("Let go → you, full frame", systemImage: "person.crop.rectangle")
+                    }
+                    .padding(12)
+                    .transition(.opacity)
+                }
+            }
+            .onContinuousHover { phase in
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    if case .active = phase { isHoveringPreview = true } else { isHoveringPreview = false }
+                }
+            }
+    }
+
+    private func hint(_ text: LocalizedStringKey, systemImage: String) -> some View {
+        Label(text, systemImage: systemImage)
+            .font(.callout)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .floatingSurface(Capsule())
     }
 
     /// Before a take, the other three corners are outlined, so choosing one is a
@@ -300,16 +269,17 @@ struct ContentView: View {
                                                          dash: corner == capture.bubbleCorner ? [] : [5, 4]))
                         .foregroundStyle(corner == capture.bubbleCorner
                                          ? Color.accentColor : Color.white.opacity(0.55))
+                        .contentShape(Circle())
                         .frame(width: frame.width * video.width, height: frame.height * video.height)
                         .position(x: video.minX + frame.midX * video.width,
                                   y: video.minY + frame.midY * video.height)
                         .onTapGesture { capture.bubbleCorner = corner }
+                        .accessibilityLabel(Text(corner.accessibilityLabel))
+                        .accessibilityAddTraits(.isButton)
                 }
             }
         }
     }
-
-    @State private var dragStart: PersonLayout?
 
     /// Green-screen mode, before a take: a dashed frame around where you stand,
     /// to drag yourself anywhere on the screen. Fixed during a take, like the corner.
@@ -325,18 +295,20 @@ struct ContentView: View {
                 let rect = CGRect(x: video.minX + frame.minX * video.width, y: video.minY + frame.minY * video.height,
                                   width: frame.width * video.width, height: frame.height * video.height)
                     .intersection(video)
-                RoundedRectangle(cornerRadius: 6)
+                RoundedRectangle(cornerRadius: 8)
                     .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
-                    .foregroundStyle(Color.white.opacity(0.7))
+                    .foregroundStyle(Color.accentColor)
                     .contentShape(Rectangle())
                     .frame(width: max(0, rect.width), height: max(0, rect.height))
                     .position(x: rect.midX, y: rect.midY)
-                    .overlay(alignment: .topLeading) {
-                        Label("Drag to move", systemImage: "hand.draw")
+                    .overlay {
+                        // On the frame's top edge, inside the preview - never over the slide's own title.
+                        Label("Drag", systemImage: "arrow.up.and.down.and.arrow.left.and.right")
                             .font(.caption)
-                            .padding(.horizontal, 8).padding(.vertical, 4)
-                            .background(.ultraThinMaterial, in: Capsule())
-                            .position(x: rect.midX, y: max(video.minY + 14, rect.minY + 16))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .floatingSurface(Capsule())
+                            .position(x: rect.midX, y: max(video.minY + 16, rect.minY))
                             .allowsHitTesting(false)
                     }
                     .gesture(DragGesture()
@@ -355,52 +327,6 @@ struct ContentView: View {
         }
     }
 
-    private var statusPill: some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(dotColor)
-                .frame(width: 7, height: 7)
-            Text(capture.countdown.map { "Starting in \($0)" } ?? capture.state.label)
-                .font(.system(.caption, design: .monospaced))
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
-        .background(.ultraThinMaterial, in: Capsule())
-    }
-
-    private var formatPill: some View {
-        Text(capture.formatSummary)
-            .font(.system(.caption, design: .monospaced))
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(.ultraThinMaterial, in: Capsule())
-    }
-
-    private var dotColor: Color {
-        switch capture.state {
-        case .ready, .preview: .green
-        case .recording: .red
-        case .paused: .yellow
-        case .finishing: .orange
-        case .needsAccess, .unavailable: .gray
-        }
-    }
-
-    private var silentCameraHint: some View {
-        HStack(spacing: 12) {
-            Text("The camera isn't sending a picture. If it's your iPhone, wake it and keep it nearby.")
-                .font(.callout)
-            if let alternative = capture.alternativeCamera {
-                Button("Use \(alternative.name)") { capture.useAlternativeCamera() }
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8))
-        .padding(12)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-    }
-
     private var accessOverlay: some View {
         VStack(spacing: 12) {
             Text("Mac-Monologue needs access to your camera and microphone.")
@@ -413,10 +339,10 @@ struct ContentView: View {
                     NSWorkspace.shared.open(url)
                 }
             }
+            .prominentActionStyle()
         }
         .padding(24)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .floatingSurface(RoundedRectangle(cornerRadius: 16))
     }
 
     private var screenAccessOverlay: some View {
@@ -425,97 +351,134 @@ struct ContentView: View {
                 .font(.headline)
             Text(capture.screenAccess == .needsRelaunch
                  ? "Permission is on. macOS only applies it after Mac-Monologue restarts."
-                 : "Switch on Mac-Monologue under Screen & System Audio Recording, "
-                   + "then restart the app — macOS only applies it after a restart.")
+                 : "Switch on Mac-Monologue under Screen & System Audio Recording, then restart the app — macOS only applies it after a restart.")
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: 380)
             HStack(spacing: 12) {
                 if capture.screenAccess != .needsRelaunch {
                     Button("Open System Settings…") { capture.openScreenRecordingSettings() }
+                        .secondaryActionStyle()
                 }
                 Button("Restart Mac-Monologue") { capture.relaunch() }
                     .keyboardShortcut(.defaultAction)
+                    .prominentActionStyle()
             }
         }
         .padding(24)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .floatingSurface(RoundedRectangle(cornerRadius: 16))
     }
 
-    // MARK: - Controls
+    // MARK: - Bottom bar
 
-    private var controls: some View {
-        HStack(spacing: 12) {
-            Button(action: capture.toggleRecording) {
-                Label(recordButtonTitle, systemImage: recordButtonIcon)
-                    .frame(minWidth: 84)
-            }
-            .keyboardShortcut(capture.countdown != nil ? .cancelAction : nil)
-            .disabled(capture.state == .finishing
-                      || (capture.state == .ready && !capture.canRecord)
-                      || capture.state == .needsAccess
-                      || capture.state == .unavailable)
-
-            if capture.state == .recording || capture.state == .paused {
-                Button("Finish") { capture.finishTake() }
-            }
-
-            Text(Self.timecode(capture.elapsed))
-                .font(.system(.title3, design: .monospaced))
-                .monospacedDigit()
-                .foregroundStyle(capture.state == .recording ? .primary : .secondary)
-
-            Spacer()
-
-            if capture.mode.recordsScreen, capture.state != .preview {
-                // Two sources, one fader between them — live during a take.
-                AudioCrossfaderView(
-                    balance: $capture.audioBalance,
-                    ducksSystemAudio: $capture.ducksSystemAudio,
-                    hasMicrophone: capture.hasAudio,
-                    levels: capture.levels
-                )
-            } else if capture.hasAudio {
-                // The microphone only: that is what a person can do something about.
-                VoiceMeterView(levels: capture.levels)
-                    .frame(width: 180)
-            }
-
+    private var bottomBar: some View {
+        HStack(spacing: 10) {
             if capture.state == .preview, let url = capture.lastRecordingURL {
                 Text([url.lastPathComponent, Self.fileSize(of: url)].compactMap { $0 }.joined(separator: " · "))
-                    .font(.system(.caption, design: .monospaced))
+                    .font(.system(.callout, design: .monospaced))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
+            } else {
+                summaryButton
+            }
+            Spacer(minLength: 12)
+            actions
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .bottomBarBackground()
+    }
 
-                Button("New recording") { capture.newRecording() }
+    /// What is about to be recorded, in one line; a click chooses the quality.
+    private var summaryButton: some View {
+        Button { isShowingQuality.toggle() } label: {
+            HStack(spacing: 4) {
+                Text(summary)
+                    .foregroundStyle(.secondary)
+                Text(capture.videoQuality.title)
+                    .fontWeight(.semibold)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+            .lineLimit(1)
+        }
+        .buttonStyle(.plain)
+        .help("How sharp the video is, and how big the file gets.")
+        .disabled(capture.devicePickersLocked)
+        .popover(isPresented: $isShowingQuality, arrowEdge: .top) {
+            QualityPopover(capture: capture)
+        }
+    }
 
+    private var summary: String {
+        var parts = [capture.mode.shortLabel]
+        parts.append(capture.hasAudio ? String(localized: "Microphone on") : String(localized: "No microphone"))
+        if capture.mode.recordsScreen { parts.append(String(localized: "Mac sound on")) }
+        return parts.joined(separator: " · ") + " ·"
+    }
+
+    @ViewBuilder
+    private var actions: some View {
+        if capture.countdown != nil {
+            Text("Esc cancels")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Button("Cancel") { capture.toggleRecording() }
+                .keyboardShortcut(.cancelAction)
+                .secondaryActionStyle()
+                .controlSize(.large)
+        } else {
+            switch capture.state {
+            case .recording:
+                timecode(color: .primary)
+                Button("Pause", systemImage: "pause.fill") { capture.toggleRecording() }
+                    .secondaryActionStyle()
+                    .controlSize(.large)
+                Button("Finish") { capture.finishTake() }
+                    .secondaryActionStyle()
+                    .controlSize(.large)
+            case .paused:
+                timecode(color: .yellow)
+                Button("Resume", systemImage: "record.circle") { capture.toggleRecording() }
+                    .prominentActionStyle()
+                    .tint(.red)
+                    .controlSize(.large)
+                Button("Finish") { capture.finishTake() }
+                    .secondaryActionStyle()
+                    .controlSize(.large)
+            case .finishing:
+                ProgressView().controlSize(.small)
+                Text("Finishing…").foregroundStyle(.secondary)
+            case .preview:
+                Button(capture.isPlaying ? "Pause" : "Play",
+                       systemImage: capture.isPlaying ? "pause.fill" : "play.fill") { capture.toggleRecording() }
+                    .secondaryActionStyle()
+                    .controlSize(.large)
                 Button("Reveal in Finder") { capture.revealInFinder() }
+                    .secondaryActionStyle()
+                    .controlSize(.large)
+                Button("New Recording", systemImage: "record.circle") { capture.newRecording() }
+                    .prominentActionStyle()
+                    .tint(.red)
+                    .controlSize(.large)
+            case .ready, .needsAccess, .unavailable:
+                Button("Record", systemImage: "record.circle") { capture.toggleRecording() }
+                    .prominentActionStyle()
+                    .tint(.red)
+                    .controlSize(.large)
+                    .disabled(!capture.canRecord || capture.state != .ready)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
     }
 
-    private var recordButtonTitle: String {
-        if capture.countdown != nil { return "Cancel" }
-        return switch capture.state {
-        case .recording: "Pause"
-        case .paused: "Resume"
-        case .preview: capture.isPlaying ? "Pause" : "Play"
-        default: "Record"
-        }
-    }
-
-    private var recordButtonIcon: String {
-        if capture.countdown != nil { return "xmark.circle" }
-        return switch capture.state {
-        case .recording: "pause.circle"
-        case .paused: "record.circle"
-        case .preview: capture.isPlaying ? "pause.circle" : "play.circle"
-        default: "record.circle"
-        }
+    private func timecode(color: Color) -> some View {
+        Text(Self.timecode(capture.elapsed))
+            .font(.system(.title3, design: .monospaced))
+            .monospacedDigit()
+            .foregroundStyle(color)
+            .padding(.trailing, 4)
     }
 
     /// As Finder shows it, so the number matches what the user sees there.
@@ -527,6 +490,213 @@ struct ContentView: View {
     static func timecode(_ seconds: Double) -> String {
         let total = Int(seconds.rounded(.down))
         return String(format: "%02d:%02d", total / 60, total % 60)
+    }
+}
+
+// MARK: - Sidebar
+
+/// The settings of the chosen mode, as a grouped form like System Settings.
+/// Fixed during a take - except the sound fader, which floats over the preview.
+private struct SidebarForm: View {
+    @ObservedObject var capture: CaptureController
+
+    var body: some View {
+        Form {
+            if capture.devicePickersLocked {
+                Section {
+                    Label("Fixed while recording. The sound fader stays live.", systemImage: "lock.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Section("Sources") {
+                if capture.mode.recordsScreen {
+                    Picker("Screen", selection: $capture.selectedDisplayID) {
+                        ForEach(capture.displays) { display in
+                            Text(display.displayName).tag(Optional(display.id))
+                        }
+                    }
+                }
+                if capture.mode.usesCamera {
+                    Picker("Camera", selection: $capture.selectedCameraID) {
+                        ForEach(capture.cameras) { option in
+                            Text(option.displayName).tag(Optional(option.id))
+                        }
+                    }
+                }
+                Picker("Microphone", selection: $capture.selectedMicrophoneID) {
+                    ForEach(capture.microphones) { option in
+                        Text(option.displayName).tag(Optional(option.id))
+                    }
+                }
+            }
+            .disabled(capture.devicePickersLocked)
+
+            if capture.mode.showsBubble {
+                Section {
+                    Picker("Size", selection: $capture.bubbleSize) {
+                        ForEach(BubbleSize.allCases, id: \.self) { size in
+                            Text(size.label).tag(size)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    LabeledContent("Corner") {
+                        CornerPickerView(corner: $capture.bubbleCorner)
+                    }
+                } header: {
+                    Text("Camera bubble")
+                } footer: {
+                    Text("Or click a corner in the preview.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .disabled(capture.devicePickersLocked)
+            }
+
+            if capture.mode.cutsOnTouch {
+                Section("Touch Cut") {
+                    LabeledContent("Finger on the trackpad") { Text("Your screen, you in the bubble") }
+                    LabeledContent("Finger lifted") { Text("You, full frame") }
+                    Text("During the countdown, the finger decides how the take opens.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if capture.mode.keysPerson {
+                Section {
+                    Picker("Cut out", selection: $capture.keyingChoice) {
+                        ForEach(KeyingChoice.allCases, id: \.self) { choice in
+                            Text(choice.label).tag(choice)
+                        }
+                    }
+                    .help("Automatic uses a green screen when it sees one behind you, and Apple's person detection otherwise.")
+                    Slider(value: Binding(get: { capture.personLayout.height },
+                                          set: { capture.personLayout.height = $0 }),
+                           in: PersonLayout.heightRange) {
+                        Text("Your size")
+                    }
+                    if let inUse = capture.keyingInUse {
+                        LabeledContent("In use") {
+                            Label(inUse == .greenScreen ? "Green screen found" : "Person detection",
+                                  systemImage: "circle.fill")
+                                .labelStyle(StatusDotLabelStyle())
+                        }
+                    }
+                } header: {
+                    Text("You, cut out")
+                } footer: {
+                    Text("Drag yourself anywhere in the preview.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .disabled(capture.devicePickersLocked)
+            }
+
+            if capture.mode.usesCamera {
+                Section("Options") {
+                    if capture.framing != .unavailable {
+                        // The software zoom would crop the person being cut out.
+                        let zoomBlocked = capture.mode.keysPerson && capture.framing == .software
+                        Toggle(isOn: $capture.keepsMeInFrame) {
+                            Text("Keep me in frame")
+                            Text(zoomBlocked ? "Off with Green Screen: the zoom would crop you"
+                                 : capture.framing == .centerStage ? "Center Stage" : "Zooms in slightly")
+                        }
+                        .help(framingHelp)
+                        .disabled(zoomBlocked)
+                    }
+                    Toggle(isOn: $capture.mirrorsRecording) {
+                        Text("Mirror the recording")
+                        if capture.mirrorsRecording {
+                            // On is rarely what anyone wants, and easy to forget:
+                            // say what it does for as long as it is on.
+                            Label("Text reads backwards in the saved file", systemImage: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.orange)
+                        }
+                    }
+                    .help(mirrorHelp)
+                }
+                .disabled(capture.devicePickersLocked)
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    private var framingHelp: String {
+        switch capture.framing {
+        case .centerStage:
+            String(localized: "Uses this camera's Center Stage: it follows you as you move, at full sharpness. You can also switch it in Control Center.")
+        case .software, .unavailable:
+            String(localized: "Follows your face by zooming in a little and moving with you. The picture gets slightly softer, since part of it is cropped away.")
+        }
+    }
+
+    private var mirrorHelp: String {
+        switch capture.mode {
+        case .camera:
+            String(localized: "The preview always looks like a mirror. Turn this on only if you want the saved file mirrored too — text you hold up to the camera will then read backwards.")
+        case .screenAndCamera:
+            String(localized: "Mirrors the camera bubble in the saved file. The screen itself is never mirrored.")
+        case .screenAndCameraTouchCut:
+            String(localized: "Mirrors the camera — bubble and full picture — in the saved file. The screen itself is never mirrored.")
+        case .screenAndGreenScreen:
+            String(localized: "Mirrors you in the saved file. The screen behind you is never mirrored.")
+        case .screen:
+            String(localized: "The screen is never mirrored.")
+        }
+    }
+}
+
+/// A green dot and the text: the way the keying in use is shown.
+private struct StatusDotLabelStyle: LabelStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: 5) {
+            Circle().fill(.green).frame(width: 6, height: 6)
+            configuration.title
+        }
+    }
+}
+
+// MARK: - Quality
+
+private struct QualityPopover: View {
+    @ObservedObject var capture: CaptureController
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Quality · size for ten minutes")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            ForEach(VideoQuality.allCases) { quality in
+                Button {
+                    capture.videoQuality = quality
+                    dismiss()
+                } label: {
+                    HStack {
+                        Image(systemName: "checkmark")
+                            .opacity(quality == capture.videoQuality ? 1 : 0)
+                        Text(quality.title)
+                        Spacer(minLength: 24)
+                        Text(quality.sizeLabel)
+                            .foregroundStyle(.secondary)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .padding(.vertical, 3)
+            }
+            if !capture.formatSummary.isEmpty {
+                Divider()
+                Text(capture.formatSummary)
+                    .font(.system(.caption, design: .monospaced))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(14)
+        .frame(minWidth: 260)
     }
 }
 
@@ -563,14 +733,14 @@ struct TranslationPreparation: ViewModifier {
 
 #if DEBUG
 private func window(_ capture: CaptureController) -> some View {
-    ContentView(capture: capture).frame(width: 900, height: 640)
+    ContentView(capture: capture).frame(width: 1100, height: 720)
 }
 
 #Preview("Camera · ready") { window(.preview()) }
 #Preview("Screen · ready") { window(.preview(mode: .screen)) }
 #Preview("Screen + Camera · ready") { window(.preview(mode: .screenAndCamera)) }
-#Preview("Screen & Head Touch Cut · ready") { window(.preview(mode: .screenAndCameraTouchCut)) }
-#Preview("Screen + Camera · crossfader") {
+#Preview("Touch Cut · ready") { window(.preview(mode: .screenAndCameraTouchCut)) }
+#Preview("Screen + Camera · recording") {
     window(.preview(mode: .screenAndCamera, state: .recording, elapsed: 42, audioLevel: -14,
                     systemAudioLevel: -10, audioBalance: -0.4))
 }
@@ -591,7 +761,10 @@ private func window(_ capture: CaptureController) -> some View {
 #Preview("Screen access · restart") { window(.preview(mode: .screenAndCamera, screenAccess: .needsRelaunch)) }
 #Preview("Camera silent") { window(.preview(cameraIsSilent: true)) }
 #Preview("Banner") { window(.preview(mode: .screenAndCamera, banner: "The screen you chose last time is not connected. Pick another one.")) }
-#Preview("No microphone · clipping") { window(.preview(hasAudio: false)) }
+#Preview("No microphone") { window(.preview(hasAudio: false)) }
 #Preview("Clipping") { window(.preview(state: .recording, elapsed: 12, audioLevel: -1, isClipping: true)) }
-#Preview("Small window") { ContentView(capture: .preview(mode: .screenAndCamera)).frame(width: 820, height: 600) }
+#Preview("Small window") { ContentView(capture: .preview(mode: .screenAndCamera)).frame(width: 900, height: 620) }
+#Preview("German") {
+    window(.preview(mode: .screenAndCamera)).environment(\.locale, Locale(identifier: "de"))
+}
 #endif

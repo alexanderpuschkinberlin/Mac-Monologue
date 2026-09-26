@@ -8,7 +8,7 @@ struct MacMonologueApp: App {
     var body: some Scene {
         Window("Mac-Monologue", id: "main") {
             ContentView(capture: capture)
-                .frame(minWidth: 820, minHeight: 600)
+                .frame(minWidth: 900, minHeight: 620)
                 .onAppear { updates.start(capture: capture) }
         }
         .windowResizability(.contentMinSize)

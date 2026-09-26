@@ -59,6 +59,9 @@ final class CaptureController: ObservableObject {
     @Published private(set) var audioLevel: Float = AudioLevelMeter.floorDB
     @Published private(set) var audioPeak: Float = AudioLevelMeter.floorDB
     @Published private(set) var isClipping = false
+    /// The Mac's own sound, as it comes in — before the crossfader.
+    @Published private(set) var systemAudioLevel: Float = AudioLevelMeter.floorDB
+    @Published private(set) var systemAudioPeak: Float = AudioLevelMeter.floorDB
     @Published private(set) var lastRecordingURL: URL?
     @Published private(set) var player: AVPlayer?
     @Published private(set) var isPlaying = false
@@ -242,6 +245,25 @@ final class CaptureController: ObservableObject {
     private var countdownTask: Task<Void, Never>?
     private let countdownOverlay = CountdownOverlay()
 
+    /// The crossfader between voice (−1) and Mac sound (1); 0 is both full.
+    /// Live: moving it mid-take changes the recording from that moment on.
+    @Published var audioBalance: Float = 0 {
+        didSet {
+            guard audioBalance != oldValue else { return }
+            if persistsPreferences { DevicePreferences.audioBalance = audioBalance }
+            configureRouter()
+        }
+    }
+
+    /// Lowers the Mac's sound while the microphone hears you.
+    @Published var ducksSystemAudio = false {
+        didSet {
+            guard ducksSystemAudio != oldValue else { return }
+            if persistsPreferences { DevicePreferences.ducksSystemAudio = ducksSystemAudio }
+            configureRouter()
+        }
+    }
+
     @Published var launchMode: LaunchMode = .lastUsed {
         didSet { if persistsPreferences { DevicePreferences.launchMode = launchMode } }
     }
@@ -294,6 +316,8 @@ final class CaptureController: ObservableObject {
 
     /// Confined to `outputQueue`: only the meter's readings cross to the main actor.
     nonisolated(unsafe) private let meter = AudioLevelMeter()
+    nonisolated(unsafe) private let systemMeter = AudioLevelMeter()
+    nonisolated(unsafe) private var lastSystemMeterPublish: CFTimeInterval = 0
     nonisolated(unsafe) private var lastMeterPublish: CFTimeInterval = 0
 
     /// Dimensions handed to the encoder: the camera's format, or the screen canvas.
@@ -344,6 +368,8 @@ final class CaptureController: ObservableObject {
         autoMinimizes = DevicePreferences.autoMinimizes
         showsMouseClicks = DevicePreferences.showsMouseClicks
         countdownSeconds = DevicePreferences.countdownSeconds
+        audioBalance = DevicePreferences.audioBalance
+        ducksSystemAudio = DevicePreferences.ducksSystemAudio
         registerHotkeys()
         mirrorsRecording = DevicePreferences.mirrorsRecording
         videoQuality = DevicePreferences.videoQuality
@@ -842,6 +868,9 @@ final class CaptureController: ObservableObject {
 
     private func stopScreenCapture() {
         isScreenCaptureRunning = false
+        // No more buffers will come to bring the Mac-sound meter down.
+        systemAudioLevel = AudioLevelMeter.floorDB
+        systemAudioPeak = AudioLevelMeter.floorDB
         screenSource.apply(nil, output: router, outputQueue: outputQueue) { _ in }
     }
 
@@ -948,7 +977,8 @@ final class CaptureController: ObservableObject {
             bubble: BubbleLayout(corner: bubbleCorner, size: bubbleSize),
             canvasWidth: mode.recordsScreen ? Int(canvasSize.width) : 0,
             canvasHeight: mode.recordsScreen ? Int(canvasSize.height) : 0,
-            followsFace: followsFaceInSoftware
+            followsFace: followsFaceInSoftware,
+            audioMix: AudioMix(balance: audioBalance, ducksSystem: ducksSystemAudio)
         ))
     }
 
@@ -1050,6 +1080,20 @@ final class CaptureController: ObservableObject {
                 self.audioLevel = level
                 self.audioPeak = peak
                 self.isClipping = clipping
+            }
+        }
+        router.onSystemAudioBuffer = { [weak self] buffer in
+            guard let self else { return }
+            self.systemMeter.consume(buffer)
+            let now = CACurrentMediaTime()
+            guard now - self.lastSystemMeterPublish >= 0.05 else { return }
+            self.lastSystemMeterPublish = now
+
+            let level = self.systemMeter.level
+            let peak = self.systemMeter.peak
+            Task { @MainActor in
+                self.systemAudioLevel = level
+                self.systemAudioPeak = peak
             }
         }
         router.onClockReading = { [weak self] reading in
@@ -1346,7 +1390,9 @@ extension CaptureController {
         isClipping: Bool = false,
         lastRecordingURL: URL? = nil,
         subtitleJob: SubtitleCenter.Job? = nil,
-        countdown: Int? = nil
+        countdown: Int? = nil,
+        systemAudioLevel: Float = AudioLevelMeter.floorDB,
+        audioBalance: Float = 0
     ) -> CaptureController {
         let controller = CaptureController()
         controller.cameras = [DeviceOption(id: "facetime", name: "FaceTime HD Camera"),
@@ -1371,6 +1417,9 @@ extension CaptureController {
             : "1920 × 1080 · up to 30 fps · \(controller.videoQuality.sizeLabel)"
         controller.banner = banner
         controller.countdown = countdown
+        controller.systemAudioLevel = systemAudioLevel
+        controller.systemAudioPeak = systemAudioLevel > AudioLevelMeter.floorDB ? systemAudioLevel + 5 : systemAudioLevel
+        controller.audioBalance = audioBalance
         controller.cameraIsSilent = cameraIsSilent
         controller.alternativeCamera = cameraIsSilent ? controller.cameras[0] : nil
         controller.hasAudio = hasAudio

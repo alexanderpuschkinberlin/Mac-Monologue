@@ -158,6 +158,11 @@ struct SettingsView: View {
                 Text("Keeps it off the slides you are presenting. It is never in the recording either way.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                Toggle("Lower Mac sound while I talk", isOn: $capture.ducksSystemAudio)
+                Text("A video or music playing on your Mac gets quieter whenever you speak, "
+                     + "and comes back when you pause. The fader in the main window sets how loud it is otherwise.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 Toggle("Show mouse clicks", isOn: $capture.showsMouseClicks)
                 Text("Marks every click in the recording, so viewers can follow along.")
                     .font(.caption)

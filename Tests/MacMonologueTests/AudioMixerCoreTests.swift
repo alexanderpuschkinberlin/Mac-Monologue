@@ -94,6 +94,70 @@ final class AudioMixerCoreTests: XCTestCase {
         XCTAssertEqual(out.first?.startIndex, 10_000)
         XCTAssertEqual(samples(out), constant(0.1, block))
     }
+
+    // MARK: - Crossfader and ducking
+
+    func testTheMiddleIsThePlainSum() {
+        XCTAssertEqual(AudioMix.gains(balance: 0).voice, 1)
+        XCTAssertEqual(AudioMix.gains(balance: 0).system, 1)
+        var mixer = AudioMixerCore(microphoneIsMaster: true)
+        mixer.mix = AudioMix(balance: 0)
+        mixer.pushSystem(constant(0.5, block + holdBack), reportedIndex: 0)
+        mixer.pushMicrophone(constant(0.25, block + holdBack), reportedIndex: 0)
+        XCTAssertEqual(samples(mixer.drainReadyBlocks()), constant(0.75, block))
+    }
+
+    func testTheEndsSilenceTheOtherSide() {
+        XCTAssertEqual(AudioMix.gains(balance: -1).system, 0)
+        XCTAssertEqual(AudioMix.gains(balance: -1).voice, 1)
+        XCTAssertEqual(AudioMix.gains(balance: 1).voice, 0)
+        XCTAssertEqual(AudioMix.gains(balance: 1).system, 1)
+        XCTAssertEqual(AudioMix.gains(balance: -0.5).system, 0.25, accuracy: 0.0001)
+    }
+
+    /// A fader moved mid-take ramps across the next block rather than jumping —
+    /// and the block after it sits at the new level.
+    func testMovingTheFaderRampsWithoutAJump() {
+        var mixer = AudioMixerCore(microphoneIsMaster: true)
+        mixer.pushMicrophone(constant(0, block * 2 + holdBack), reportedIndex: 0)
+        mixer.pushSystem(constant(0.8, block * 2 + holdBack), reportedIndex: 0)
+        mixer.mix = AudioMix(balance: -1)
+        let out = mixer.drainReadyBlocks()
+        XCTAssertEqual(out.count, 2)
+        let ramp = out[0].samples
+        XCTAssertEqual(ramp[0], 0.8, accuracy: 0.01, "starts where the last block left off")
+        XCTAssertEqual(ramp[block - 1], 0, accuracy: 0.0001, "arrives at the new level")
+        for index in 1..<block { XCTAssertLessThanOrEqual(ramp[index], ramp[index - 1]) }
+        XCTAssertEqual(out[1].samples, constant(0, block))
+    }
+
+    func testDuckingLowersTheMacWhileYouTalkAndReturnsAfterwards() {
+        var ducker = Ducker()
+        let speech = constant(0.1, block)     // −20 dBFS
+        let silence = constant(0, block)
+        var gain: Float = 1
+        for _ in 0..<10 { gain = ducker.next(microphone: speech) }
+        XCTAssertEqual(gain, Ducker.duckedGain, accuracy: 0.0001, "ducked while talking")
+
+        // Held through a short pause between words.
+        let holdBlocks = Int(Ducker.holdSeconds * Float(AudioMixerCore.sampleRate)) / block
+        for _ in 0..<holdBlocks { gain = ducker.next(microphone: silence) }
+        XCTAssertEqual(gain, Ducker.duckedGain, accuracy: 0.0001, "held between words")
+
+        let releaseBlocks = Int(Ducker.releaseSeconds * Float(AudioMixerCore.sampleRate)) / block + 3
+        for _ in 0..<releaseBlocks { gain = ducker.next(microphone: silence) }
+        XCTAssertEqual(gain, 1, "back to full after a pause")
+    }
+
+    func testDuckingOnlyTouchesTheMac() {
+        var mixer = AudioMixerCore(microphoneIsMaster: true)
+        mixer.mix = AudioMix(balance: 0, ducksSystem: true)
+        let frames = block * 12
+        mixer.pushMicrophone(constant(0.1, frames + holdBack), reportedIndex: 0)
+        mixer.pushSystem(constant(0.4, frames + holdBack), reportedIndex: 0)
+        let last = mixer.drainReadyBlocks().last!.samples
+        XCTAssertEqual(last[block - 1], 0.1 + 0.4 * Ducker.duckedGain, accuracy: 0.0001)
+    }
 }
 
 final class SourceTimelineTests: XCTestCase {

@@ -17,6 +17,11 @@ final class AudioMixer {
         core = AudioMixerCore(microphoneIsMaster: microphoneIsMaster)
     }
 
+    var mix: AudioMix {
+        get { core.mix }
+        set { core.mix = newValue }
+    }
+
     func pushMicrophone(_ sampleBuffer: CMSampleBuffer, takeTime: CMTime) {
         guard let samples = microphoneConverter.convert(sampleBuffer) else { return }
         core.pushMicrophone(samples, reportedIndex: Self.frameIndex(takeTime))

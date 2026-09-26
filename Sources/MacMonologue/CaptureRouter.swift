@@ -25,6 +25,8 @@ final class CaptureRouter: NSObject, @unchecked Sendable {
         var canvasHeight = 0
         /// Follow the face in software, for a camera without Center Stage.
         var followsFace = false
+        /// Crossfader and ducking for the mixed track, applied from the next block.
+        var audioMix = AudioMix()
 
         var isScreenMode: Bool { mode.recordsScreen && canvasWidth > 0 && canvasHeight > 0 }
     }
@@ -66,6 +68,10 @@ final class CaptureRouter: NSObject, @unchecked Sendable {
     /// be live before you start, which is the whole point of having one.
     /// Called on `queue`; the buffer must not escape it.
     var onMicrophoneBuffer: ((CMSampleBuffer) -> Void)?
+
+    /// Every system-audio buffer, idle or not, for the Mac-sound meter.
+    /// Called on `queue`; the buffer must not escape it.
+    var onSystemAudioBuffer: ((CMSampleBuffer) -> Void)?
 
     init(queue: DispatchQueue, recorder: TakeRecorder, trackpad: TrackpadTouch) {
         self.queue = queue
@@ -201,6 +207,7 @@ final class CaptureRouter: NSObject, @unchecked Sendable {
     // MARK: - System audio
 
     private func handleSystemAudio(_ sampleBuffer: CMSampleBuffer) {
+        onSystemAudioBuffer?(sampleBuffer)
         guard let mixer else { return }
         let captureClock = recorder.currentSourceClock()
         var timestamp = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
@@ -220,6 +227,7 @@ final class CaptureRouter: NSObject, @unchecked Sendable {
 
     private func writeMixedAudio() {
         guard let mixer else { return }
+        mixer.mix = configuration.audioMix
         for block in mixer.drainReady() {
             recorder.appendInTakeTime(block, to: .audio)
         }
@@ -228,6 +236,7 @@ final class CaptureRouter: NSObject, @unchecked Sendable {
     /// Hands over the hold-back at the end of a take. Runs inside `finish`.
     private func flushMixer() {
         guard let mixer else { return }
+        mixer.mix = configuration.audioMix
         for block in mixer.flush() {
             recorder.appendInTakeTime(block, to: .audio)
         }

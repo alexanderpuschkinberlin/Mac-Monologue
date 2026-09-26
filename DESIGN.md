@@ -195,6 +195,21 @@ several decisions below that would be wrong for a product with real users.
   100 ms hold-back; a hole in either source is silence at that span, never a shift;
   `SourceTimeline` keeps each source contiguous and bounds drift instead of letting it
   accumulate. Each source is converted from the format it actually delivers.
+- **One crossfader between voice and Mac sound** (v0.5.1), not two volume
+  sliders: the question is always "which of the two is too loud", and one control
+  answers it. In the middle both are full — the plain sum every earlier take had,
+  sample for sample. Towards an end, the other side fades along `(1 − x)²`, which
+  sounds even across the travel. It is live: `AudioMix` sits in the router's
+  configuration and the core reads it for every block, so moving it mid-take
+  changes the file from the next block on. Each gain ramps across a block from
+  where the last one ended — a moved fader never clicks.
+- **Ducking lowers only the Mac**, by 12 dB while the microphone is above
+  −38 dBFS, with a 60 ms attack, 400 ms hold and 600 ms release, so the gaps
+  between words do not pump. The voice is never touched, so its meter stays true.
+- **The two meters show what goes into the file**: each source's level plus the
+  fader's gain. Ducking is left out of them — it is not known before a take. The
+  Mac-sound meter needed the level meter to read non-interleaved stereo, which is
+  how ScreenCaptureKit delivers system audio.
 
 ### Control from anywhere
 

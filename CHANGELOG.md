@@ -4,6 +4,15 @@ Every version of Mac-Monologue, newest first. `bin/publish` takes the section of
 the version it publishes as that release's notes, and the app shows them when it
 offers an update.
 
+## 0.5.1
+
+- **Set how loud your Mac is next to your voice.** In the screen modes, one
+  fader sits between Voice and Mac sound, like a DJ's between two decks: in the
+  middle both are full, towards either side the other one fades. It works while
+  you record, too, and two small meters show what goes into the video.
+- **Lower Mac sound while I talk**: a video or music gets quieter whenever you
+  speak and comes back when you pause. Next to the fader, and in Settings.
+
 ## 0.5.0 — 2026-09-26
 
 - **Screen & Head Touch Cut**, a fourth mode. With a finger on the trackpad the

@@ -76,42 +76,59 @@ final class AudioLevelMeter {
               let asbd = CMAudioFormatDescriptionGetStreamBasicDescription(formatDescription)?.pointee
         else { return nil }
 
+        // Sized for as many buffers as the format has: ScreenCaptureKit delivers
+        // system audio as non-interleaved stereo, one buffer per channel, which a
+        // single-buffer list cannot hold.
+        var sizeNeeded = 0
+        guard CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(
+            sampleBuffer, bufferListSizeNeededOut: &sizeNeeded, bufferListOut: nil, bufferListSize: 0,
+            blockBufferAllocator: nil, blockBufferMemoryAllocator: nil,
+            flags: kCMSampleBufferFlag_AudioBufferList_Assure16ByteAlignment, blockBufferOut: nil
+        ) == noErr, sizeNeeded > 0 else { return nil }
+
+        let rawList = UnsafeMutableRawPointer.allocate(byteCount: sizeNeeded,
+                                                       alignment: MemoryLayout<AudioBufferList>.alignment)
+        defer { rawList.deallocate() }
+        let listPointer = rawList.bindMemory(to: AudioBufferList.self, capacity: 1)
         var blockBuffer: CMBlockBuffer?
-        var audioBufferList = AudioBufferList()
         let status = CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(
             sampleBuffer,
             bufferListSizeNeededOut: nil,
-            bufferListOut: &audioBufferList,
-            bufferListSize: MemoryLayout<AudioBufferList>.size,
+            bufferListOut: listPointer,
+            bufferListSize: sizeNeeded,
             blockBufferAllocator: nil,
             blockBufferMemoryAllocator: nil,
             flags: kCMSampleBufferFlag_AudioBufferList_Assure16ByteAlignment,
             blockBufferOut: &blockBuffer
         )
-        guard status == noErr, let data = audioBufferList.mBuffers.mData else { return nil }
+        guard status == noErr else { return nil }
 
-        let byteCount = Int(audioBufferList.mBuffers.mDataByteSize)
         let isFloat = asbd.mFormatFlags & kAudioFormatFlagIsFloat != 0
-
         var sumOfSquares: Float = 0
         var peak: Float = 0
         var count = 0
 
-        if isFloat {
-            let samples = data.bindMemory(to: Float.self, capacity: byteCount / MemoryLayout<Float>.size)
-            count = byteCount / MemoryLayout<Float>.size
-            for index in 0..<count {
-                let value = abs(samples[index])
-                sumOfSquares += value * value
-                peak = max(peak, value)
-            }
-        } else {
-            let samples = data.bindMemory(to: Int16.self, capacity: byteCount / MemoryLayout<Int16>.size)
-            count = byteCount / MemoryLayout<Int16>.size
-            for index in 0..<count {
-                let value = abs(Float(samples[index])) / Float(Int16.max)
-                sumOfSquares += value * value
-                peak = max(peak, value)
+        for buffer in UnsafeMutableAudioBufferListPointer(listPointer) {
+            guard let data = buffer.mData else { continue }
+            let byteCount = Int(buffer.mDataByteSize)
+            if isFloat {
+                let length = byteCount / MemoryLayout<Float>.size
+                let samples = data.bindMemory(to: Float.self, capacity: length)
+                for index in 0..<length {
+                    let value = abs(samples[index])
+                    sumOfSquares += value * value
+                    peak = max(peak, value)
+                }
+                count += length
+            } else {
+                let length = byteCount / MemoryLayout<Int16>.size
+                let samples = data.bindMemory(to: Int16.self, capacity: length)
+                for index in 0..<length {
+                    let value = abs(Float(samples[index])) / Float(Int16.max)
+                    sumOfSquares += value * value
+                    peak = max(peak, value)
+                }
+                count += length
             }
         }
 

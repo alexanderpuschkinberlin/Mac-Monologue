@@ -20,6 +20,8 @@ enum DevicePreferences {
     private static let autoMinimizesKey = "autoMinimizes"
     private static let showsMouseClicksKey = "showsMouseClicks"
     private static let countdownSecondsKey = "countdownSeconds"
+    private static let audioBalanceKey = "audioBalance"
+    private static let ducksSystemAudioKey = "ducksSystemAudio"
     private static let completedOnboardingKey = "hasCompletedOnboarding"
     private static let launchModeKey = "launchMode"
     private static let checksForUpdatesKey = "checksForUpdatesAutomatically"
@@ -147,6 +149,17 @@ enum DevicePreferences {
     static var countdownSeconds: Int {
         get { UserDefaults.standard.object(forKey: countdownSecondsKey) as? Int ?? 3 }
         set { UserDefaults.standard.set(newValue, forKey: countdownSecondsKey) }
+    }
+
+    /// Absent means the middle: voice and Mac sound both full.
+    static var audioBalance: Float {
+        get { UserDefaults.standard.object(forKey: audioBalanceKey) as? Float ?? 0 }
+        set { UserDefaults.standard.set(newValue, forKey: audioBalanceKey) }
+    }
+
+    static var ducksSystemAudio: Bool {
+        get { UserDefaults.standard.bool(forKey: ducksSystemAudioKey) }
+        set { UserDefaults.standard.set(newValue, forKey: ducksSystemAudioKey) }
     }
 
     static var launchMode: LaunchMode {

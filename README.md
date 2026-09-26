@@ -155,7 +155,7 @@
   <tr>
     <td width="50%">
       <h3>Your voice and your Mac, together</h3>
-      <p>Play a video or music during your presentation, and it is in the recording along with what you say - in one track, in sync.</p>
+      <p>Play a video or music during your presentation, and it is in the recording along with what you say - in one track, in sync. One fader sets the balance, like a DJ's between two decks: slide towards your voice and the video gets quieter, towards the Mac and your voice does - even while you record. Or let it duck: the Mac gets quieter whenever you speak.</p>
     </td>
     <td width="50%">
       <picture>

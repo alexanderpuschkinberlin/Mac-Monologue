@@ -383,8 +383,18 @@ struct ContentView: View {
 
             Spacer()
 
-            // The microphone only: that is what a person can do something about.
-            if capture.hasAudio {
+            if capture.mode.recordsScreen, capture.state != .preview {
+                // Two sources, one fader between them — live during a take.
+                AudioCrossfaderView(
+                    balance: $capture.audioBalance,
+                    ducksSystemAudio: $capture.ducksSystemAudio,
+                    hasMicrophone: capture.hasAudio,
+                    voiceLevel: capture.audioLevel, voicePeak: capture.audioPeak,
+                    voiceClipping: capture.isClipping,
+                    systemLevel: capture.systemAudioLevel, systemPeak: capture.systemAudioPeak
+                )
+            } else if capture.hasAudio {
+                // The microphone only: that is what a person can do something about.
                 LevelMeterView(
                     level: capture.audioLevel,
                     peak: capture.audioPeak,
@@ -481,6 +491,10 @@ private func window(_ capture: CaptureController) -> some View {
 #Preview("Screen · ready") { window(.preview(mode: .screen)) }
 #Preview("Screen + Camera · ready") { window(.preview(mode: .screenAndCamera)) }
 #Preview("Screen & Head Touch Cut · ready") { window(.preview(mode: .screenAndCameraTouchCut)) }
+#Preview("Screen + Camera · crossfader") {
+    window(.preview(mode: .screenAndCamera, state: .recording, elapsed: 42, audioLevel: -14,
+                    systemAudioLevel: -10, audioBalance: -0.4))
+}
 #Preview("Countdown") { window(.preview(mode: .screenAndCameraTouchCut, countdown: 2)) }
 #Preview("Recording") { window(.preview(state: .recording, elapsed: 83, audioLevel: -9)) }
 #Preview("Paused") { window(.preview(state: .paused, elapsed: 83)) }

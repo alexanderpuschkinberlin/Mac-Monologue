@@ -383,6 +383,29 @@ Tests/MacMonologueTests/       all of the above, plus compositing on synthetic f
 5. Global shortcuts, menu bar item, auto-minimise.
 6. Welcome steps, Settings, the key drawing.
 
+### Screen + Green Screen (v0.6)
+
+- A fifth mode rather than an option on the bubble: a person standing in front
+  of the screen is a different video, and the mode picker is where that
+  choice lives. The bubble's corner and size do not apply; `PersonLayout` - a
+  centre and a height, as shares of the canvas - does, dragged in the preview
+  and placed by the same function for recording and preview. The camera
+  picture may reach past the edges, a quarter of it always stays on: cut off
+  at the bottom is the presenter look.
+- **Two ways to cut out, one mask.** `PersonKeyer` hands the compositor a mask
+  either way. With a green screen, by colour: two 32³ colour cubes, one for the
+  alpha (green's lead over red and blue, with a soft ramp so hair fades rather
+  than steps) and one taking the green spill off edges. Without, by
+  `VNGeneratePersonSegmentationRequest` at `.balanced`, every other frame,
+  slightly blurred so the edge does not shimmer.
+- **Automatic** looks at the top, left and right edges of a small copy of the
+  picture twice a second - where the background shows - and keys by colour
+  when over 60 % of it is screen green, back below 40 %. The gap keeps a green
+  shirt passing the edge from flipping the method.
+- "Keep me in frame" in software is off here: its zoom would crop the person.
+  Center Stage, done by the camera, still works.
+- Cost, idle, Release: colour key ~34 %, person detection ~38 %.
+
 ## Idle cost
 
 The app runs its preview all the time, so what it costs while nobody records

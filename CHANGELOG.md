@@ -4,6 +4,15 @@ Every version of Mac-Monologue, newest first. `bin/publish` takes the section of
 the version it publishes as that release's notes, and the app shows them when it
 offers an update.
 
+## 0.6.0
+
+- **Screen + Green Screen**, a fifth mode: you, cut out, standing in front of
+  your screen like a weather presenter - no bubble. Drag yourself anywhere in
+  the preview and set your size with the slider.
+- Works with a green screen behind you, for sharp edges, and without one,
+  using Apple's person detection. *Automatic* picks whichever fits and says
+  which it is using.
+
 ## 0.5.2 — 2026-09-26
 
 - Fixed: Mac-Monologue kept the processor busy even when not recording - up

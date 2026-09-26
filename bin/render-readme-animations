@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Renders the animated drawings into docs/images/ as animated WebP, light and
+# dark, playing twice and then resting on their last frame. The website starts
+# them when they scroll into view; the README keeps the stills.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}"
+command -v img2webp >/dev/null || { echo "✗ img2webp missing: brew install webp" >&2; exit 1; }
+
+FRAMES="$(pwd)/build/animation-frames"
+rm -rf "$FRAMES"
+mkdir -p "$FRAMES"
+xcodegen generate --quiet
+# xcodebuild hands variables prefixed TEST_RUNNER_ to the test process, unprefixed.
+TEST_RUNNER_README_ANIMATION_OUTPUT="$FRAMES" xcodebuild -project Mac-Monologue.xcodeproj -scheme Mac-Monologue \
+  -configuration Debug -derivedDataPath build \
+  test -only-testing:MacMonologueTests/ReadmeAnimationRenderer 2>&1 | grep -E "\.swift:[0-9]+.*error:|TEST (SUCCEEDED|FAILED)" || true
+
+FPS="${FPS:-24}"
+DELAY=$(( 1000 / FPS ))
+QUALITY="${QUALITY:-80}"
+for dir in "$FRAMES"/*/; do
+  name="$(basename "$dir")"
+  frames=("$dir"*.png)
+  [ "${#frames[@]}" -gt 0 ] || { echo "✗ no frames for $name" >&2; exit 1; }
+  # -mixed lets each frame pick lossless or lossy, whichever is smaller.
+  img2webp -loop 2 -mixed -q "$QUALITY" -m 6 -d "$DELAY" "${frames[@]}" -o "docs/images/$name.webp" >/dev/null
+  echo "→ docs/images/$name.webp  ($(du -h "docs/images/$name.webp" | cut -f1), ${#frames[@]} frames)"
+done

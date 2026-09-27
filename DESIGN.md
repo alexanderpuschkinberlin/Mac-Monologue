@@ -283,11 +283,17 @@ several decisions below that would be wrong for a product with real users.
     **Settings** (`SettingsLink`) beside it; the window title is removed for room;
   - the **sidebar**: the chosen mode's settings as a grouped `Form` - Sources, Camera
     bubble, Touch Cut, You cut out, Options - fixed during a take;
-  - the **preview** filling the rest, letterboxed; over its bottom the **sound bar**
-    (meters, DJ fader, ducking) floats, live during a take; notices float over its top;
-    Touch Cut's hints show only while the pointer is over it;
-  - the **bottom bar**: what is about to be recorded in one line - a click chooses the
-    quality - and the one action of the state, a red **Record**.
+  - the **preview** as a card in the recording's aspect ratio (0.7.1: no black bars
+    that are not in the file); notices float over its top, Touch Cut's hints show only
+    while the pointer is over it. Nothing floats over its bottom: the bubble corners
+    and the cut-out person are there;
+  - the **bottom bar**: what is about to be recorded in one line with the quality as a
+    button, the **sound bar** (meters, DJ fader, ducking; live during a take) in the
+    middle - in a row of its own above when the window is narrow - and the one action
+    of the state, a red **Record**. ⌘1-⌘5 (Mode menu) switch the mode.
+- **The sidebar follows the system.** macOS 26 floats it as a glass panel, macOS 27
+  (like Finder and Notes there) draws it flush. The form's own backdrop is hidden
+  (`scrollContentBackground(.hidden)`) so it never covers the system's sidebar.
 - **Glass only on the controls layer.** `GlassSurface.swift`: `.glassEffect` and the
   glass button styles on macOS 26, materials and bordered buttons on 15 - never on the
   preview, the fields or the meters.

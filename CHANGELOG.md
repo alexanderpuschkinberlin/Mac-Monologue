@@ -10,6 +10,14 @@ offers an update.
   sit together in `~/Movies/Monologue/Monologue-<date>/`, instead of all
   takes and .srt files mixed in one folder. Takes recorded before stay where
   they are. Discarding a take moves its whole folder to the Trash.
+- **Nothing covers the recording any more.** The preview is now a card in the
+  shape of the video, without black bars, and the sound fader sits in the bar
+  below it instead of over the corners where your bubble or you stand.
+- **The quality is a proper button** next to the summary, and the full name
+  of a screen, camera or microphone shows when you point at it.
+- **⌘1 to ⌘5 switch the mode**, also in the new Mode menu.
+- **Text you hold up reads the right way round** in the file, with any camera,
+  an iPhone included. The camera preview is a mirror, and now says so.
 
 ## 0.7.0 — 2026-09-27
 

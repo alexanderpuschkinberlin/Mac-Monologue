@@ -10,16 +10,17 @@ struct ContentView: View {
     @ObservedObject var capture: CaptureController
     @State private var isShowingQuality = false
     @State private var dragStart: PersonLayout?
+    @State private var bottomBarWidth: CGFloat = 0
 
     var body: some View {
         NavigationSplitView {
             SidebarForm(capture: capture)
-                .frame(minWidth: 270, idealWidth: 290)
-                .navigationSplitViewColumnWidth(min: 270, ideal: 290, max: 360)
+                .frame(minWidth: 290, idealWidth: 320)
+                .navigationSplitViewColumnWidth(min: 290, ideal: 320, max: 380)
                 // The settings are the point of the sidebar; hiding them helps nobody.
                 .toolbar(removing: .sidebarToggle)
         } detail: {
-            preview
+            previewCard
                 .safeAreaInset(edge: .bottom, spacing: 0) {
                     VStack(spacing: 0) {
                         SubtitleProgressView(subtitles: capture.subtitles)
@@ -119,6 +120,27 @@ struct ContentView: View {
 
     // MARK: - Preview
 
+    /// The preview in the shape of the recording, as a card: no black bars
+    /// beside it that are not in the file.
+    private var previewCard: some View {
+        preview
+            .aspectRatio(previewAspect, contentMode: .fit)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .shadow(color: .black.opacity(0.25), radius: 12, y: 4)
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, 4)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var previewAspect: CGFloat {
+        if capture.mode.recordsScreen, capture.canvasSize.width > 0, capture.canvasSize.height > 0 {
+            return capture.canvasSize.width / capture.canvasSize.height
+        }
+        if capture.mode.usesCamera { return capture.cameraAspect }
+        return 16 / 9
+    }
+
     private var preview: some View {
         ZStack {
             Color.black
@@ -145,7 +167,6 @@ struct ContentView: View {
             }
         }
         .overlay(alignment: .top) { notice }
-        .overlay(alignment: .bottom) { soundBar }
         .overlay(alignment: .topLeading) { touchCutHints }
     }
 
@@ -176,8 +197,9 @@ struct ContentView: View {
         }
     }
 
-    /// The meters and the fader float over the bottom of the preview; after a
-    /// take, the player's own controls are there instead.
+    /// The meters and the fader, in the bar below the preview - over it, they
+    /// covered the corners where the bubble and the person stand. After a take,
+    /// the player's own controls take over.
     @ViewBuilder
     private var soundBar: some View {
         if capture.state != .preview {
@@ -189,9 +211,8 @@ struct ContentView: View {
                     levels: capture.levels
                 )
                 .padding(.horizontal, 16)
-                .padding(.vertical, 8)
+                .padding(.vertical, 6)
                 .floatingSurface(Capsule())
-                .padding(14)
             } else if capture.hasAudio {
                 // The microphone only: that is what a person can do something about.
                 HStack(spacing: 10) {
@@ -204,9 +225,16 @@ struct ContentView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
                 .floatingSurface(Capsule())
-                .padding(14)
             }
         }
+    }
+
+    /// Whether the sound bar fits between the summary and the actions, or
+    /// needs a row of its own above them.
+    private var soundBarGetsOwnRow: Bool {
+        guard capture.state != .preview else { return false }
+        let sound: CGFloat = capture.mode.recordsScreen ? 450 : (capture.hasAudio ? 290 : 0)
+        return bottomBarWidth < 380 + sound + 300
     }
 
     /// Touch Cut, before a take: what the trackpad does, shown only while the
@@ -364,43 +392,57 @@ struct ContentView: View {
     // MARK: - Bottom bar
 
     private var bottomBar: some View {
-        HStack(spacing: 10) {
-            if capture.state == .preview, let url = capture.lastRecordingURL {
-                Text([url.lastPathComponent, Self.fileSize(of: url)].compactMap { $0 }.joined(separator: " · "))
-                    .font(.system(.callout, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-            } else {
-                summaryButton
+        VStack(spacing: 8) {
+            if soundBarGetsOwnRow {
+                soundBar
             }
-            Spacer(minLength: 12)
-            actions
+            HStack(spacing: 10) {
+                if capture.state == .preview, let url = capture.lastRecordingURL {
+                    Text([url.lastPathComponent, Self.fileSize(of: url)].compactMap { $0 }.joined(separator: " · "))
+                        .font(.system(.callout, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                } else {
+                    summaryLine
+                }
+                Spacer(minLength: 12)
+                if !soundBarGetsOwnRow {
+                    soundBar
+                    Spacer(minLength: 12)
+                }
+                actions
+            }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { bottomBarWidth = $0 }
         .bottomBarBackground()
     }
 
-    /// What is about to be recorded, in one line; a click chooses the quality.
-    private var summaryButton: some View {
-        Button { isShowingQuality.toggle() } label: {
-            HStack(spacing: 4) {
-                Text(summary)
-                    .foregroundStyle(.secondary)
-                Text(capture.videoQuality.title)
-                    .fontWeight(.semibold)
-                Image(systemName: "chevron.up.chevron.down")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+    /// What is about to be recorded, in one line, and the quality as a button
+    /// that looks like one.
+    private var summaryLine: some View {
+        HStack(spacing: 8) {
+            Text(summary)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.tail)
+            Button { isShowingQuality.toggle() } label: {
+                HStack(spacing: 4) {
+                    Text(capture.videoQuality.title)
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.caption2)
+                }
+                .lineLimit(1)
             }
-            .lineLimit(1)
-        }
-        .buttonStyle(.plain)
-        .help("How sharp the video is, and how big the file gets.")
-        .disabled(capture.devicePickersLocked)
-        .popover(isPresented: $isShowingQuality, arrowEdge: .top) {
-            QualityPopover(capture: capture)
+            .secondaryActionStyle()
+            .help("How sharp the video is, and how big the file gets.")
+            .disabled(capture.devicePickersLocked)
+            .popover(isPresented: $isShowingQuality, arrowEdge: .top) {
+                QualityPopover(capture: capture)
+            }
+            .fixedSize()
         }
     }
 
@@ -408,7 +450,7 @@ struct ContentView: View {
         var parts = [capture.mode.shortLabel]
         parts.append(capture.hasAudio ? String(localized: "Microphone on") : String(localized: "No microphone"))
         if capture.mode.recordsScreen { parts.append(String(localized: "Mac sound on")) }
-        return parts.joined(separator: " · ") + " ·"
+        return parts.joined(separator: " · ")
     }
 
     @ViewBuilder
@@ -512,7 +554,7 @@ private struct ModeSwitcher: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(isSelected ? Color.primary : Color.secondary)
-                .help(mode.explanation)
+                .help(mode.explanation + " (⌘\((CaptureMode.allCases.firstIndex(of: mode) ?? 0) + 1))")
                 .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : .isButton)
             }
         }
@@ -548,6 +590,7 @@ private struct SidebarForm: View {
                             Text(display.displayName).tag(Optional(display.id))
                         }
                     }
+                    .help(capture.displays.first { $0.id == capture.selectedDisplayID }?.displayName ?? "")
                 }
                 if capture.mode.usesCamera {
                     Picker("Camera", selection: $capture.selectedCameraID) {
@@ -555,12 +598,14 @@ private struct SidebarForm: View {
                             Text(option.displayName).tag(Optional(option.id))
                         }
                     }
+                    .help(capture.cameras.first { $0.id == capture.selectedCameraID }?.displayName ?? "")
                 }
                 Picker("Microphone", selection: $capture.selectedMicrophoneID) {
                     ForEach(capture.microphones) { option in
                         Text(option.displayName).tag(Optional(option.id))
                     }
                 }
+                .help(capture.microphones.first { $0.id == capture.selectedMicrophoneID }?.displayName ?? "")
             }
             .disabled(capture.devicePickersLocked)
 
@@ -637,6 +682,9 @@ private struct SidebarForm: View {
                         }
                         .help(framingHelp)
                         .disabled(zoomBlocked)
+                        // A form row does not dim its label when disabled; it
+                        // would read as simply switched off.
+                        .opacity(zoomBlocked ? 0.5 : 1)
                     }
                     Toggle(isOn: $capture.mirrorsRecording) {
                         Text("Mirror the recording")
@@ -645,6 +693,10 @@ private struct SidebarForm: View {
                             // say what it does for as long as it is on.
                             Label("Text reads backwards in the saved file", systemImage: "exclamationmark.triangle.fill")
                                 .foregroundStyle(.orange)
+                        } else if capture.mode == .camera {
+                            // The preview is a mirror; a sign held up reads
+                            // backwards there, and people think the file is wrong.
+                            Text("The preview is a mirror. The saved file shows text the right way round.")
                         }
                     }
                     .help(mirrorHelp)
@@ -653,6 +705,9 @@ private struct SidebarForm: View {
             }
         }
         .formStyle(.grouped)
+        // The form's own backdrop would cover the sidebar's glass on macOS 26,
+        // and the panel would no longer float.
+        .scrollContentBackground(.hidden)
     }
 
     private var framingHelp: String {

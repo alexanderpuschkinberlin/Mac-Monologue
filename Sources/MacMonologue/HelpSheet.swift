@@ -9,6 +9,7 @@ struct HelpSheet: View {
         ("Space", String(localized: "Record, then pause, then resume — or play the finished clip")),
         ("⌘↩", String(localized: "Finish the take")),
         ("⌫", String(localized: "Discard the take")),
+        ("⌘1 … ⌘5", String(localized: "Choose a mode")),
         ("⌘N", String(localized: "Start a new recording")),
         ("⇧⌘R", String(localized: "Reveal the recording in Finder")),
         ("?", String(localized: "This list")),

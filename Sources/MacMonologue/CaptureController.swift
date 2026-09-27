@@ -774,6 +774,14 @@ final class CaptureController: ObservableObject {
                    connection.isVideoRotationAngleSupported(rotationAngle) {
                     connection.videoRotationAngle = rotationAngle
                 }
+                // The file gets the camera the right way round - text held up
+                // reads correctly - whatever camera it is, an iPhone included.
+                // Only "Mirror the recording" mirrors it, in the compositor.
+                if let connection = self.videoOutput.connection(with: .video),
+                   connection.isVideoMirroringSupported {
+                    connection.automaticallyAdjustsVideoMirroring = false
+                    connection.isVideoMirrored = false
+                }
             }
 
             if let microphone,

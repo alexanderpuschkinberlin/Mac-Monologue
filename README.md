@@ -339,7 +339,7 @@ Yes, in <i>Settings › Shortcuts</i> - the drawing there shows where your finge
 <details>
 <summary><b>The video I play drowns out my voice.</b></summary>
 <br>
-Slide the fader over the bottom of the preview towards <b>Voice</b> - the Mac gets quieter, your
+Slide the fader in the bar below the preview towards <b>Voice</b> - the Mac gets quieter, your
 voice stays as it is. It works while you record, too. Or switch on <i>Lower Mac sound
 while I talk</i>, next to the fader or in <i>Settings › Recording</i>, and the Mac gets
 quieter whenever you speak.

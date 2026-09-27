@@ -361,6 +361,16 @@
         }
       }
     },
+    "Choose a mode": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modus wählen"
+          }
+        }
+      }
+    },
     "Choose a mode at the top of the window, press Record, and talk.": {
       "localizations": {
         "de": {
@@ -2387,6 +2397,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Die Vorschau wirkt immer wie ein Spiegel. Schalte das nur ein, wenn auch die gespeicherte Datei gespiegelt sein soll – Text, den du in die Kamera hältst, ist dann spiegelverkehrt."
+          }
+        }
+      }
+    },
+    "The preview is a mirror. The saved file shows text the right way round.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Vorschau ist wie ein Spiegel. In der Aufnahme ist Schrift richtig herum."
           }
         }
       }

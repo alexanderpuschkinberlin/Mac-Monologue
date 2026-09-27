@@ -42,6 +42,20 @@ struct AppCommands: Commands {
                           || capture.state == .unavailable)
         }
 
+        CommandMenu("Mode") {
+            // A picker, so the menu ticks the mode in use, as the toolbar marks it.
+            Picker("Mode", selection: $capture.mode) {
+                ForEach(Array(CaptureMode.allCases.enumerated()), id: \.element) { index, mode in
+                    Text(mode.label)
+                        .tag(mode)
+                        .keyboardShortcut(KeyEquivalent(Character("\(index + 1)")), modifiers: .command)
+                }
+            }
+            .pickerStyle(.inline)
+            .labelsHidden()
+            .disabled(capture.devicePickersLocked)
+        }
+
         CommandGroup(replacing: .help) {
             Button("Keyboard Shortcuts") { capture.isShowingHelp = true }
                 .keyboardShortcut("?", modifiers: [])

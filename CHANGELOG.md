@@ -4,7 +4,7 @@ Every version of Mac-Monologue, newest first. `bin/publish` takes the section of
 the version it publishes as that release's notes, and the app shows them when it
 offers an update.
 
-## 0.7.0
+## 0.7.0 — 2026-09-27
 
 - **A new window.** The modes sit at the top, the settings for the chosen mode
   in a sidebar, and the preview - which is exactly what gets recorded - fills

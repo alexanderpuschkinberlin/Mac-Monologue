@@ -83,7 +83,7 @@
   <tr>
     <td width="50%">
       <h3>Cut to yourself with one finger</h3>
-      <p>Choose <b>Screen &amp; Head Touch Cut</b>. While a finger rests on the trackpad, your screen fills the picture, with you in the corner. Let go, and a moment later the video cuts to you, full frame - the look of an edited video, straight out of the recording. Works with the trackpad; with a mouse it records like Screen + Camera.</p>
+      <p>Choose <b>Touch Cut</b>. While a finger rests on the trackpad, your screen fills the picture, with you in the corner. Let go, and a moment later the video cuts to you, full frame - the look of an edited video, straight out of the recording. Works with the trackpad; with a mouse it records like Screen + Camera.</p>
     </td>
     <td width="50%">
       <picture>
@@ -107,7 +107,7 @@
   <tr>
     <td width="50%">
       <h3>Stand in front of your screen</h3>
-      <p>Choose <b>Screen + Green Screen</b>, and you appear cut out, in front of your slides - like a weather presenter, no bubble. Drag yourself anywhere in the preview and set your size. With a green screen behind you the edges are crisp; without one, your Mac finds you on its own. <i>Automatic</i> picks the right way.</p>
+      <p>Choose <b>Green Screen</b>, and you appear cut out, in front of your slides - like a weather presenter, no bubble. Drag yourself anywhere in the preview and set your size. With a green screen behind you the edges are crisp; without one, your Mac finds you on its own. <i>Automatic</i> picks the right way.</p>
     </td>
     <td width="50%">
       <picture>
@@ -317,7 +317,7 @@ A still slide takes less, a lot of movement a little more.
 <details>
 <summary><b>Why does it want to record my screen?</b></summary>
 <br>
-Only when you record your screen - <b>Screen</b>, <b>Screen + Camera</b>, <b>Screen &amp; Head Touch Cut</b> or <b>Screen + Green Screen</b> - and only while you are recording. If you only ever
+Only when you record your screen - <b>Screen</b>, <b>Screen + Camera</b>, <b>Touch Cut</b> or <b>Green Screen</b> - and only while you are recording. If you only ever
 record yourself, you can skip that step. Mac-Monologue never records its own window.
 </details>
 
@@ -338,7 +338,7 @@ Yes, in <i>Settings › Shortcuts</i> - the drawing there shows where your finge
 <details>
 <summary><b>The video I play drowns out my voice.</b></summary>
 <br>
-Slide the fader under the preview towards <b>Voice</b> - the Mac gets quieter, your
+Slide the fader over the bottom of the preview towards <b>Voice</b> - the Mac gets quieter, your
 voice stays as it is. It works while you record, too. Or switch on <i>Lower Mac sound
 while I talk</i>, next to the fader or in <i>Settings › Recording</i>, and the Mac gets
 quieter whenever you speak.

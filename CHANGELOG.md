@@ -4,7 +4,7 @@ Every version of Mac-Monologue, newest first. `bin/publish` takes the section of
 the version it publishes as that release's notes, and the app shows them when it
 offers an update.
 
-## 0.7.1
+## 0.7.1 — 2026-09-27
 
 - **Every take in a folder of its own.** The video and its subtitle files now
   sit together in `~/Movies/Monologue/Monologue-<date>/`, instead of all

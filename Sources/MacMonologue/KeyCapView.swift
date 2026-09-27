@@ -91,12 +91,12 @@ struct KeyCapView: View {
 
     static func spokenDescription(of shortcut: Shortcut) -> String {
         var held: [String] = []
-        if shortcut.hasControl { held.append("Control") }
-        if shortcut.hasOption { held.append("Option") }
-        if shortcut.hasShift { held.append("Shift") }
-        if shortcut.hasCommand { held.append("Command") }
-        let key = shortcut.keyLabel == "↩" ? "Return" : shortcut.keyLabel
-        return "Hold \(ListFormatter.localizedString(byJoining: held)), then press \(key)"
+        if shortcut.hasControl { held.append(String(localized: "Control")) }
+        if shortcut.hasOption { held.append(String(localized: "Option")) }
+        if shortcut.hasShift { held.append(String(localized: "Shift")) }
+        if shortcut.hasCommand { held.append(String(localized: "Command")) }
+        let key = shortcut.keyLabel == "↩" ? String(localized: "Return") : shortcut.keyLabel
+        return String(localized: "Hold \(ListFormatter.localizedString(byJoining: held)), then press \(key)")
     }
 
     // MARK: - Geometry

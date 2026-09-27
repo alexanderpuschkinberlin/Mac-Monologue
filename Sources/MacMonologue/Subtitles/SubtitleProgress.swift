@@ -67,8 +67,8 @@ struct SubtitleProgress: Equatable, Sendable {
     /// "about 2 min left", "less than a minute left".
     static func remainingLabel(_ seconds: Double?) -> String? {
         guard let seconds else { return nil }
-        if seconds < 50 { return "less than a minute left" }
+        if seconds < 50 { return String(localized: "less than a minute left") }
         let minutes = Int((seconds / 60).rounded())
-        return minutes == 1 ? "about 1 minute left" : "about \(minutes) minutes left"
+        return minutes == 1 ? String(localized: "about 1 minute left") : String(localized: "about \(minutes) minutes left")
     }
 }

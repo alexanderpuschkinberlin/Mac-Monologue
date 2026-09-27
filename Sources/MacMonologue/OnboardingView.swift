@@ -73,20 +73,17 @@ struct OnboardingView: View {
         switch step {
         case .welcome:
             page(symbol: "record.circle",
-                 title: "Welcome to Mac-Monologue",
-                 text: "Record yourself talking — or your screen with you in a small circle in the corner, "
-                     + "like the tutorials you see on YouTube. Press one key to start, the same key to "
-                     + "pause, and your video is ready. No editing afterwards.")
+                 title: String(localized: "Welcome to Mac-Monologue"),
+                 text: String(localized: "Record yourself talking — or your screen with you in a small circle in the corner, like the tutorials you see on YouTube. Press one key to start, the same key to pause, and your video is ready. No editing afterwards."))
         case .camera:
             permissionPage(.camera, symbol: "camera",
-                           text: "So you can be seen: on your own, or in the circle next to your slides.")
+                           text: String(localized: "So you can be seen: on your own, or in the circle next to your slides."))
         case .microphone:
             permissionPage(.microphone, symbol: "mic",
-                           text: "So you can be heard. The level meter shows how loud you are before you start.")
+                           text: String(localized: "So you can be heard. The level meter shows how loud you are before you start."))
         case .screen:
             permissionPage(.screen, symbol: "rectangle.on.rectangle",
-                           text: "So you can record presentations and demos. Mac-Monologue only records "
-                               + "while you are recording, and never records its own window.")
+                           text: String(localized: "So you can record presentations and demos. Mac-Monologue only records while you are recording, and never records its own window."))
         case .quality:
             qualityPage
         case .subtitles:
@@ -125,8 +122,7 @@ struct OnboardingView: View {
                     .foregroundStyle(.green)
             case .notAsked:
                 if permission == .screen {
-                    Text("macOS will send you to System Settings: switch on Mac-Monologue under "
-                         + "“Screen & System Audio Recording”, then come back here.")
+                    Text("macOS will send you to System Settings: switch on Mac-Monologue under “Screen & System Audio Recording”, then come back here.")
                         .font(.callout)
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.secondary)
@@ -146,8 +142,7 @@ struct OnboardingView: View {
         VStack(spacing: 12) {
             Text("How sharp should your videos be?")
                 .font(.title.weight(.semibold))
-            Text("Sharper means bigger files. Pick what suits how you share your videos: "
-                 + "by email, as a link, or for editing. Medium fits most people.")
+            Text("Sharper means bigger files. Pick what suits how you share your videos: by email, as a link, or for editing. Medium fits most people.")
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 480)
@@ -164,9 +159,7 @@ struct OnboardingView: View {
         VStack(spacing: 12) {
             Text("Subtitles, made by your Mac")
                 .font(.title.weight(.semibold))
-            Text("After each take, your Mac can write down what you said and add it as subtitles, "
-                 + "in the language you speak and translated. Viewers switch them on in their player, "
-                 + "and each language is also saved as a file for YouTube or Vimeo.")
+            Text("After each take, your Mac can write down what you said and add it as subtitles, in the language you speak and translated. Viewers switch them on in their player, and each language is also saved as a file for YouTube or Vimeo.")
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 500)
@@ -188,8 +181,8 @@ struct OnboardingView: View {
                 .multilineTextAlignment(.center)
 
             HStack(alignment: .top, spacing: 16) {
-                shortcutCard(title: "Record · Pause · Resume", shortcut: capture.toggleShortcut)
-                shortcutCard(title: "Finish", shortcut: capture.finishShortcut)
+                shortcutCard(title: String(localized: "Record · Pause · Resume"), shortcut: capture.toggleShortcut)
+                shortcutCard(title: String(localized: "Finish"), shortcut: capture.finishShortcut)
             }
             Text("You can change them later in Settings.")
                 .font(.caption)
@@ -211,13 +204,12 @@ struct OnboardingView: View {
     private var donePage: some View {
         if needsRestart {
             page(symbol: "arrow.clockwise.circle",
-                 title: "One restart, and you are set",
-                 text: "macOS only lets Mac-Monologue see your screen after it restarts. "
-                     + "It takes a second and opens again right away.")
+                 title: String(localized: "One restart, and you are set"),
+                 text: String(localized: "macOS only lets Mac-Monologue see your screen after it restarts. It takes a second and opens again right away."))
         } else {
             page(symbol: "checkmark.circle",
-                 title: "Ready",
-                 text: "Choose Camera, Screen or Screen + Camera at the top, press Record, and talk.")
+                 title: String(localized: "Ready"),
+                 text: String(localized: "Choose a mode at the top of the window, press Record, and talk."))
         }
     }
 

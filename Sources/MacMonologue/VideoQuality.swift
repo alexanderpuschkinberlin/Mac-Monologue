@@ -16,10 +16,10 @@ enum VideoQuality: String, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .economical: "Economical"
-        case .medium: "Medium"
-        case .high: "High"
-        case .veryHigh: "Very high"
+        case .economical: String(localized: "Economical")
+        case .medium: String(localized: "Medium")
+        case .high: String(localized: "High")
+        case .veryHigh: String(localized: "Very high")
         }
     }
 
@@ -27,13 +27,13 @@ enum VideoQuality: String, CaseIterable, Identifiable, Sendable {
     var explanation: String {
         switch self {
         case .economical:
-            "Small files, easy to email or upload on a slow connection. Small text on a screen looks a little soft."
+            String(localized: "Small files, easy to email or upload on a slow connection. Small text on a screen looks a little soft.")
         case .medium:
-            "The all-rounder: sharp enough for slides and faces, small enough to share anywhere."
+            String(localized: "The all-rounder: sharp enough for slides and faces, small enough to share anywhere.")
         case .high:
-            "Crisp text and detail, still easy to share as a link."
+            String(localized: "Crisp text and detail, still easy to share as a link.")
         case .veryHigh:
-            "The best picture, for editing afterwards or showing on a big screen. Large files."
+            String(localized: "The best picture, for editing afterwards or showing on a big screen. Large files.")
         }
     }
 
@@ -94,7 +94,7 @@ enum VideoQuality: String, CaseIterable, Identifiable, Sendable {
         Double(videoBitRate + audioBitRate) * 600 / 8 / 1_000_000
     }
 
-    var sizeLabel: String { "≈ \(Int(megabytesPerTenMinutes)) MB per 10 min" }
+    var sizeLabel: String { String(localized: "≈ \(Int(megabytesPerTenMinutes)) MB per 10 min") }
 
     /// The size a camera frame of `width` × `height` is written at.
     func cameraSize(width: Int, height: Int) -> (width: Int, height: Int) {

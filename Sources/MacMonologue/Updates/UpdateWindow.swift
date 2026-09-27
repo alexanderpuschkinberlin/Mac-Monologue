@@ -60,11 +60,11 @@ struct UpdateView: View {
 
     private var title: String {
         switch checker.state {
-        case .checking: "Checking for updates…"
-        case .upToDate: "Mac-Monologue is up to date"
-        case .failed: "The update did not work"
-        case .working: "Updating Mac-Monologue"
-        case .available, .idle: "A new version of Mac-Monologue is available"
+        case .checking: String(localized: "Checking for updates…")
+        case .upToDate: String(localized: "Mac-Monologue is up to date")
+        case .failed: String(localized: "The update did not work")
+        case .working: String(localized: "Updating Mac-Monologue")
+        case .available, .idle: String(localized: "A new version of Mac-Monologue is available")
         }
     }
 
@@ -72,12 +72,12 @@ struct UpdateView: View {
         let installed = checker.installedVersion.description
         switch checker.state {
         case .upToDate:
-            return "Version \(installed) is the newest."
+            return String(localized: "Version \(installed) is the newest.")
         case .available(let releases):
             let newest = releases.first?.version?.description ?? "?"
-            return "Version \(newest) — you have \(installed)."
+            return String(localized: "Version \(newest) — you have \(installed).")
         default:
-            return "You have version \(installed)."
+            return String(localized: "You have version \(installed).")
         }
     }
 

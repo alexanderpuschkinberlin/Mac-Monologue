@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Run the unit tests (no camera or microphone required).
+# Run the unit tests (no camera or microphone required). Always in English, so
+# a test that reads a label passes whatever language the Mac is set to.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}"
@@ -9,4 +10,5 @@ xcodebuild \
   -scheme Mac-Monologue \
   -configuration Debug \
   -derivedDataPath build \
+  -testLanguage en -testRegion US \
   test | tail -n 30

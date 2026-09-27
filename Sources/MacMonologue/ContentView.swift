@@ -80,16 +80,8 @@ struct ContentView: View {
     // MARK: - Toolbar
 
     private var modePicker: some View {
-        Picker("Mode", selection: $capture.mode) {
-            ForEach(CaptureMode.allCases) { mode in
-                Text(mode.shortLabel).tag(mode)
-                    .help(mode.explanation)
-            }
-        }
-        .pickerStyle(.segmented)
-        .labelsHidden()
-        .fixedSize()
-        .disabled(capture.devicePickersLocked)
+        ModeSwitcher(selection: $capture.mode)
+            .disabled(capture.devicePickersLocked)
     }
 
     private var statusPill: some View {
@@ -490,6 +482,45 @@ struct ContentView: View {
     static func timecode(_ seconds: Double) -> String {
         let total = Int(seconds.rounded(.down))
         return String(format: "%02d:%02d", total / 60, total % 60)
+    }
+}
+
+// MARK: - Mode switcher
+
+/// The five modes, each segment as wide as its name. A segmented picker makes
+/// every segment as wide as the widest, and with German names the toolbar then
+/// had no room left for the status.
+private struct ModeSwitcher: View {
+    @Binding var selection: CaptureMode
+    @Environment(\.isEnabled) private var isEnabled
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(CaptureMode.allCases) { mode in
+                let isSelected = mode == selection
+                Button { selection = mode } label: {
+                    Text(mode.shortLabel)
+                        .fontWeight(isSelected ? .semibold : .regular)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background {
+                            if isSelected {
+                                Capsule().fill(Color.primary.opacity(0.14))
+                            }
+                        }
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(isSelected ? Color.primary : Color.secondary)
+                .help(mode.explanation)
+                .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : .isButton)
+            }
+        }
+        .padding(2)
+        .fixedSize()
+        .opacity(isEnabled ? 1 : 0.5)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Mode")
     }
 }
 

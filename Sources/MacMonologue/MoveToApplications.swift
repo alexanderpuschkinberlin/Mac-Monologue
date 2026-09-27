@@ -32,11 +32,10 @@ enum MoveToApplications {
         guard shouldOffer(bundleURL: bundleURL) else { return false }
 
         let alert = NSAlert()
-        alert.messageText = "Move Mac-Monologue to your Applications folder?"
-        alert.informativeText = "It is running from \(folderName(of: bundleURL)). Updates can only be "
-            + "installed in Applications, and it is easy to find there. It opens again right away."
-        alert.addButton(withTitle: "Move to Applications")
-        alert.addButton(withTitle: "Not Now")
+        alert.messageText = String(localized: "Move Mac-Monologue to your Applications folder?")
+        alert.informativeText = String(localized: "It is running from \(folderName(of: bundleURL)). Updates can only be installed in Applications, and it is easy to find there. It opens again right away.")
+        alert.addButton(withTitle: String(localized: "Move to Applications"))
+        alert.addButton(withTitle: String(localized: "Not Now"))
         guard alert.runModal() == .alertFirstButtonReturn else {
             DevicePreferences.declinedMoveVersion = AppVersion.current?.description
             return false
@@ -47,9 +46,8 @@ enum MoveToApplications {
         } catch {
             let failure = NSAlert()
             failure.alertStyle = .warning
-            failure.messageText = "Mac-Monologue could not be moved"
-            failure.informativeText = "\(error.localizedDescription) Drag Mac-Monologue into the "
-                + "Applications folder in Finder instead."
+            failure.messageText = String(localized: "Mac-Monologue could not be moved")
+            failure.informativeText = String(localized: "\(error.localizedDescription) Drag Mac-Monologue into the Applications folder in Finder instead.")
             failure.runModal()
             return false
         }

@@ -11,7 +11,7 @@ struct DisplayOption: Identifiable, Hashable, Sendable {
     let pixelHeight: Int
     var isAvailable = true
 
-    var displayName: String { isAvailable ? name : "\(name) — unavailable" }
+    var displayName: String { isAvailable ? name : String(localized: "\(name) — unavailable") }
 }
 
 /// Starts, changes and stops the ScreenCaptureKit stream.

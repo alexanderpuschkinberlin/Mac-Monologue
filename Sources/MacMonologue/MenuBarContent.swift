@@ -92,21 +92,21 @@ struct MenuBarMenu: View {
 
     private var statusLine: String {
         switch capture.state {
-        case .recording: "Recording · \(ContentView.timecode(capture.elapsed))"
-        case .paused: "Paused · \(ContentView.timecode(capture.elapsed))"
-        case .finishing: "Finishing…"
-        case .preview: "Take saved"
-        case .ready: capture.countdown.map { "Starting in \($0)…" } ?? "Ready · \(capture.mode.label)"
-        case .needsAccess: "Camera access needed"
-        case .unavailable: "No camera"
+        case .recording: String(localized: "Recording · \(ContentView.timecode(capture.elapsed))")
+        case .paused: String(localized: "Paused · \(ContentView.timecode(capture.elapsed))")
+        case .finishing: String(localized: "Finishing…")
+        case .preview: String(localized: "Take saved")
+        case .ready: capture.countdown.map { String(localized: "Starting in \($0)…") } ?? String(localized: "Ready · \(capture.mode.label)")
+        case .needsAccess: String(localized: "Camera access needed")
+        case .unavailable: String(localized: "No camera")
         }
     }
 
     private var recordTitle: String {
         let title = switch capture.state {
-        case .recording: "Pause"
-        case .paused: "Resume"
-        default: capture.countdown != nil ? "Cancel Countdown" : "Record"
+        case .recording: String(localized: "Pause")
+        case .paused: String(localized: "Resume")
+        default: capture.countdown != nil ? String(localized: "Cancel Countdown") : String(localized: "Record")
         }
         return title + hint(capture.toggleShortcut)
     }

@@ -6,13 +6,13 @@ struct HelpSheet: View {
     var finishShortcut: Shortcut = .defaultFinish
 
     private static let shortcuts: [(String, String)] = [
-        ("Space", "Record, then pause, then resume — or play the finished clip"),
-        ("⌘↩", "Finish the take"),
-        ("⌫", "Discard the take"),
-        ("⌘N", "Start a new recording"),
-        ("⇧⌘R", "Reveal the recording in Finder"),
-        ("?", "This list"),
-        ("⌘Q", "Quit"),
+        ("Space", String(localized: "Record, then pause, then resume — or play the finished clip")),
+        ("⌘↩", String(localized: "Finish the take")),
+        ("⌫", String(localized: "Discard the take")),
+        ("⌘N", String(localized: "Start a new recording")),
+        ("⇧⌘R", String(localized: "Reveal the recording in Finder")),
+        ("?", String(localized: "This list")),
+        ("⌘Q", String(localized: "Quit")),
     ]
 
     var body: some View {

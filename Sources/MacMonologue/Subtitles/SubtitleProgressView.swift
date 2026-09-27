@@ -124,11 +124,11 @@ struct SubtitleProgressView: View {
 
     static func describe(_ step: SubtitleProgress.Step) -> String {
         switch step {
-        case .listening: "Listening to the take"
+        case .listening: String(localized: "Listening to the take")
         case .translating(let language, let index, let count):
-            "Translating to \(language.nativeName) (\(index + 1) of \(count))"
-        case .addingToVideo: "Adding them to the video"
-        case .done: "Done"
+            String(localized: "Translating to \(language.nativeName) (\(index + 1) of \(count))")
+        case .addingToVideo: String(localized: "Adding them to the video")
+        case .done: String(localized: "Done")
         }
     }
 }

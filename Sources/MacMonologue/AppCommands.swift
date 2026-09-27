@@ -51,10 +51,10 @@ struct AppCommands: Commands {
 
     private var recordTitle: String {
         switch capture.state {
-        case .recording: "Pause"
-        case .paused: "Resume"
-        case .preview: capture.isPlaying ? "Pause Playback" : "Play"
-        default: "Record"
+        case .recording: String(localized: "Pause")
+        case .paused: String(localized: "Resume")
+        case .preview: capture.isPlaying ? String(localized: "Pause Playback") : String(localized: "Play")
+        default: String(localized: "Record")
         }
     }
 }

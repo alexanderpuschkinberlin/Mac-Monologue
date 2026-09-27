@@ -15,9 +15,9 @@ enum Permission: CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .camera: "Camera"
-        case .microphone: "Microphone"
-        case .screen: "Screen recording"
+        case .camera: String(localized: "Camera")
+        case .microphone: String(localized: "Microphone")
+        case .screen: String(localized: "Screen recording")
         }
     }
 

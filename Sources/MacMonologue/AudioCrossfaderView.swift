@@ -30,13 +30,13 @@ struct AudioCrossfaderView: View {
                 HStack(spacing: 8) {
                     meter(level: levels.voice.level, peak: levels.voice.peak, clipping: levels.voice.isClipping,
                           gain: gains.voice,
-                          help: "Your voice as it goes into the recording")
+                          help: String(localized: "Your voice as it goes into the recording"))
                         .opacity(hasMicrophone ? 1 : 0.35)
                     DJFader(value: $balance)
                         .help("Towards Voice, the Mac gets quieter; towards Mac sound, your voice does. "
                               + "Double-click for both full.")
                     meter(level: levels.system.level, peak: levels.system.peak, clipping: false, gain: gains.system,
-                          help: "The Mac's sound as it goes into the recording")
+                          help: String(localized: "The Mac's sound as it goes into the recording"))
                 }
             }
             .frame(width: 330)
@@ -52,9 +52,9 @@ struct AudioCrossfaderView: View {
 
     private var positionLabel: String {
         switch balance {
-        case -0.02...0.02: "both full"
-        case ...(-0.98): "Mac sound off"
-        case 0.98...: "voice off"
+        case -0.02...0.02: String(localized: "both full")
+        case ...(-0.98): String(localized: "Mac sound off")
+        case 0.98...: String(localized: "voice off")
         default: ""
         }
     }
@@ -177,9 +177,9 @@ enum FaderMath {
 
     static func spokenValue(_ value: Float) -> String {
         let gains = AudioMix.gains(balance: value)
-        if value == 0 { return "both full" }
-        return value < 0 ? "Mac sound \(Int((gains.system * 100).rounded())) %"
-                         : "voice \(Int((gains.voice * 100).rounded())) %"
+        if value == 0 { return String(localized: "both full") }
+        return value < 0 ? String(localized: "Mac sound \(Int((gains.system * 100).rounded())) %")
+                         : String(localized: "voice \(Int((gains.voice * 100).rounded())) %")
     }
 }
 

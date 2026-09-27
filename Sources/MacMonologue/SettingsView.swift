@@ -13,12 +13,12 @@ enum LaunchMode: String, CaseIterable, Identifiable, Sendable {
 
     var label: String {
         switch self {
-        case .lastUsed: "The mode I used last"
-        case .camera: "Camera"
-        case .screen: "Screen"
-        case .screenAndCamera: "Screen + Camera"
-        case .screenAndCameraTouchCut: "Screen & Head Touch Cut"
-        case .screenAndGreenScreen: "Screen + Green Screen"
+        case .lastUsed: String(localized: "The mode I used last")
+        case .camera: String(localized: "Camera")
+        case .screen: String(localized: "Screen")
+        case .screenAndCamera: String(localized: "Screen + Camera")
+        case .screenAndCameraTouchCut: String(localized: "Screen & Head Touch Cut")
+        case .screenAndGreenScreen: String(localized: "Screen + Green Screen")
         }
     }
 }
@@ -68,16 +68,15 @@ struct SettingsView: View {
 
     private var shortcuts: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("These work from any app — so you can pause and finish while presenting, "
-                 + "without switching back to Mac-Monologue.")
+            Text("These work from any app — so you can pause and finish while presenting, without switching back to Mac-Monologue.")
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            shortcutRow(title: "Record, pause and resume",
+            shortcutRow(title: String(localized: "Record, pause and resume"),
                         shortcut: $capture.toggleShortcut,
                         defaultShortcut: .defaultToggle,
                         action: .toggleRecording)
-            shortcutRow(title: "Finish the take",
+            shortcutRow(title: String(localized: "Finish the take"),
                         shortcut: $capture.finishShortcut,
                         defaultShortcut: .defaultFinish,
                         action: .finish)
@@ -122,8 +121,7 @@ struct SettingsView: View {
                     Text("Off").tag(0)
                     ForEach([3, 5, 10], id: \.self) { Text("\($0) seconds").tag($0) }
                 }
-                Text("Time to get ready. In Screen & Head Touch Cut, a finger on the trackpad "
-                     + "when it ends starts the take on the screen.")
+                Text("Time to get ready. In Touch Cut, a finger on the trackpad when it ends starts the take on the screen.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -134,8 +132,7 @@ struct SettingsView: View {
             } header: {
                 Text("Quality")
             } footer: {
-                Text("Sizes are for ten minutes of recording, picture and sound together. "
-                     + "A still slide takes less, a lot of movement a little more.")
+                Text("Sizes are for ten minutes of recording, picture and sound together. A still slide takes less, a lot of movement a little more.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -145,8 +142,7 @@ struct SettingsView: View {
                     Toggle("Keep me in frame", isOn: $capture.keepsMeInFrame)
                     Text(capture.framing == .centerStage
                          ? "This camera has Center Stage: it follows you as you move, at full sharpness."
-                         : "This camera has no Center Stage. Mac-Monologue follows your face by zooming in "
-                           + "a little, so the picture gets slightly softer.")
+                         : "This camera has no Center Stage. Mac-Monologue follows your face by zooming in a little, so the picture gets slightly softer.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Text("Remembered for each camera. Off until you turn it on.")
@@ -155,14 +151,13 @@ struct SettingsView: View {
                 }
             }
 
-            Section("Screen and Screen + Camera") {
+            Section("Screen modes") {
                 Toggle("Minimise the window while recording", isOn: $capture.autoMinimizes)
                 Text("Keeps it off the slides you are presenting. It is never in the recording either way.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Toggle("Lower Mac sound while I talk", isOn: $capture.ducksSystemAudio)
-                Text("A video or music playing on your Mac gets quieter whenever you speak, "
-                     + "and comes back when you pause. The fader in the main window sets how loud it is otherwise.")
+                Text("A video or music playing on your Mac gets quieter whenever you speak, and comes back when you pause. The fader in the main window sets how loud it is otherwise.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Toggle("Show mouse clicks", isOn: $capture.showsMouseClicks)
@@ -188,8 +183,7 @@ struct SettingsView: View {
         Form {
             Section {
                 Toggle("Automatically check for updates", isOn: $updates.checksAutomatically)
-                Text("Asks GitHub for the newest version when Mac-Monologue opens and once a day. "
-                     + "Nothing else leaves your Mac, and nothing is installed without asking you.")
+                Text("Asks GitHub for the newest version when Mac-Monologue opens and once a day. Nothing else leaves your Mac, and nothing is installed without asking you.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

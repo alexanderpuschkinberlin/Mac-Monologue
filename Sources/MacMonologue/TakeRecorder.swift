@@ -131,7 +131,7 @@ final class TakeRecorder: @unchecked Sendable {
                 self.setStatus(.recording)
             } catch {
                 cleanUp()
-                onFailure?("Could not start recording: \(error.localizedDescription)")
+                onFailure?(String(localized: "Could not start recording: \(error.localizedDescription)"))
             }
         }
     }
@@ -280,10 +280,10 @@ final class TakeRecorder: @unchecked Sendable {
 
         var errorDescription: String? {
             switch self {
-            case .cannotAddInput: "The encoder rejected this camera format."
-            case .cannotStartWriting: "The file could not be opened for writing."
-            case .notRecording: "There is no take in progress."
-            case .writeFailed: "Writing the file failed."
+            case .cannotAddInput: String(localized: "The encoder rejected this camera format.")
+            case .cannotStartWriting: String(localized: "The file could not be opened for writing.")
+            case .notRecording: String(localized: "There is no take in progress.")
+            case .writeFailed: String(localized: "Writing the file failed.")
             }
         }
     }
@@ -345,7 +345,7 @@ extension TakeRecorder {
 
         if !input.append(retimed) {
             let reason = writer.error.map(Self.describe) ?? "the encoder rejected a frame"
-            onFailure?("Recording stopped: \(reason)")
+            onFailure?(String(localized: "Recording stopped: \(reason)"))
             discard()
             return
         }
@@ -374,7 +374,7 @@ extension TakeRecorder {
 
         if !input.append(sampleBuffer) {
             let reason = writer.error.map(Self.describe) ?? "the encoder rejected a sample"
-            onFailure?("Recording stopped: \(reason)")
+            onFailure?(String(localized: "Recording stopped: \(reason)"))
             discard()
             return
         }

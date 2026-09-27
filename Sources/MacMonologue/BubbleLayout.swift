@@ -12,10 +12,10 @@ enum BubbleCorner: String, CaseIterable, Sendable {
 
     var accessibilityLabel: String {
         switch self {
-        case .topLeading: "Top left"
-        case .topTrailing: "Top right"
-        case .bottomLeading: "Bottom left"
-        case .bottomTrailing: "Bottom right"
+        case .topLeading: String(localized: "Top left")
+        case .topTrailing: String(localized: "Top right")
+        case .bottomLeading: String(localized: "Bottom left")
+        case .bottomTrailing: String(localized: "Bottom right")
         }
     }
 }
@@ -36,9 +36,9 @@ enum BubbleSize: String, CaseIterable, Sendable {
 
     var label: String {
         switch self {
-        case .small: "Small"
-        case .medium: "Medium"
-        case .large: "Large"
+        case .small: String(localized: "Small")
+        case .medium: String(localized: "Medium")
+        case .large: String(localized: "Large")
         }
     }
 }

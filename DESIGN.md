@@ -273,8 +273,26 @@ several decisions below that would be wrong for a product with real users.
 
 ### UI
 
-- Standard resizable window, normal title bar and traffic lights, preview letterboxed,
-  sensible minimum size. Follows system light/dark. No theme syncing.
+- **The window (v0.7)** is a `NavigationSplitView`, built from standard parts so it
+  looks at home on macOS 15 and takes on Liquid Glass on 26 by itself:
+  - the **mode switcher** in the toolbar's centre - its own control, each segment as
+    wide as its name; a segmented picker makes all as wide as the widest, and in
+    German that left the toolbar no room for the status - with the **status** and
+    **Settings** (`SettingsLink`) beside it; the window title is removed for room;
+  - the **sidebar**: the chosen mode's settings as a grouped `Form` - Sources, Camera
+    bubble, Touch Cut, You cut out, Options - fixed during a take;
+  - the **preview** filling the rest, letterboxed; over its bottom the **sound bar**
+    (meters, DJ fader, ducking) floats, live during a take; notices float over its top;
+    Touch Cut's hints show only while the pointer is over it;
+  - the **bottom bar**: what is about to be recorded in one line - a click chooses the
+    quality - and the one action of the state, a red **Record**.
+- **Glass only on the controls layer.** `GlassSurface.swift`: `.glassEffect` and the
+  glass button styles on macOS 26, materials and bordered buttons on 15 - never on the
+  preview, the fields or the meters.
+- **English and German**, following the system language: `Localizable.xcstrings`, 304
+  strings. Text built in code is `String(localized:)`. The tests run in English
+  (`-testLanguage en`), so a test reading a label passes on any Mac.
+- Follows system light/dark. No theme syncing.
 - Two device pickers, remembered by **unique device ID** in `UserDefaults`. A remembered
   device that has disappeared is shown greyed as `<name> — unavailable` rather than
   silently falling back to another camera. The microphone list includes an explicit
@@ -284,8 +302,8 @@ several decisions below that would be wrong for a product with real users.
 - Seven states: `needsAccess` · `unavailable` · `ready` · `recording` · `paused` ·
   `finishing` · `preview`. `finishing` is a real state, not a spinner — the HEVC flush
   is not instant, and keystrokes during it are how a file gets corrupted.
-- A `Camera | Screen + Camera` switch at the top; screen mode adds a screen picker,
-  a four-dot corner widget and Small / Medium / Large.
+- The modes are switched in the toolbar; the screen modes add a screen picker, the
+  bubble ones a four-dot corner widget and Small / Medium / Large.
 - **Mirror the recording** checkbox. The camera-mode preview is always mirrored, like
   a bathroom mirror; the checkbox decides only the file, and defaults to off so text in
   frame reads the right way round.

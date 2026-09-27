@@ -14,11 +14,11 @@ enum CaptureMode: String, CaseIterable, Identifiable, Sendable {
 
     var label: String {
         switch self {
-        case .camera: "Camera"
-        case .screen: "Screen"
-        case .screenAndCamera: "Screen + Camera"
-        case .screenAndCameraTouchCut: "Screen & Head Touch Cut"
-        case .screenAndGreenScreen: "Screen + Green Screen"
+        case .camera: String(localized: "Camera")
+        case .screen: String(localized: "Screen")
+        case .screenAndCamera: String(localized: "Screen + Camera")
+        case .screenAndCameraTouchCut: String(localized: "Screen & Head Touch Cut")
+        case .screenAndGreenScreen: String(localized: "Screen + Green Screen")
         }
     }
 
@@ -26,8 +26,8 @@ enum CaptureMode: String, CaseIterable, Identifiable, Sendable {
     /// full name would squeeze everything beside it.
     var shortLabel: String {
         switch self {
-        case .screenAndCameraTouchCut: "Touch Cut"
-        case .screenAndGreenScreen: "Green Screen"
+        case .screenAndCameraTouchCut: String(localized: "Touch Cut")
+        case .screenAndGreenScreen: String(localized: "Green Screen")
         default: label
         }
     }

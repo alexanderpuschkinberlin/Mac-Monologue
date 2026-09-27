@@ -17,7 +17,7 @@ struct LevelMeterView: View {
     let isClipping: Bool
     /// Without the −60…0 scale underneath, for the crossfader's two channels.
     var compact = false
-    var help = "Microphone level in dBFS, with peak hold"
+    var help = String(localized: "Microphone level in dBFS, with peak hold")
 
     /// The clipping red from omacom/monologue (`#f06c6c`), kept deliberately:
     /// it is the one visual constant carried over verbatim.

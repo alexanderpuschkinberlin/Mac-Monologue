@@ -1,0 +1,3046 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "%@ Drag Mac-Monologue into the Applications folder in Finder instead.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ Zieh Mac-Monologue stattdessen im Finder in den Ordner „Programme“."
+          }
+        }
+      }
+    },
+    "%@ — unavailable": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ – nicht verbunden"
+          }
+        }
+      }
+    },
+    "%@, %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, %@"
+          }
+        }
+      }
+    },
+    "%lld": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
+          }
+        }
+      }
+    },
+    "%lld seconds": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Sekunden"
+          }
+        }
+      }
+    },
+    "%lld%%": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld %%"
+          }
+        }
+      }
+    },
+    "0": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "0"
+          }
+        }
+      }
+    },
+    "A new version of Mac-Monologue is available": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine neue Version von Mac-Monologue ist verfügbar"
+          }
+        }
+      }
+    },
+    "A video or music playing on your Mac gets quieter whenever you speak, and comes back when you pause. The fader in the main window sets how loud it is otherwise.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Video oder Musik auf deinem Mac wird leiser, sobald du sprichst, und kommt in Sprechpausen zurück. Der Regler im Hauptfenster bestimmt, wie laut es sonst ist."
+          }
+        }
+      }
+    },
+    "Access needed": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zugriff nötig"
+          }
+        }
+      }
+    },
+    "Add subtitles in": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Untertitel hinzufügen in"
+          }
+        }
+      }
+    },
+    "Adding them to the video": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Werden ins Video eingefügt"
+          }
+        }
+      }
+    },
+    "After each take, your Mac can write down what you said and add it as subtitles, in the language you speak and translated. Viewers switch them on in their player, and each language is also saved as a file for YouTube or Vimeo.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nach jeder Aufnahme kann dein Mac aufschreiben, was du gesagt hast, und es als Untertitel hinzufügen – in deiner Sprache und übersetzt. Zuschauer schalten sie im Player ein, und jede Sprache wird zusätzlich als Datei für YouTube oder Vimeo gespeichert."
+          }
+        }
+      }
+    },
+    "Allow %@…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ erlauben …"
+          }
+        }
+      }
+    },
+    "Allowed": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erlaubt"
+          }
+        }
+      }
+    },
+    "Another app already uses this combination. Choose a different one.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine andere App nutzt diese Kombination schon. Wähle eine andere."
+          }
+        }
+      }
+    },
+    "Asks GitHub for the newest version when Mac-Monologue opens and once a day. Nothing else leaves your Mac, and nothing is installed without asking you.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fragt beim Öffnen und einmal am Tag bei GitHub nach der neuesten Version. Sonst verlässt nichts deinen Mac, und nichts wird ohne deine Zustimmung installiert."
+          }
+        }
+      }
+    },
+    "Automatic": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatisch"
+          }
+        }
+      }
+    },
+    "Automatic uses a green screen when it sees one behind you, and Apple's person detection otherwise.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatisch nutzt einen Greenscreen, wenn einer hinter dir zu sehen ist, und sonst Apples Personenerkennung."
+          }
+        }
+      }
+    },
+    "Automatically check for updates": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatisch nach Updates suchen"
+          }
+        }
+      }
+    },
+    "Back": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zurück"
+          }
+        }
+      }
+    },
+    "Bottom left": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unten links"
+          }
+        }
+      }
+    },
+    "Bottom right": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unten rechts"
+          }
+        }
+      }
+    },
+    "Bubble position": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Position der Blase"
+          }
+        }
+      }
+    },
+    "Camera": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kamera"
+          }
+        }
+      }
+    },
+    "Camera access needed": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kamerazugriff nötig"
+          }
+        }
+      }
+    },
+    "Camera bubble": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kamera-Blase"
+          }
+        }
+      }
+    },
+    "Cancel": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abbrechen"
+          }
+        }
+      }
+    },
+    "Cancel Countdown": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Countdown abbrechen"
+          }
+        }
+      }
+    },
+    "Center Stage": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Folgemodus"
+          }
+        }
+      }
+    },
+    "Change…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ändern …"
+          }
+        }
+      }
+    },
+    "Check Now": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jetzt suchen"
+          }
+        }
+      }
+    },
+    "Check for Updates…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nach Updates suchen …"
+          }
+        }
+      }
+    },
+    "Checking for updates…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nach Updates suchen …"
+          }
+        }
+      }
+    },
+    "Checking it is genuine…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Echtheit wird geprüft …"
+          }
+        }
+      }
+    },
+    "Checking…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wird geprüft …"
+          }
+        }
+      }
+    },
+    "Choose a mode at the top of the window, press Record, and talk.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wähle oben im Fenster einen Modus, drück auf Aufnehmen und leg los."
+          }
+        }
+      }
+    },
+    "Choose one, several, or none.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wähle eine, mehrere oder keine."
+          }
+        }
+      }
+    },
+    "Clipping": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Übersteuert"
+          }
+        }
+      }
+    },
+    "Close": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schließen"
+          }
+        }
+      }
+    },
+    "Command": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Befehlstaste"
+          }
+        }
+      }
+    },
+    "Continue": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weiter"
+          }
+        }
+      }
+    },
+    "Continue Without": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ohne weiter"
+          }
+        }
+      }
+    },
+    "Continue in Background": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Im Hintergrund weiter"
+          }
+        }
+      }
+    },
+    "Control": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Control"
+          }
+        }
+      }
+    },
+    "Control it from anywhere": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Von überall aus steuern"
+          }
+        }
+      }
+    },
+    "Corner": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ecke"
+          }
+        }
+      }
+    },
+    "Could not start recording: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Aufnahme konnte nicht starten: %@"
+          }
+        }
+      }
+    },
+    "Countdown before recording": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Countdown vor der Aufnahme"
+          }
+        }
+      }
+    },
+    "Create subtitles after each take": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nach jeder Aufnahme Untertitel erstellen"
+          }
+        }
+      }
+    },
+    "Creating subtitles · %lld%%": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Untertitel werden erstellt · %lld %%"
+          }
+        }
+      }
+    },
+    "Creating subtitles…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Untertitel werden erstellt …"
+          }
+        }
+      }
+    },
+    "Crisp text and detail, still easy to share as a link.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scharfer Text und Details, trotzdem leicht als Link zu teilen."
+          }
+        }
+      }
+    },
+    "Cut out": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Freistellen"
+          }
+        }
+      }
+    },
+    "Discard": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwerfen"
+          }
+        }
+      }
+    },
+    "Discard the take": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufnahme verwerfen"
+          }
+        }
+      }
+    },
+    "Discard this take?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Aufnahme verwerfen?"
+          }
+        }
+      }
+    },
+    "Discard…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwerfen …"
+          }
+        }
+      }
+    },
+    "Done": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fertig"
+          }
+        }
+      }
+    },
+    "Download Language Tools": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprachwerkzeuge laden"
+          }
+        }
+      }
+    },
+    "Download from GitHub": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Von GitHub laden"
+          }
+        }
+      }
+    },
+    "Downloading…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wird geladen …"
+          }
+        }
+      }
+    },
+    "Drag": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ziehen"
+          }
+        }
+      }
+    },
+    "Drag yourself anywhere in the preview.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zieh dich in der Vorschau an jede Stelle."
+          }
+        }
+      }
+    },
+    "During the countdown, the finger decides how the take opens.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Während des Countdowns entscheidet der Finger, womit die Aufnahme beginnt."
+          }
+        }
+      }
+    },
+    "Economical": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sparsam"
+          }
+        }
+      }
+    },
+    "Esc cancels": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esc bricht ab"
+          }
+        }
+      }
+    },
+    "Finger lifted": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finger losgelassen"
+          }
+        }
+      }
+    },
+    "Finger on the trackpad": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finger auf dem Trackpad"
+          }
+        }
+      }
+    },
+    "Finger on the trackpad → your screen, you in the bubble": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finger auf dem Trackpad → dein Bildschirm, du in der Blase"
+          }
+        }
+      }
+    },
+    "Finish": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beenden"
+          }
+        }
+      }
+    },
+    "Finish the take": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufnahme beenden"
+          }
+        }
+      }
+    },
+    "Finishing": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wird beendet"
+          }
+        }
+      }
+    },
+    "Finishing…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wird beendet …"
+          }
+        }
+      }
+    },
+    "Fixed while recording. The sound fader stays live.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Während der Aufnahme fest. Der Ton-Regler bleibt bedienbar."
+          }
+        }
+      }
+    },
+    "Follows your face by zooming in a little and moving with you. The picture gets slightly softer, since part of it is cropped away.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Folgt deinem Gesicht, indem es leicht hineinzoomt und mitwandert. Das Bild wird etwas weicher, weil ein Teil abgeschnitten wird."
+          }
+        }
+      }
+    },
+    "From any app — while presenting": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aus jeder App – auch beim Präsentieren"
+          }
+        }
+      }
+    },
+    "Getting the %@ translation. macOS may ask you to confirm.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Übersetzung für %@ wird geholt. macOS fragt eventuell nach."
+          }
+        }
+      }
+    },
+    "Green Screen": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Freigestellt"
+          }
+        }
+      }
+    },
+    "Green screen": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Greenscreen"
+          }
+        }
+      }
+    },
+    "Green screen found": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Greenscreen erkannt"
+          }
+        }
+      }
+    },
+    "High": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoch"
+          }
+        }
+      }
+    },
+    "Hold %@, then press %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Halte %@ und drück dann %@"
+          }
+        }
+      }
+    },
+    "How sharp should your videos be?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wie scharf sollen deine Videos sein?"
+          }
+        }
+      }
+    },
+    "How sharp the video is, and how big the file gets.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wie scharf das Video ist und wie groß die Datei wird."
+          }
+        }
+      }
+    },
+    "In my videos I speak": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In meinen Videos spreche ich"
+          }
+        }
+      }
+    },
+    "In the Mac-Monologue window": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Im Fenster von Mac-Monologue"
+          }
+        }
+      }
+    },
+    "In use": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktiv"
+          }
+        }
+      }
+    },
+    "Install and Relaunch": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installieren und neu starten"
+          }
+        }
+      }
+    },
+    "Installed version": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installierte Version"
+          }
+        }
+      }
+    },
+    "Installing — Mac-Monologue will reopen by itself.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wird installiert – Mac-Monologue öffnet sich danach von selbst."
+          }
+        }
+      }
+    },
+    "It is running from %@. Updates can only be installed in Applications, and it is easy to find there. It opens again right away.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die App läuft aus „%@“. Updates lassen sich nur im Ordner „Programme“ installieren, und dort findest du sie leicht. Sie öffnet sich sofort wieder."
+          }
+        }
+      }
+    },
+    "Just you, through the camera.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nur du, über die Kamera."
+          }
+        }
+      }
+    },
+    "Just your screen.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nur dein Bildschirm."
+          }
+        }
+      }
+    },
+    "Keep": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Behalten"
+          }
+        }
+      }
+    },
+    "Keep me in frame": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Im Bild bleiben"
+          }
+        }
+      }
+    },
+    "Keeps it off the slides you are presenting. It is never in the recording either way.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Damit es nicht über deinen Folien liegt. In der Aufnahme ist es so oder so nie."
+          }
+        }
+      }
+    },
+    "Keyboard Shortcuts": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tastenkürzel"
+          }
+        }
+      }
+    },
+    "Large": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Groß"
+          }
+        }
+      }
+    },
+    "Last checked": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zuletzt geprüft"
+          }
+        }
+      }
+    },
+    "Later": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Später"
+          }
+        }
+      }
+    },
+    "Let go → you, full frame": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loslassen → du im Vollbild"
+          }
+        }
+      }
+    },
+    "Listening to the take": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Aufnahme wird angehört"
+          }
+        }
+      }
+    },
+    "Lower Mac sound while I talk": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac leiser, wenn ich spreche"
+          }
+        }
+      }
+    },
+    "Mac sound": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac-Ton"
+          }
+        }
+      }
+    },
+    "Mac sound %lld %%": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac-Ton %lld %%"
+          }
+        }
+      }
+    },
+    "Mac sound off": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac-Ton aus"
+          }
+        }
+      }
+    },
+    "Mac sound on": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac-Ton an"
+          }
+        }
+      }
+    },
+    "Mac-Monologue": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac-Monologue"
+          }
+        }
+      }
+    },
+    "Mac-Monologue could not be moved": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac-Monologue konnte nicht bewegt werden"
+          }
+        }
+      }
+    },
+    "Mac-Monologue is up to date": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac-Monologue ist aktuell"
+          }
+        }
+      }
+    },
+    "Mac-Monologue needs access to your camera and microphone.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac-Monologue braucht Zugriff auf Kamera und Mikrofon."
+          }
+        }
+      }
+    },
+    "Mac-Monologue needs permission to record your screen.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac-Monologue braucht die Erlaubnis, deinen Bildschirm aufzunehmen."
+          }
+        }
+      }
+    },
+    "Marks every click in the recording, so viewers can follow along.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Markiert jeden Klick in der Aufnahme, damit Zuschauer folgen können."
+          }
+        }
+      }
+    },
+    "Medium": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mittel"
+          }
+        }
+      }
+    },
+    "Microphone": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mikrofon"
+          }
+        }
+      }
+    },
+    "Microphone level in dBFS, with peak hold": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mikrofonpegel in dBFS, mit Spitzenwert"
+          }
+        }
+      }
+    },
+    "Microphone on": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mikrofon an"
+          }
+        }
+      }
+    },
+    "Minimise the window while recording": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fenster während der Aufnahme minimieren"
+          }
+        }
+      }
+    },
+    "Mirror the recording": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufnahme spiegeln"
+          }
+        }
+      }
+    },
+    "Mirrors the camera bubble in the saved file. The screen itself is never mirrored.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spiegelt die Kamera-Blase in der gespeicherten Datei. Der Bildschirm selbst wird nie gespiegelt."
+          }
+        }
+      }
+    },
+    "Mirrors the camera — bubble and full picture — in the saved file. The screen itself is never mirrored.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spiegelt die Kamera – Blase und Vollbild – in der gespeicherten Datei. Der Bildschirm selbst wird nie gespiegelt."
+          }
+        }
+      }
+    },
+    "Mirrors you in the saved file. The screen behind you is never mirrored.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spiegelt dich in der gespeicherten Datei. Der Bildschirm hinter dir wird nie gespiegelt."
+          }
+        }
+      }
+    },
+    "Mode": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modus"
+          }
+        }
+      }
+    },
+    "More settings": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weitere Einstellungen"
+          }
+        }
+      }
+    },
+    "Move Mac-Monologue to your Applications folder?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac-Monologue in den Ordner „Programme“ bewegen?"
+          }
+        }
+      }
+    },
+    "Move to Applications": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In „Programme“ bewegen"
+          }
+        }
+      }
+    },
+    "Needs a download from Apple": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Braucht einen Download von Apple"
+          }
+        }
+      }
+    },
+    "Never": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie"
+          }
+        }
+      }
+    },
+    "New Recording": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue Aufnahme"
+          }
+        }
+      }
+    },
+    "No audio": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kein Ton"
+          }
+        }
+      }
+    },
+    "No camera": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Kamera"
+          }
+        }
+      }
+    },
+    "No camera available — the screen will be recorded without the bubble.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Kamera verfügbar – der Bildschirm wird ohne Blase aufgenommen."
+          }
+        }
+      }
+    },
+    "No green screen": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ohne Greenscreen"
+          }
+        }
+      }
+    },
+    "No microphone": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kein Mikrofon"
+          }
+        }
+      }
+    },
+    "Not Now": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nicht jetzt"
+          }
+        }
+      }
+    },
+    "Not allowed": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nicht erlaubt"
+          }
+        }
+      }
+    },
+    "Not allowed yet": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noch nicht erlaubt"
+          }
+        }
+      }
+    },
+    "Not available on this Mac": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auf diesem Mac nicht verfügbar"
+          }
+        }
+      }
+    },
+    "OK": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        }
+      }
+    },
+    "Off": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aus"
+          }
+        }
+      }
+    },
+    "Off with Green Screen: the zoom would crop you": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aus beim Freistellen: Der Zoom würde dich abschneiden"
+          }
+        }
+      }
+    },
+    "One restart, and you are set": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Neustart, und du bist startklar"
+          }
+        }
+      }
+    },
+    "Open Privacy & Security…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datenschutz & Sicherheit öffnen …"
+          }
+        }
+      }
+    },
+    "Open System Settings…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Systemeinstellungen öffnen …"
+          }
+        }
+      }
+    },
+    "Option": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wahltaste"
+          }
+        }
+      }
+    },
+    "Options": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optionen"
+          }
+        }
+      }
+    },
+    "Or click a corner in the preview.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oder klick auf eine Ecke in der Vorschau."
+          }
+        }
+      }
+    },
+    "Pause": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause"
+          }
+        }
+      }
+    },
+    "Pause Playback": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wiedergabe anhalten"
+          }
+        }
+      }
+    },
+    "Paused": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausiert"
+          }
+        }
+      }
+    },
+    "Paused · %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausiert · %@"
+          }
+        }
+      }
+    },
+    "Permission is on. macOS only applies it after Mac-Monologue restarts.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Erlaubnis ist an. macOS übernimmt sie erst nach einem Neustart von Mac-Monologue."
+          }
+        }
+      }
+    },
+    "Permissions": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Berechtigungen"
+          }
+        }
+      }
+    },
+    "Person detection": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personenerkennung"
+          }
+        }
+      }
+    },
+    "Play": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abspielen"
+          }
+        }
+      }
+    },
+    "Press the new shortcut…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neues Tastenkürzel drücken …"
+          }
+        }
+      }
+    },
+    "Preview": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vorschau"
+          }
+        }
+      }
+    },
+    "Quality": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Qualität"
+          }
+        }
+      }
+    },
+    "Quality · size for ten minutes": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Qualität · Größe für zehn Minuten"
+          }
+        }
+      }
+    },
+    "Quit": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beenden"
+          }
+        }
+      }
+    },
+    "Quit Mac-Monologue": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac-Monologue beenden"
+          }
+        }
+      }
+    },
+    "Ready": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bereit"
+          }
+        }
+      }
+    },
+    "Ready · %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bereit · %@"
+          }
+        }
+      }
+    },
+    "Recommended": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empfohlen"
+          }
+        }
+      }
+    },
+    "Record": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufnehmen"
+          }
+        }
+      }
+    },
+    "Record yourself talking — or your screen with you in a small circle in the corner, like the tutorials you see on YouTube. Press one key to start, the same key to pause, and your video is ready. No editing afterwards.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nimm dich beim Reden auf – oder deinen Bildschirm mit dir in einem kleinen Kreis in der Ecke, wie bei Tutorials auf YouTube. Eine Taste startet, dieselbe Taste pausiert, und dein Video ist fertig. Ohne Nachbearbeitung."
+          }
+        }
+      }
+    },
+    "Record · Pause · Resume": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufnehmen · Pause · Fortsetzen"
+          }
+        }
+      }
+    },
+    "Record, pause and resume": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufnehmen, pausieren und fortsetzen"
+          }
+        }
+      }
+    },
+    "Record, pause, resume": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufnehmen, pausieren, fortsetzen"
+          }
+        }
+      }
+    },
+    "Record, then pause, then resume — or play the finished clip": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufnehmen, dann pausieren, dann fortsetzen – oder die fertige Aufnahme abspielen"
+          }
+        }
+      }
+    },
+    "Recording": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufnahme"
+          }
+        }
+      }
+    },
+    "Recording stopped: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufnahme gestoppt: %@"
+          }
+        }
+      }
+    },
+    "Recording · %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufnahme · %@"
+          }
+        }
+      }
+    },
+    "Recordings": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufnahmen"
+          }
+        }
+      }
+    },
+    "Release Notes on GitHub": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versionshinweise auf GitHub"
+          }
+        }
+      }
+    },
+    "Remembered for each camera. Off until you turn it on.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wird für jede Kamera gemerkt. Aus, bis du es einschaltest."
+          }
+        }
+      }
+    },
+    "Reset": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zurücksetzen"
+          }
+        }
+      }
+    },
+    "Restart Mac-Monologue": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac-Monologue neu starten"
+          }
+        }
+      }
+    },
+    "Resume": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fortsetzen"
+          }
+        }
+      }
+    },
+    "Return": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeilenschalter"
+          }
+        }
+      }
+    },
+    "Reveal Recordings in Finder": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufnahmen im Finder zeigen"
+          }
+        }
+      }
+    },
+    "Reveal in Finder": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Im Finder zeigen"
+          }
+        }
+      }
+    },
+    "Reveal the recording in Finder": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufnahme im Finder zeigen"
+          }
+        }
+      }
+    },
+    "Saved to ~/Movies/Monologue": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gespeichert in ~/Filme/Monologue"
+          }
+        }
+      }
+    },
+    "Screen": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildschirm"
+          }
+        }
+      }
+    },
+    "Screen & Head Touch Cut": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildschirm & Kopf (Touch Cut)"
+          }
+        }
+      }
+    },
+    "Screen + Camera": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildschirm + Kamera"
+          }
+        }
+      }
+    },
+    "Screen + Green Screen": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildschirm + Freigestellt"
+          }
+        }
+      }
+    },
+    "Screen modes": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildschirm-Modi"
+          }
+        }
+      }
+    },
+    "Screen recording": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildschirmaufnahme"
+          }
+        }
+      }
+    },
+    "Screen recording only takes effect after Mac-Monologue restarts.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Bildschirmaufnahme wirkt erst nach einem Neustart von Mac-Monologue."
+          }
+        }
+      }
+    },
+    "Screen recording stopped: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildschirmaufnahme gestoppt: %@"
+          }
+        }
+      }
+    },
+    "Settings": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einstellungen"
+          }
+        }
+      }
+    },
+    "Settings…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einstellungen …"
+          }
+        }
+      }
+    },
+    "Sharper means bigger files. Pick what suits how you share your videos: by email, as a link, or for editing. Medium fits most people.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schärfer heißt größere Dateien. Wähle, was dazu passt, wie du deine Videos teilst: per E-Mail, als Link oder zum Weiterbearbeiten. „Mittel“ passt für die meisten."
+          }
+        }
+      }
+    },
+    "Shift": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Umschalttaste"
+          }
+        }
+      }
+    },
+    "Shortcuts": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tastenkürzel"
+          }
+        }
+      }
+    },
+    "Show Mac-Monologue": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac-Monologue zeigen"
+          }
+        }
+      }
+    },
+    "Show in Finder": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Im Finder zeigen"
+          }
+        }
+      }
+    },
+    "Show mouse clicks": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mausklicks zeigen"
+          }
+        }
+      }
+    },
+    "Show the Welcome Steps Again…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Willkommensschritte erneut zeigen …"
+          }
+        }
+      }
+    },
+    "Size": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Größe"
+          }
+        }
+      }
+    },
+    "Sizes are for ten minutes of recording, picture and sound together. A still slide takes less, a lot of movement a little more.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Größen gelten für zehn Minuten Aufnahme, Bild und Ton zusammen. Eine ruhige Folie braucht weniger, viel Bewegung etwas mehr."
+          }
+        }
+      }
+    },
+    "Skip This Version": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Version überspringen"
+          }
+        }
+      }
+    },
+    "Small": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klein"
+          }
+        }
+      }
+    },
+    "Small files, easy to email or upload on a slow connection. Small text on a screen looks a little soft.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kleine Dateien, leicht per E-Mail zu schicken oder über eine langsame Verbindung hochzuladen. Kleine Schrift auf dem Bildschirm wirkt etwas weich."
+          }
+        }
+      }
+    },
+    "So you can be heard. The level meter shows how loud you are before you start.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Damit man dich hört. Der Pegel zeigt dir schon vor dem Start, wie laut du bist."
+          }
+        }
+      }
+    },
+    "So you can be seen: on your own, or in the circle next to your slides.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Damit man dich sieht: allein oder im Kreis neben deinen Folien."
+          }
+        }
+      }
+    },
+    "So you can record presentations and demos. Mac-Monologue only records while you are recording, and never records its own window.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Damit du Präsentationen und Demos aufnehmen kannst. Mac-Monologue nimmt nur auf, während du aufnimmst, und nie sein eigenes Fenster."
+          }
+        }
+      }
+    },
+    "Sources": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quellen"
+          }
+        }
+      }
+    },
+    "Spoken language": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gesprochene Sprache"
+          }
+        }
+      }
+    },
+    "Start Recording": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufnahme beginnen"
+          }
+        }
+      }
+    },
+    "Start a new recording": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue Aufnahme beginnen"
+          }
+        }
+      }
+    },
+    "Starting in %lld": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Startet in %lld"
+          }
+        }
+      }
+    },
+    "Starting in %lld…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Startet in %lld …"
+          }
+        }
+      }
+    },
+    "Starts on the screen": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beginnt mit dem Bildschirm"
+          }
+        }
+      }
+    },
+    "Starts on you": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beginnt mit dir"
+          }
+        }
+      }
+    },
+    "Step %lld of %lld": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schritt %lld von %lld"
+          }
+        }
+      }
+    },
+    "Subtitles": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Untertitel"
+          }
+        }
+      }
+    },
+    "Subtitles cancelled": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Untertitel abgebrochen"
+          }
+        }
+      }
+    },
+    "Subtitles could not be made": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Untertitel konnten nicht erstellt werden"
+          }
+        }
+      }
+    },
+    "Subtitles need macOS 26 or later.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Untertitel brauchen macOS 26 oder neuer."
+          }
+        }
+      }
+    },
+    "Subtitles, made by your Mac": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Untertitel, von deinem Mac gemacht"
+          }
+        }
+      }
+    },
+    "Switch on Mac-Monologue under Screen & System Audio Recording, then restart the app — macOS only applies it after a restart.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schalte Mac-Monologue unter „Bildschirm- & Systemaudioaufnahme“ ein und starte die App dann neu – macOS übernimmt es erst nach einem Neustart."
+          }
+        }
+      }
+    },
+    "System audio could not be synchronised with the camera and may drift.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Mac-Ton ließ sich nicht mit der Kamera synchronisieren und kann auseinanderlaufen."
+          }
+        }
+      }
+    },
+    "Take saved": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufnahme gespeichert"
+          }
+        }
+      }
+    },
+    "Text reads backwards in the saved file": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Text ist in der Datei spiegelverkehrt"
+          }
+        }
+      }
+    },
+    "The Mac's sound as it goes into the recording": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Mac-Ton, wie er in die Aufnahme geht"
+          }
+        }
+      }
+    },
+    "The all-rounder: sharp enough for slides and faces, small enough to share anywhere.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Allrounder: scharf genug für Folien und Gesichter, klein genug zum Teilen überall."
+          }
+        }
+      }
+    },
+    "The best picture, for editing afterwards or showing on a big screen. Large files.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das beste Bild, zum Weiterbearbeiten oder für große Bildschirme. Große Dateien."
+          }
+        }
+      }
+    },
+    "The camera disconnected. The screen keeps recording without the bubble.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Kamera wurde getrennt. Der Bildschirm wird ohne Blase weiter aufgenommen."
+          }
+        }
+      }
+    },
+    "The camera disconnected. The take has been stopped and kept.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Kamera wurde getrennt. Die Aufnahme wurde beendet und gespeichert."
+          }
+        }
+      }
+    },
+    "The camera isn't sending a picture. If it's your iPhone, wake it and keep it nearby.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Kamera liefert kein Bild. Ist es dein iPhone, entsperre es und halte es in der Nähe."
+          }
+        }
+      }
+    },
+    "The encoder rejected this camera format.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Encoder hat dieses Kameraformat abgelehnt."
+          }
+        }
+      }
+    },
+    "The file could not be opened for writing.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Datei konnte nicht zum Schreiben geöffnet werden."
+          }
+        }
+      }
+    },
+    "The file moves to the Trash.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Datei wandert in den Papierkorb."
+          }
+        }
+      }
+    },
+    "The mode I used last": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der zuletzt genutzte Modus"
+          }
+        }
+      }
+    },
+    "The preview always looks like a mirror. Turn this on only if you want the saved file mirrored too — text you hold up to the camera will then read backwards.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Vorschau wirkt immer wie ein Spiegel. Schalte das nur ein, wenn auch die gespeicherte Datei gespiegelt sein soll – Text, den du in die Kamera hältst, ist dann spiegelverkehrt."
+          }
+        }
+      }
+    },
+    "The screen being recorded went away. The take has been stopped and kept.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der aufgenommene Bildschirm ist weg. Die Aufnahme wurde beendet und gespeichert."
+          }
+        }
+      }
+    },
+    "The screen could not be recorded: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Bildschirm konnte nicht aufgenommen werden: %@"
+          }
+        }
+      }
+    },
+    "The screen is never mirrored.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Bildschirm wird nie gespiegelt."
+          }
+        }
+      }
+    },
+    "The screen you chose last time is not connected. Pick another one.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der zuletzt gewählte Bildschirm ist nicht verbunden. Wähle einen anderen."
+          }
+        }
+      }
+    },
+    "The take is not saved.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Aufnahme wird nicht gespeichert."
+          }
+        }
+      }
+    },
+    "The update did not work": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Update hat nicht geklappt"
+          }
+        }
+      }
+    },
+    "There is no take in progress.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Es läuft keine Aufnahme."
+          }
+        }
+      }
+    },
+    "These work from any app — so you can pause and finish while presenting, without switching back to Mac-Monologue.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sie funktionieren aus jeder App – so kannst du beim Präsentieren pausieren und beenden, ohne zu Mac-Monologue zu wechseln."
+          }
+        }
+      }
+    },
+    "This camera has Center Stage: it follows you as you move, at full sharpness.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Kamera hat den Folgemodus: Er folgt dir bei voller Schärfe."
+          }
+        }
+      }
+    },
+    "This camera has no Center Stage. Mac-Monologue follows your face by zooming in a little, so the picture gets slightly softer.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Kamera hat keinen Folgemodus. Mac-Monologue folgt deinem Gesicht, indem es leicht hineinzoomt – das Bild wird dadurch etwas weicher."
+          }
+        }
+      }
+    },
+    "This list": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Liste"
+          }
+        }
+      }
+    },
+    "This was turned off earlier, so macOS will not ask again.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das wurde früher ausgeschaltet, deshalb fragt macOS nicht noch einmal."
+          }
+        }
+      }
+    },
+    "Time to get ready. In Touch Cut, a finger on the trackpad when it ends starts the take on the screen.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeit, dich bereitzumachen. Bei Touch Cut beginnt die Aufnahme mit dem Bildschirm, wenn beim Ablauf ein Finger auf dem Trackpad liegt."
+          }
+        }
+      }
+    },
+    "Top left": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oben links"
+          }
+        }
+      }
+    },
+    "Top right": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oben rechts"
+          }
+        }
+      }
+    },
+    "Touch Cut": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touch Cut"
+          }
+        }
+      }
+    },
+    "Trackpad touch isn't available on this Mac — records like Screen + Camera.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Trackpad-Berührung ist auf diesem Mac nicht verfügbar – es wird wie bei Bildschirm + Kamera aufgenommen."
+          }
+        }
+      }
+    },
+    "Translating to %@ (%lld of %lld)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Übersetzung: %@ (%lld von %lld)"
+          }
+        }
+      }
+    },
+    "Try Again": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erneut versuchen"
+          }
+        }
+      }
+    },
+    "Turning this off keeps the languages below for next time.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beim Ausschalten bleiben die Sprachen unten für das nächste Mal erhalten."
+          }
+        }
+      }
+    },
+    "Unavailable": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nicht verfügbar"
+          }
+        }
+      }
+    },
+    "Update Available: %@…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update verfügbar: %@ …"
+          }
+        }
+      }
+    },
+    "Updates": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Updates"
+          }
+        }
+      }
+    },
+    "Updating Mac-Monologue": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac-Monologue wird aktualisiert"
+          }
+        }
+      }
+    },
+    "Use %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ verwenden"
+          }
+        }
+      }
+    },
+    "Use at least two of ⌃ ⌥ ⇧ ⌘ together with one key, so the shortcut cannot go off while typing.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nimm mindestens zwei von ⌃ ⌥ ⇧ ⌘ zusammen mit einer Taste, damit das Kürzel beim Tippen nicht versehentlich auslöst."
+          }
+        }
+      }
+    },
+    "Uses this camera's Center Stage: it follows you as you move, at full sharpness. You can also switch it in Control Center.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nutzt den Folgemodus dieser Kamera: Er folgt dir bei voller Schärfe. Du kannst ihn auch im Kontrollzentrum schalten."
+          }
+        }
+      }
+    },
+    "Version %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@"
+          }
+        }
+      }
+    },
+    "Version %@ is the newest.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@ ist die neueste."
+          }
+        }
+      }
+    },
+    "Version %@ — you have %@.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@ – du hast %@."
+          }
+        }
+      }
+    },
+    "Very high": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sehr hoch"
+          }
+        }
+      }
+    },
+    "Voice": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stimme"
+          }
+        }
+      }
+    },
+    "Voice and Mac sound balance": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verhältnis von Stimme und Mac-Ton"
+          }
+        }
+      }
+    },
+    "Welcome to Mac-Monologue": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Willkommen bei Mac-Monologue"
+          }
+        }
+      }
+    },
+    "Welcome to Mac-Monologue…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Willkommen bei Mac-Monologue …"
+          }
+        }
+      }
+    },
+    "When Mac-Monologue opens": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beim Öffnen von Mac-Monologue"
+          }
+        }
+      }
+    },
+    "While you present, your slides are in front. These keys still reach Mac-Monologue.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Während du präsentierst, sind deine Folien vorne. Diese Tasten erreichen Mac-Monologue trotzdem."
+          }
+        }
+      }
+    },
+    "Writing the file failed.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Schreiben der Datei ist fehlgeschlagen."
+          }
+        }
+      }
+    },
+    "You can change them later in Settings.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du kannst sie später in den Einstellungen ändern."
+          }
+        }
+      }
+    },
+    "You can change this any time in Settings › Subtitles.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du kannst das jederzeit unter Einstellungen › Untertitel ändern."
+          }
+        }
+      }
+    },
+    "You can change this any time, in the main window or in Settings.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du kannst das jederzeit ändern, im Hauptfenster oder in den Einstellungen."
+          }
+        }
+      }
+    },
+    "You have version %@.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du hast Version %@."
+          }
+        }
+      }
+    },
+    "You, cut out": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du, freigestellt"
+          }
+        }
+      }
+    },
+    "You, cut out, standing in front of your screen.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du, freigestellt, vor deinem Bildschirm."
+          }
+        }
+      }
+    },
+    "You, full frame": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du im Vollbild"
+          }
+        }
+      }
+    },
+    "Your position on the screen": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine Position auf dem Bildschirm"
+          }
+        }
+      }
+    },
+    "Your screen while a finger rests on the trackpad, you in full frame once you let go.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Bildschirm, solange ein Finger auf dem Trackpad liegt – du im Vollbild, sobald du loslässt."
+          }
+        }
+      }
+    },
+    "Your screen, with you in a round bubble in a corner.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Bildschirm, mit dir in einer runden Blase in der Ecke."
+          }
+        }
+      }
+    },
+    "Your screen, you in the bubble": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Bildschirm, du in der Blase"
+          }
+        }
+      }
+    },
+    "Your size": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine Größe"
+          }
+        }
+      }
+    },
+    "Your voice as it goes into the recording": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine Stimme, wie sie in die Aufnahme geht"
+          }
+        }
+      }
+    },
+    "Zooms in slightly": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zoomt leicht hinein"
+          }
+        }
+      }
+    },
+    "about %lld minutes left": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "noch etwa %lld Minuten"
+          }
+        }
+      }
+    },
+    "about 1 minute left": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "noch etwa 1 Minute"
+          }
+        }
+      }
+    },
+    "as spoken": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "wie gesprochen"
+          }
+        }
+      }
+    },
+    "both full": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "beide voll"
+          }
+        }
+      }
+    },
+    "less than a minute left": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "noch weniger als eine Minute"
+          }
+        }
+      }
+    },
+    "macOS only lets Mac-Monologue see your screen after it restarts. It takes a second and opens again right away.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS lässt Mac-Monologue deinen Bildschirm erst nach einem Neustart sehen. Das dauert eine Sekunde, die App öffnet sich sofort wieder."
+          }
+        }
+      }
+    },
+    "macOS will send you to System Settings: switch on Mac-Monologue under “Screen & System Audio Recording”, then come back here.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS schickt dich in die Systemeinstellungen: Schalte Mac-Monologue unter „Bildschirm- & Systemaudioaufnahme“ ein und komm dann hierher zurück."
+          }
+        }
+      }
+    },
+    "translated": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "übersetzt"
+          }
+        }
+      }
+    },
+    "voice %lld %%": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stimme %lld %%"
+          }
+        }
+      }
+    },
+    "voice off": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stimme aus"
+          }
+        }
+      }
+    },
+    "•": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "•"
+          }
+        }
+      }
+    },
+    "−60": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "−60"
+          }
+        }
+      }
+    },
+    "≈ %lld MB per 10 min": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "≈ %lld MB pro 10 Min."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

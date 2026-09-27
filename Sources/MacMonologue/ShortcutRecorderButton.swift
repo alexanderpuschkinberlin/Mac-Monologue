@@ -45,8 +45,7 @@ struct ShortcutRecorderButton: View {
                     shortcut = recorded
                     stop()
                 } else {
-                    hint = "Use at least two of ⌃ ⌥ ⇧ ⌘ together with one key, "
-                        + "so the shortcut cannot go off while typing."
+                    hint = String(localized: "Use at least two of ⌃ ⌥ ⇧ ⌘ together with one key, so the shortcut cannot go off while typing.")
                 }
             }
             return nil

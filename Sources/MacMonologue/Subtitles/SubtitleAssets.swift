@@ -11,10 +11,10 @@ enum LanguageReadiness: Equatable, Sendable {
 
     var label: String {
         switch self {
-        case .ready: "Ready"
-        case .needsDownload: "Needs a download from Apple"
-        case .unsupported: "Not available on this Mac"
-        case .checking: "Checking…"
+        case .ready: String(localized: "Ready")
+        case .needsDownload: String(localized: "Needs a download from Apple")
+        case .unsupported: String(localized: "Not available on this Mac")
+        case .checking: String(localized: "Checking…")
         }
     }
 }

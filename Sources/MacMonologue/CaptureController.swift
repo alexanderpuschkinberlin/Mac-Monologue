@@ -18,13 +18,13 @@ enum RecorderState: Equatable {
 
     var label: String {
         switch self {
-        case .needsAccess: "Access needed"
-        case .unavailable: "Unavailable"
-        case .ready: "Ready"
-        case .recording: "Recording"
-        case .paused: "Paused"
-        case .finishing: "Finishing"
-        case .preview: "Preview"
+        case .needsAccess: String(localized: "Access needed")
+        case .unavailable: String(localized: "Unavailable")
+        case .ready: String(localized: "Ready")
+        case .recording: String(localized: "Recording")
+        case .paused: String(localized: "Paused")
+        case .finishing: String(localized: "Finishing")
+        case .preview: String(localized: "Preview")
         }
     }
 }
@@ -38,9 +38,9 @@ struct DeviceOption: Identifiable, Hashable {
     let name: String
     var isAvailable: Bool = true
 
-    var displayName: String { isAvailable ? name : "\(name) — unavailable" }
+    var displayName: String { isAvailable ? name : String(localized: "\(name) — unavailable") }
 
-    static let noAudio = DeviceOption(id: noAudioID, name: "No audio")
+    static let noAudio = DeviceOption(id: noAudioID, name: String(localized: "No audio"))
 }
 
 @MainActor
@@ -573,11 +573,11 @@ final class CaptureController: ObservableObject {
         switch mode {
         case .camera:
             // Nothing left to record: finish, and keep what there is.
-            banner = "The camera disconnected. The take has been stopped and kept."
+            banner = String(localized: "The camera disconnected. The take has been stopped and kept.")
             finishTake()
         case .screenAndCamera, .screenAndCameraTouchCut, .screenAndGreenScreen:
             // The presentation matters more than the bubble: keep recording.
-            banner = "The camera disconnected. The screen keeps recording without the bubble."
+            banner = String(localized: "The camera disconnected. The screen keeps recording without the bubble.")
         case .screen:
             break
         }
@@ -624,14 +624,13 @@ final class CaptureController: ObservableObject {
                 return
             }
             activeDimensions = videoQuality.cameraSize(width: cameraDimensions.width, height: cameraDimensions.height)
-            formatSummary = "\(activeDimensions.width) × \(activeDimensions.height) · up to \(Int(Self.targetFPS)) fps"
-                + " · \(videoQuality.sizeLabel)"
+            formatSummary = "\(activeDimensions.width) × \(activeDimensions.height) · up to \(Int(Self.targetFPS)) fps · \(videoQuality.sizeLabel)"
 
         case .screenAndCamera, .screenAndCameraTouchCut, .screenAndGreenScreen:
             if camera == nil, !cameraAccessDenied {
-                banner = "No camera available — the screen will be recorded without the bubble."
+                banner = String(localized: "No camera available — the screen will be recorded without the bubble.")
             } else if mode.cutsOnTouch, !trackpad.isAvailable {
-                banner = "Trackpad touch isn't available on this Mac — records like Screen + Camera."
+                banner = String(localized: "Trackpad touch isn't available on this Mac — records like Screen + Camera.")
             }
             refreshScreenCapture()
 
@@ -863,7 +862,7 @@ final class CaptureController: ObservableObject {
         }
 
         guard let chosen else {
-            banner = "The screen you chose last time is not connected. Pick another one."
+            banner = String(localized: "The screen you chose last time is not connected. Pick another one.")
             stopScreenCapture()
             formatSummary = ""
             return
@@ -885,7 +884,7 @@ final class CaptureController: ObservableObject {
                 guard let self, generation == self.screenRefreshGeneration else { return }
                 if let error {
                     self.isScreenCaptureRunning = false
-                    self.banner = "The screen could not be recorded: \(TakeRecorder.describe(error))"
+                    self.banner = String(localized: "The screen could not be recorded: \(TakeRecorder.describe(error))")
                 } else {
                     self.isScreenCaptureRunning = true
                 }
@@ -906,10 +905,10 @@ final class CaptureController: ObservableObject {
                 guard let self else { return }
                 self.isScreenCaptureRunning = false
                 if self.state == .recording || self.state == .paused {
-                    self.banner = "The screen being recorded went away. The take has been stopped and kept."
+                    self.banner = String(localized: "The screen being recorded went away. The take has been stopped and kept.")
                     self.finishTake()
                 } else {
-                    self.banner = "Screen recording stopped: \(reason)"
+                    self.banner = String(localized: "Screen recording stopped: \(reason)")
                 }
             }
         }
@@ -1130,7 +1129,7 @@ final class CaptureController: ObservableObject {
                 guard let self else { return }
                 self.clockReading = reading
                 if reading.verdict == .unrelated {
-                    self.banner = "System audio could not be synchronised with the camera and may drift."
+                    self.banner = String(localized: "System audio could not be synchronised with the camera and may drift.")
                 }
             }
         }

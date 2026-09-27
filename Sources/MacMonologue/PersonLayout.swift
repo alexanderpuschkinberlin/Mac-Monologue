@@ -10,9 +10,9 @@ enum KeyingChoice: String, CaseIterable, Sendable {
 
     var label: String {
         switch self {
-        case .automatic: "Automatic"
-        case .greenScreen: "Green screen"
-        case .segmentation: "No green screen"
+        case .automatic: String(localized: "Automatic")
+        case .greenScreen: String(localized: "Green screen")
+        case .segmentation: String(localized: "No green screen")
         }
     }
 }

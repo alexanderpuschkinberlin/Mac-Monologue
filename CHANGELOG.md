@@ -4,6 +4,13 @@ Every version of Mac-Monologue, newest first. `bin/publish` takes the section of
 the version it publishes as that release's notes, and the app shows them when it
 offers an update.
 
+## 0.7.1
+
+- **Every take in a folder of its own.** The video and its subtitle files now
+  sit together in `~/Movies/Monologue/Monologue-<date>/`, instead of all
+  takes and .srt files mixed in one folder. Takes recorded before stay where
+  they are. Discarding a take moves its whole folder to the Trash.
+
 ## 0.7.0 — 2026-09-27
 
 - **A new window.** The modes sit at the top, the settings for the chosen mode

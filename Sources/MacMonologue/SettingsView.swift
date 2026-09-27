@@ -168,7 +168,7 @@ struct SettingsView: View {
 
             Section("Recordings") {
                 HStack {
-                    Text("Saved to ~/Movies/Monologue")
+                    Text("Saved to ~/Movies/Monologue, one folder per take")
                     Spacer()
                     Button("Show in Finder") { capture.revealInFinder() }
                 }

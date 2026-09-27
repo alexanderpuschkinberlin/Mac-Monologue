@@ -212,7 +212,7 @@ enum SelfTest {
             if CommandLine.arguments.contains("--keep") {
                 log("OK · verified and kept \(url.path)")
             } else {
-                try? FileManager.default.removeItem(at: url)
+                try? FileManager.default.removeItem(at: TakeRecorder.takeFolder(of: url) ?? url)
                 log("OK · verified and removed \(url.lastPathComponent)")
             }
             exit(0)

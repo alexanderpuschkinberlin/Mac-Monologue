@@ -152,7 +152,7 @@ final class TakeRecorder: @unchecked Sendable {
         }
     }
 
-    /// Finishes and moves the file into `~/Movies/Monologue`.
+    /// Finishes and moves the file into its own folder in `~/Movies/Monologue`.
     func finish(completion: @escaping @Sendable (Result<URL, Error>) -> Void) {
         queue.async { [self] in
             guard status == .recording || status == .paused else { return }
@@ -226,18 +226,38 @@ final class TakeRecorder: @unchecked Sendable {
     }
 
     private static func moveIntoRecordings(_ temporaryURL: URL) throws -> URL {
-        let directory = recordingsDirectory
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-
-        var destination = directory.appendingPathComponent(filename())
-        var suffix = 2
-        while FileManager.default.fileExists(atPath: destination.path) {
-            let name = filename().replacingOccurrences(of: ".mp4", with: "-\(suffix).mp4")
-            destination = directory.appendingPathComponent(name)
-            suffix += 1
-        }
+        let destination = destination(in: recordingsDirectory, date: Date())
+        try FileManager.default.createDirectory(at: destination.deletingLastPathComponent(),
+                                                withIntermediateDirectories: true)
         try FileManager.default.moveItem(at: temporaryURL, to: destination)
         return destination
+    }
+
+    /// Each take gets a folder of its own, named like the file, so the .srt
+    /// files written next to it later stay with it:
+    /// `Monologue-X/Monologue-X.mp4`, or `Monologue-X-2/Monologue-X-2.mp4`
+    /// when that folder is already there.
+    static func destination(in directory: URL, date: Date) -> URL {
+        let base = (filename(for: date) as NSString).deletingPathExtension
+        var name = base
+        var suffix = 2
+        while FileManager.default.fileExists(atPath: directory.appendingPathComponent(name).path) {
+            name = "\(base)-\(suffix)"
+            suffix += 1
+        }
+        return directory.appendingPathComponent(name, isDirectory: true)
+            .appendingPathComponent(name).appendingPathExtension("mp4")
+    }
+
+    /// The take's own folder, or nil for a take saved before 0.7.1, which sits
+    /// loose in the recordings folder - that one must not take its
+    /// neighbours along when it goes to the Trash.
+    static func takeFolder(of video: URL, in directory: URL = recordingsDirectory) -> URL? {
+        let folder = video.deletingLastPathComponent()
+        guard folder.standardizedFileURL.deletingLastPathComponent().path == directory.standardizedFileURL.path,
+              folder.lastPathComponent == video.deletingPathExtension().lastPathComponent
+        else { return nil }
+        return folder
     }
 
     private static func videoSettings(for configuration: Configuration) -> [String: Any] {

@@ -1841,12 +1841,12 @@
         }
       }
     },
-    "Saved to ~/Movies/Monologue": {
+    "Saved to ~/Movies/Monologue, one folder per take": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Gespeichert in ~/Filme/Monologue"
+            "value": "Gespeichert in ~/Filme/Monologue, ein Ordner pro Aufnahme"
           }
         }
       }

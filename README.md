@@ -295,8 +295,9 @@ opens normally, and updates from inside the app do not ask again.
 <details>
 <summary><b>Where are my recordings?</b></summary>
 <br>
-In your <b>Movies</b> folder, under <b>Monologue</b>, named by date and time. After
-each take, <i>Reveal in Finder</i> takes you straight to the file.
+In your <b>Movies</b> folder, under <b>Monologue</b>: every take in a folder of its own,
+named by date and time, with its subtitle files next to the video. After each take,
+<i>Reveal in Finder</i> takes you straight to the file.
 </details>
 
 <details>

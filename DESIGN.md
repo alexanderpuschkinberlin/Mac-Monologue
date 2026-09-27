@@ -263,11 +263,13 @@ several decisions below that would be wrong for a product with real users.
 
 ### Storage
 
-- Record to a temp file; **move into `~/Movies/Monologue/` on Finish.** A crash or a
+- Record to a temp file; **move into `~/Movies/Monologue/<take>/<take>.mp4` on
+  Finish** - one folder per take, so the `.srt` files written next to the video
+  stay with it (since 0.7.1; older takes lie loose and are left alone). A crash or a
   discard therefore leaves nothing behind in a folder the user looks at.
 - No staging library, no `take.json` manifests, no Recordings browser — all removed
   relative to the original.
-- Discard after finishing moves the file to **Trash**, not `unlink`, so Finder's
+- Discard after finishing moves the take (its folder) to **Trash**, not `unlink`, so Finder's
   Put Back works.
 - The original's "Open in Omacut" becomes **Reveal in Finder** (`⇧⌘R`).
 

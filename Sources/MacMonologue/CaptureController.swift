@@ -1349,7 +1349,8 @@ final class CaptureController: ObservableObject {
             // Finished takes go to the Trash, so Finder's Put Back works.
             tearDownPlayer()
             subtitles.discard(url)
-            try? FileManager.default.trashItem(at: url, resultingItemURL: nil)
+            let take = TakeRecorder.takeFolder(of: url) ?? url
+            try? FileManager.default.trashItem(at: take, resultingItemURL: nil)
         }
 
         tearDownPlayer()

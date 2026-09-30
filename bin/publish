@@ -105,6 +105,9 @@ if ! gh release create "$TAG" "$ASSET" --repo "$REPOSITORY" \
   echo "  gh release create $TAG '$ASSET' --repo $REPOSITORY --title 'Mac-Monologue $VERSION' --notes-file '$NOTES_FILE'" >&2
   exit 1
 fi
+# The Homebrew cask follows the release; if this fails, the release stands and
+# bin/update-tap can be run again by hand.
+bin/update-tap "$VERSION" "$ASSET" || echo "✗ Updating the Homebrew tap failed. Retry: bin/update-tap $VERSION" >&2
 rm -rf "$ASSET_DIR"
 
 echo

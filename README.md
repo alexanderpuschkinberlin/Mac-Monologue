@@ -251,6 +251,12 @@
   </tr>
 </table>
 
+Or with [Homebrew](https://brew.sh):
+
+```sh
+brew install --cask alexanderpuschkinberlin/tap/mac-monologue
+```
+
 <h4 id="first-open">The first time you open it</h4>
 
 macOS stops the app with **“Mac-Monologue.app” Not Opened** and says Apple could not

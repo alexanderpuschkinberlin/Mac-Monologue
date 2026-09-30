@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Points the Homebrew cask at a released version: sets version and sha256 in
+# alexanderpuschkinberlin/homebrew-tap/Casks/mac-monologue.rb through the GitHub
+# API - no clone needed. bin/publish runs it after every release; by hand:
+#
+#   bin/update-tap 0.7.1                 hashes the zip of that GitHub release
+#   bin/update-tap 0.7.1 path/to.zip     hashes a local copy of it
+#   bin/update-tap 0.7.1 --dry-run       prints the new cask, changes nothing
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+VERSION="${1:-}"; SOURCE="${2:-}"
+TAP="alexanderpuschkinberlin/homebrew-tap"
+CASK="Casks/mac-monologue.rb"
+[[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "usage: bin/update-tap <version> [zip|--dry-run]" >&2; exit 1; }
+
+DRY_RUN=""
+if [ "$SOURCE" = "--dry-run" ]; then DRY_RUN=1; SOURCE=""; fi
+if [ -z "$SOURCE" ]; then
+  SOURCE="$(mktemp -d)/Mac-Monologue.zip"
+  curl -fsSL -o "$SOURCE" \
+    "https://github.com/alexanderpuschkinberlin/Mac-Monologue/releases/download/v$VERSION/Mac-Monologue.zip"
+fi
+SHA="$(shasum -a 256 "$SOURCE" | cut -d' ' -f1)"
+
+CURRENT="$(gh api "repos/$TAP/contents/$CASK")"
+BLOB="$(printf '%s' "$CURRENT" | python3 -c 'import sys, json; print(json.load(sys.stdin)["sha"])')"
+NEW="$(printf '%s' "$CURRENT" | python3 -c '
+import sys, json, base64, re
+text = base64.b64decode(json.load(sys.stdin)["content"]).decode()
+text = re.sub(r"version \"[^\"]+\"", "version \"" + sys.argv[1] + "\"", text, count=1)
+text = re.sub(r"sha256 \"[0-9a-f]+\"", "sha256 \"" + sys.argv[2] + "\"", text, count=1)
+print(text, end="")
+' "$VERSION" "$SHA")"
+
+if [ -n "$DRY_RUN" ]; then
+  printf '%s\n' "$NEW"
+  exit 0
+fi
+gh api -X PUT "repos/$TAP/contents/$CASK" \
+  -f message="Mac-Monologue $VERSION" \
+  -f content="$(printf '%s' "$NEW" | base64)" \
+  -f sha="$BLOB" >/dev/null
+echo "✓ Homebrew: brew install --cask alexanderpuschkinberlin/tap/mac-monologue now gets $VERSION"
